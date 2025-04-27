@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ネットワークルーティングシミュレーション</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen font-sans text-gray-800">
+    <div class="max-w-7xl mx-auto px-4 py-6">
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-800 font-sans">ネットワークルーティングシミュレーション</h1>
+            <div class="flex items-center text-gray-500 text-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>v1.0.0</span>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-lg p-5 mb-6 border border-gray-200 backdrop-blur-sm bg-opacity-95">
+            <div class="flex flex-wrap items-center gap-4">
+                <div class="flex items-center">
+                    <label for="source" class="font-medium mr-2 text-gray-700">送信:</label>
+                    <select id="source" class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 transition-all duration-200">
+                        <option value="A">端末 A</option>
+                        <option value="B">端末 B</option>
+                        <option value="C">端末 C</option>
+                        <option value="D" selected>端末 D</option>
+                        <option value="E">端末 E</option>
+                    </select>
+                </div>
+                
+                <div class="flex items-center">
+                    <label for="destination" class="font-medium mr-2 text-gray-700">受信:</label>
+                    <select id="destination" class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 transition-all duration-200">
+                        <option value="A">端末 A</option>
+                        <option value="B" selected>端末 B</option>
+                        <option value="C">端末 C</option>
+                        <option value="D">端末 D</option>
+                        <option value="E">端末 E</option>
+                    </select>
+                </div>
+                
+                <div class="ml-auto flex gap-3 mt-2 sm:mt-0">
+                    <button id="send-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-5 rounded-lg transition-all duration-200 flex items-center shadow-md hover:shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" />
+                        </svg>
+                        送信
+                    </button>
+                    <button id="stop-btn" class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-5 rounded-lg transition-all duration-200 flex items-center shadow-md hover:shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd" />
+                        </svg>
+                        停止
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div id="network-container" class="lg:col-span-2 bg-white rounded-xl shadow-lg p-4 border border-gray-200 backdrop-blur-sm bg-opacity-95">
+                <div id="network" class="w-full h-96 md:h-[550px] relative overflow-hidden border border-gray-100 rounded-lg bg-gradient-to-br from-gray-50 to-white">
+                    <!-- Network visualization will be rendered here -->
+                </div>
+                <div class="flex justify-between mt-3 px-2 text-sm text-gray-500">
+                    <div>ネットワークトポロジー</div>
+                    <div id="packet-counter">アクティブパケット: 0</div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-lg p-5 border border-gray-200 backdrop-blur-sm bg-opacity-95">
+                <div class="flex items-center mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <h2 class="text-xl font-bold">ルーティングテーブル</h2>
+                </div>
+                <div class="overflow-x-auto rounded-lg">
+                    <table id="routing-table" class="w-full border-collapse">
+                        <thead>
+                            <tr>
+                                <th class="border border-gray-200 bg-gray-50 px-4 py-2 text-left font-semibold rounded-tl-lg">宛先</th>
+                                <th class="border border-gray-200 bg-gray-50 px-4 py-2 text-left font-semibold rounded-tr-lg">転送先</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Routing table entries will be added dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="flex items-center mt-8 mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                    </svg>
+                    <h2 class="text-xl font-bold">パケットログ</h2>
+                </div>
+                <div id="log-container" class="h-40 md:h-56 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50 font-mono text-sm"></div>
+            </div>
+        </div>
+        
+        <div class="mt-6 text-center text-gray-500 text-sm">
+            ネットワークトポロジーとパケットルーティングのシミュレーション © 2025
+        </div>
+    </div>
+
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+        
+        .node {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            background-color: white;
+            border: 2px solid;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out;
+        }
+        
+        .node:hover {
+            transform: translate(-50%, -50%) scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            cursor: pointer;
+        }
+        
+        .terminal {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            font-size: 24px;
+            border-color: #4B5563;
+            background: linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .terminal.active {
+            border-color: #3B82F6;
+            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+        
+        .router {
+            width: 80px;
+            height: 80px;
+            flex-direction: column;
+            border-color: #4B5563;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .router.active {
+            border-color: #3B82F6;
+            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+        
+        .router-icon {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            width: 40px;
+            height: 40px;
+            margin-bottom: 4px;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .router-icon div {
+            background-color: #111827;
+            border: 1px solid #F3F4F6;
+        }
+        
+        .router-icon div:nth-child(2),
+        .router-icon div:nth-child(3) {
+            background-color: #F3F4F6;
+            border: 1px solid #111827;
+        }
+        
+        .connection {
+            position: absolute;
+            background-color: #9CA3AF;
+            transform-origin: 0 0;
+            height: 3px;
+            z-index: 1;
+            border-radius: 2px;
+            opacity: 0.6;
+            transition: background-color 0.3s ease, height 0.3s ease, opacity 0.3s ease;
+        }
+        
+        .connection.active {
+            background-color: #3B82F6;
+            height: 4px;
+            opacity: 1;
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+        }
+        
+        .packet {
+            position: absolute;
+            width: 32px;
+            height: 22px;
+            background-color: #3B82F6;
+            color: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 20;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 6px rgba(59, 130, 246, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+            }
+        }
+        
+        .port-label {
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background-color: #3B82F6;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 15;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .port-label.active {
+            transform: translate(-50%, -50%) scale(1.2);
+            background-color: #2563EB;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+            z-index: 16;
+        }
+        
+        .port-label.received {
+            background-color: #EF4444;
+        }
+        
+        #log-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        #log-container::-webkit-scrollbar-track {
+            background: #F3F4F6;
+            border-radius: 4px;
+        }
+        
+        #log-container::-webkit-scrollbar-thumb {
+            background-color: #D1D5DB;
+            border-radius: 4px;
+        }
+        
+        #log-container::-webkit-scrollbar-thumb:hover {
+            background-color: #9CA3AF;
+        }
+        
+        /* Fix for Japanese fonts */
+        select, button, table {
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+    </style>
+
+    <script>
+        // Network topology and routing simulation
+        class NetworkSimulation {
+            constructor() {
+                this.nodes = {};
+                this.connections = [];
+                this.packets = [];
+                this.packetId = 0;
+                this.isRunning = false;
+                this.scaleFactor = 1;
+                this.offsetX = 0;
+                this.offsetY = 0;
+                this.baseWidth = 800;  // Base design width
+                this.baseHeight = 700; // Base design height
+                this.activeElements = new Set(); // Track active elements
+                
+                // Initialize nodes with positions
+                this.initializeNodes();
+                
+                // Create connections between nodes
+                this.createConnections();
+                
+                // Setup event listeners
+                this.setupEventListeners();
+                
+                // Render the network
+                this.calculateScaleFactor();
+                this.renderNetwork();
+                
+                // Display the routing table
+                this.renderRoutingTable();
+                
+                // Handle window resize
+                window.addEventListener('resize', () => {
+                    this.calculateScaleFactor();
+                    this.renderNetwork();
+                });
+                
+                // Update packet counter
+                this.updatePacketCounter();
+            }
+            
+            initializeNodes() {
+                // These are base positions for a 800x700 canvas
+                this.nodes.A = { x: 100, y: 170, type: 'terminal', label: 'A' };
+                this.nodes.B = { x: 100, y: 350, type: 'terminal', label: 'B' };
+                this.nodes.C = { x: 100, y: 530, type: 'terminal', label: 'C' };
+                this.nodes.D = { x: 700, y: 170, type: 'terminal', label: 'D' };
+                this.nodes.E = { x: 700, y: 530, type: 'terminal', label: 'E' };
+                
+                this.nodes.X = { x: 300, y: 170, type: 'router', label: 'ルータ X' };
+                this.nodes.Y = { x: 300, y: 450, type: 'router', label: 'ルータ Y' };
+                this.nodes.Z = { x: 500, y: 350, type: 'router', label: 'ルータ Z' };
+            }
+            
+            createConnections() {
+                // Define connections between nodes
+                this.connections = [
+                    { from: 'A', to: 'X', fromPort: null, toPort: 1, portLabel: 1, id: 'A-X' },
+                    { from: 'X', to: 'B', fromPort: 2, toPort: null, portLabel: 2, id: 'X-B' },
+                    { from: 'C', to: 'Y', fromPort: null, toPort: 3, portLabel: 3, id: 'C-Y' },
+                    { from: 'X', to: 'Y', fromPort: 4, toPort: 4, portLabel: 4, id: 'X-Y' },
+                    { from: 'Y', to: 'Z', fromPort: 5, toPort: 5, portLabel: 5, id: 'Y-Z' },
+                    { from: 'X', to: 'Z', fromPort: 6, toPort: 6, portLabel: 6, id: 'X-Z' },
+                    { from: 'Z', to: 'D', fromPort: 7, toPort: null, portLabel: 7, id: 'Z-D' },
+                    { from: 'Z', to: 'E', fromPort: 8, toPort: null, portLabel: 8, id: 'Z-E' }
+                ];
+            }
+            
+            calculateScaleFactor() {
+                const networkEl = document.getElementById('network');
+                if (!networkEl) return;
+                
+                const containerWidth = networkEl.clientWidth;
+                const containerHeight = networkEl.clientHeight;
+                
+                // Calculate scale factors based on design size vs container size
+                const scaleX = containerWidth / this.baseWidth;
+                const scaleY = containerHeight / this.baseHeight;
+                
+                // Use the smaller scale factor to ensure the entire network fits
+                this.scaleFactor = Math.min(scaleX, scaleY, 1);
+                
+                // Center the network
+                this.offsetX = (containerWidth - (this.baseWidth * this.scaleFactor)) / 2;
+                this.offsetY = (containerHeight - (this.baseHeight * this.scaleFactor)) / 2;
+            }
+            
+            scalePosition(x, y) {
+                return {
+                    x: (x * this.scaleFactor) + this.offsetX,
+                    y: (y * this.scaleFactor) + this.offsetY
+                };
+            }
+            
+            renderNetwork() {
+                const networkEl = document.getElementById('network');
+                if (!networkEl) return;
+                
+                // Clear existing elements
+                networkEl.innerHTML = '';
+                
+                // Create connections first (so they're below nodes)
+                for (const connection of this.connections) {
+                    const fromNode = this.nodes[connection.from];
+                    const toNode = this.nodes[connection.to];
+                    
+                    const fromPos = this.scalePosition(fromNode.x, fromNode.y);
+                    const toPos = this.scalePosition(toNode.x, toNode.y);
+                    
+                    const dx = toPos.x - fromPos.x;
+                    const dy = toPos.y - fromPos.y;
+                    const length = Math.sqrt(dx * dx + dy * dy);
+                    const angle = Math.atan2(dy, dx);
+                    
+                    const connectionEl = document.createElement('div');
+                    connectionEl.classList.add('connection');
+                    connectionEl.dataset.id = connection.id;
+                    if (this.activeElements.has(connection.id)) {
+                        connectionEl.classList.add('active');
+                    }
+                    
+                    connectionEl.style.left = `${fromPos.x}px`;
+                    connectionEl.style.top = `${fromPos.y}px`;
+                    connectionEl.style.width = `${length}px`;
+                    connectionEl.style.transform = `rotate(${angle}rad)`;
+                    
+                    networkEl.appendChild(connectionEl);
+                    
+                    // Add port labels if defined
+                    if (connection.portLabel) {
+                        const midX = fromPos.x + dx / 2;
+                        const midY = fromPos.y + dy / 2;
+                        
+                        const portLabelEl = document.createElement('div');
+                        portLabelEl.classList.add('port-label');
+                        portLabelEl.dataset.id = `port-${connection.id}`;
+                        if (this.activeElements.has(`port-${connection.id}`)) {
+                            portLabelEl.classList.add('active');
+                        }
+                        
+                        portLabelEl.textContent = connection.portLabel;
+                        portLabelEl.style.left = `${midX}px`;
+                        portLabelEl.style.top = `${midY}px`;
+                        
+                        networkEl.appendChild(portLabelEl);
+                    }
+                }
+                
+                // Create nodes
+                for (const [id, node] of Object.entries(this.nodes)) {
+                    const pos = this.scalePosition(node.x, node.y);
+                    
+                    const nodeEl = document.createElement('div');
+                    nodeEl.classList.add('node');
+                    nodeEl.dataset.id = id;
+                    
+                    if (this.activeElements.has(id)) {
+                        nodeEl.classList.add('active');
+                    }
+                    
+                    if (node.type === 'terminal') {
+                        nodeEl.classList.add('terminal');
+                        nodeEl.textContent = node.label;
+                    } else if (node.type === 'router') {
+                        nodeEl.classList.add('router');
+                        
+                        const iconEl = document.createElement('div');
+                        iconEl.classList.add('router-icon');
+                        
+                        for (let i = 0; i < 4; i++) {
+                            const square = document.createElement('div');
+                            iconEl.appendChild(square);
+                        }
+                        
+                        const labelEl = document.createElement('div');
+                        labelEl.textContent = node.label;
+                        labelEl.classList.add('text-sm');
+                        
+                        nodeEl.appendChild(iconEl);
+                        nodeEl.appendChild(labelEl);
+                    }
+                    
+                    nodeEl.style.left = `${pos.x}px`;
+                    nodeEl.style.top = `${pos.y}px`;
+                    
+                    // Add node hover interaction
+                    nodeEl.addEventListener('mouseenter', () => {
+                        this.highlightConnections(id);
+                    });
+                    
+                    nodeEl.addEventListener('mouseleave', () => {
+                        this.unhighlightConnections(id);
+                    });
+                    
+                    networkEl.appendChild(nodeEl);
+                }
+            }
+            
+            highlightConnections(nodeId) {
+                // Find all connections involving this node
+                for (const conn of this.connections) {
+                    if (conn.from === nodeId || conn.to === nodeId) {
+                        const connEl = document.querySelector(`.connection[data-id="${conn.id}"]`);
+                        if (connEl) connEl.classList.add('active');
+                        
+                        const portEl = document.querySelector(`.port-label[data-id="port-${conn.id}"]`);
+                        if (portEl) portEl.classList.add('active');
+                    }
+                }
+            }
+            
+            unhighlightConnections(nodeId) {
+                // Only remove highlights from connections that aren't actively being used for packets
+                for (const conn of this.connections) {
+                    if ((conn.from === nodeId || conn.to === nodeId) && !this.activeElements.has(conn.id)) {
+                        const connEl = document.querySelector(`.connection[data-id="${conn.id}"]`);
+                        if (connEl) connEl.classList.remove('active');
+                        
+                        const portEl = document.querySelector(`.port-label[data-id="port-${conn.id}"]`);
+                        if (portEl && !this.activeElements.has(`port-${conn.id}`)) {
+                            portEl.classList.remove('active');
+                        }
+                    }
+                }
+            }
+            
+            renderRoutingTable() {
+                const tableBody = document.getElementById('routing-table').querySelector('tbody');
+                tableBody.innerHTML = '';
+                
+                // Router X entries
+                this.addRoutingTableSection(tableBody, 'ルータ X');
+                this.addRoutingTableRow(tableBody, '端末 A', '1');
+                this.addRoutingTableRow(tableBody, '端末 B', '2');
+                this.addRoutingTableRow(tableBody, 'その他', '6');
+                
+                // Router Y entries
+                this.addRoutingTableSection(tableBody, 'ルータ Y');
+                this.addRoutingTableRow(tableBody, '端末 C', '3');
+                this.addRoutingTableRow(tableBody, 'その他', '4');
+                
+                // Router Z entries
+                this.addRoutingTableSection(tableBody, 'ルータ Z');
+                this.addRoutingTableRow(tableBody, '端末 D', '7');
+                this.addRoutingTableRow(tableBody, '端末 E', '8');
+                this.addRoutingTableRow(tableBody, 'その他', '5');
+            }
+            
+            addRoutingTableSection(tableBody, title) {
+                const row = document.createElement('tr');
+                const cell = document.createElement('td');
+                cell.setAttribute('colspan', '2');
+                cell.classList.add('bg-blue-50', 'font-bold', 'text-center', 'border', 'border-gray-200', 'px-4', 'py-2', 'text-blue-800');
+                cell.textContent = title;
+                row.appendChild(cell);
+                tableBody.appendChild(row);
+            }
+            
+            addRoutingTableRow(tableBody, destination, port) {
+                const row = document.createElement('tr');
+                row.classList.add('hover:bg-gray-50', 'transition-colors');
+                
+                const destCell = document.createElement('td');
+                destCell.classList.add('border', 'border-gray-200', 'px-4', 'py-2');
+                destCell.textContent = destination;
+                
+                const portCell = document.createElement('td');
+                portCell.classList.add('border', 'border-gray-200', 'px-4', 'py-2', 'font-medium', 'text-blue-600');
+                portCell.textContent = port;
+                
+                row.appendChild(destCell);
+                row.appendChild(portCell);
+                tableBody.appendChild(row);
+            }
+            
+            setupEventListeners() {
+                const sendBtn = document.getElementById('send-btn');
+                const stopBtn = document.getElementById('stop-btn');
+                
+                if (!sendBtn || !stopBtn) return;
+                
+                sendBtn.addEventListener('click', () => {
+                    const source = document.getElementById('source').value;
+                    const destination = document.getElementById('destination').value;
+                    
+                    if (source === destination) {
+                        this.addLogEntry('同一端末に送信することはできません。', 'error');
+                        return;
+                    }
+                    
+                    this.isRunning = true;
+                    this.sendPacket(source, destination);
+                });
+                
+                stopBtn.addEventListener('click', () => {
+                    this.isRunning = false;
+                    this.clearPackets();
+                    this.activeElements.clear();
+                    this.renderNetwork();
+                    this.addLogEntry('シミュレーションを停止しました。', 'info');
+                });
+                
+                // Add source and destination select change event listeners
+                const sourceSelect = document.getElementById('source');
+                const destinationSelect = document.getElementById('destination');
+                
+                if (sourceSelect && destinationSelect) {
+                    sourceSelect.addEventListener('change', () => {
+                        this.updateActiveTerminals();
+                    });
+                    
+                    destinationSelect.addEventListener('change', () => {
+                        this.updateActiveTerminals();
+                    });
+                    
+                    // Initial update
+                    this.updateActiveTerminals();
+                }
+            }
+            
+            updateActiveTerminals() {
+                const source = document.getElementById('source').value;
+                const destination = document.getElementById('destination').value;
+                
+                // Reset terminal highlights
+                document.querySelectorAll('.terminal').forEach(el => {
+                    el.classList.remove('active');
+                });
+                
+                // Highlight selected terminals
+                const sourceEl = document.querySelector(`.terminal[data-id="${source}"]`);
+                const destEl = document.querySelector(`.terminal[data-id="${destination}"]`);
+                
+                if (sourceEl) sourceEl.classList.add('active');
+                if (destEl) destEl.classList.add('active');
+            }
+            
+            sendPacket(source, destination) {
+                this.packetId++;
+                const id = this.packetId;
+                
+                const packet = {
+                    id,
+                    source,
+                    destination,
+                    currentNode: source,
+                    nextNode: this.getNextHop(source, destination),
+                    status: 'created'
+                };
+                
+                this.packets.push(packet);
+                this.addLogEntry(`パケット #${id}: 端末 ${source} から 端末 ${destination} へ送信します。`, 'info');
+                this.updatePacketCounter();
+                
+                // Start moving the packet
+                this.movePacket(packet);
+            }
+            
+            getNextHop(currentNode, destination) {
+                // Direct connection for terminals to their immediate router
+                if (currentNode === 'A') return 'X';
+                if (currentNode === 'B') return 'X';
+                if (currentNode === 'C') return 'Y';
+                if (currentNode === 'D') return 'Z';
+                if (currentNode === 'E') return 'Z';
+                
+                // Router logic
+                if (currentNode === 'X') {
+                    if (destination === 'A') return 'A';
+                    if (destination === 'B') return 'B';
+                    if (destination === 'C') return 'Y';
+                    return 'Z'; // For D and E
+                }
+                
+                if (currentNode === 'Y') {
+                    if (destination === 'C') return 'C';
+                    return 'Z'; // For D and E
+                }
+                
+                if (currentNode === 'Z') {
+                    if (destination === 'D') return 'D';
+                    if (destination === 'E') return 'E';
+                    return 'X'; // For A, B, and C
+                }
+                
+                return null;
+            }
+            
+            getPortNumber(fromNode, toNode) {
+                // Find the connection
+                for (const conn of this.connections) {
+                    if (conn.from === fromNode && conn.to === toNode) {
+                        return conn.fromPort;
+                    }
+                }
+                return null;
+            }
+            
+            getConnectionId(fromNode, toNode) {
+                // Find the connection ID
+                for (const conn of this.connections) {
+                    if (conn.from === fromNode && conn.to === toNode) {
+                        return conn.id;
+                    }
+                }
+                return null;
+            }
+            
+            movePacket(packet) {
+                if (!this.isRunning) return;
+                
+                const fromNode = this.nodes[packet.currentNode];
+                const toNode = this.nodes[packet.nextNode];
+                
+                if (!fromNode || !toNode) {
+                    this.addLogEntry(`パケット #${packet.id}: 無効なルートです。`, 'error');
+                    return;
+                }
+                
+                const portNumber = this.getPortNumber(packet.currentNode, packet.nextNode);
+                const connectionId = this.getConnectionId(packet.currentNode, packet.nextNode);
+                
+                // Add active elements to highlight
+                this.activeElements.add(packet.currentNode);
+                this.activeElements.add(packet.nextNode);
+                if (connectionId) {
+                    this.activeElements.add(connectionId);
+                    this.activeElements.add(`port-${connectionId}`);
+                }
+                
+                // Update network visualization to show active elements
+                this.renderNetwork();
+                
+                if (packet.currentNode !== packet.source) {
+                    if (portNumber) {
+                        this.addLogEntry(`パケット #${packet.id}: ルータ ${packet.currentNode} がパケットを受信し、ポート ${portNumber} から転送します。`, 'info');
+                    } else {
+                        this.addLogEntry(`パケット #${packet.id}: ルータ ${packet.currentNode} がパケットを転送します。`, 'info');
+                    }
+                }
+                
+                // Create visual packet
+                const networkEl = document.getElementById('network');
+                const packetEl = document.createElement('div');
+                packetEl.classList.add('packet', 'animate__animated', 'animate__fadeIn');
+                packetEl.textContent = packet.id;
+                packetEl.dataset.id = `packet-${packet.id}`;
+                
+                const fromPos = this.scalePosition(fromNode.x, fromNode.y);
+                packetEl.style.left = `${fromPos.x}px`;
+                packetEl.style.top = `${fromPos.y}px`;
+                
+                networkEl.appendChild(packetEl);
+                
+                // Animate packet movement
+                const startTime = Date.now();
+                const duration = 1000; // 1 second
+                
+                const animate = () => {
+                    if (!this.isRunning) {
+                        try {
+                            networkEl.removeChild(packetEl);
+                        } catch (e) {
+                            // Element might already be removed
+                        }
+                        return;
+                    }
+                    
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    
+                    const fromPos = this.scalePosition(fromNode.x, fromNode.y);
+                    const toPos = this.scalePosition(toNode.x, toNode.y);
+                    
+                    const x = fromPos.x + (toPos.x - fromPos.x) * progress;
+                    const y = fromPos.y + (toPos.y - fromPos.y) * progress;
+                    
+                    packetEl.style.left = `${x}px`;
+                    packetEl.style.top = `${y}px`;
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        // Packet reached its target
+                        try {
+                            packetEl.classList.add('animate__fadeOut');
+                            setTimeout(() => {
+                                try {
+                                    networkEl.removeChild(packetEl);
+                                } catch (e) {
+                                    // Element might already be removed
+                                }
+                            }, 300);
+                        } catch (e) {
+                            // Element might already be removed
+                        }
+                        
+                        // Update packet state
+                        packet.currentNode = packet.nextNode;
+                        
+                        if (packet.currentNode === packet.destination) {
+                            // Packet reached final destination
+                            this.addLogEntry(`パケット #${packet.id}: 端末 ${packet.destination} に到達しました。`, 'success');
+                            const index = this.packets.findIndex(p => p.id === packet.id);
+                            if (index !== -1) {
+                                this.packets.splice(index, 1);
+                                this.updatePacketCounter();
+                            }
+                            
+                            // Remove this packet's active elements
+                            this.activeElements.delete(packet.source);
+                            this.activeElements.delete(packet.destination);
+                            // Keep connections active if other packets are using them
+                            if (this.packets.length === 0) {
+                                this.activeElements.clear();
+                                this.renderNetwork();
+                            }
+                        } else {
+                            // Continue to next hop
+                            const oldNext = packet.nextNode;
+                            packet.nextNode = this.getNextHop(packet.currentNode, packet.destination);
+                            
+                            // Remove old connection from active elements if no other packet is using it
+                            const oldConnectionId = this.getConnectionId(packet.currentNode, oldNext);
+                            if (oldConnectionId) {
+                                this.activeElements.delete(oldConnectionId);
+                                this.activeElements.delete(`port-${oldConnectionId}`);
+                            }
+                            
+                            setTimeout(() => this.movePacket(packet), 500);
+                        }
+                    }
+                };
+                
+                animate();
+            }
+            
+            clearPackets() {
+                this.packets = [];
+                this.updatePacketCounter();
+                
+                // Remove all packet elements
+                const networkEl = document.getElementById('network');
+                if (!networkEl) return;
+                
+                const packetEls = networkEl.querySelectorAll('.packet');
+                packetEls.forEach(el => {
+                    try {
+                        networkEl.removeChild(el);
+                    } catch (e) {
+                        // Element might already be removed
+                    }
+                });
+            }
+            
+            updatePacketCounter() {
+                const counter = document.getElementById('packet-counter');
+                if (counter) {
+                    counter.textContent = `アクティブパケット: ${this.packets.length}`;
+                }
+            }
+            
+            addLogEntry(message, type = 'info') {
+                const logContainer = document.getElementById('log-container');
+                if (!logContainer) return;
+                
+                const logEntry = document.createElement('div');
+                logEntry.classList.add('py-1', 'border-b', 'border-gray-200', 'animate__animated', 'animate__fadeIn');
+                
+                if (type === 'error') {
+                    logEntry.classList.add('text-red-600');
+                    logEntry.innerHTML = `<span class="text-red-500">❌</span> ${message}`;
+                } else if (type === 'success') {
+                    logEntry.classList.add('text-green-600');
+                    logEntry.innerHTML = `<span class="text-green-500">✅</span> ${message}`;
+                } else {
+                    logEntry.classList.add('text-blue-600');
+                    logEntry.innerHTML = `<span class="text-blue-500">ℹ️</span> ${message}`;
+                }
+                
+                logContainer.appendChild(logEntry);
+                logContainer.scrollTop = logContainer.scrollHeight;
+                
+                // Limit log entries
+                if (logContainer.children.length > 100) {
+                    logContainer.removeChild(logContainer.children[0]);
+                }
+            }
+        }
+        
+        // Initialize the simulation when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                window.simulation = new NetworkSimulation();
+            } catch (e) {
+                console.error('Error initializing simulation:', e);
+            }
+        });
+    </script>
+</body>
+</html>
