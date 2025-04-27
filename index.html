@@ -463,6 +463,7 @@
                 this.packets = [];               // パケット情報
                 this.packetId = 0;               // パケットID（自動増加）
                 this.isRunning = false;          // シミュレーション実行中かどうか
+                this.isCleaningUp = false;       // クリーンアップ処理中フラグ - 追加
                 this.sendInterval = null;        // 定期送信用インターバル
                 this.sendRate = 1000;            // 送信間隔（ミリ秒）
                 this.scaleFactor = 1;            // 表示スケール係数
@@ -475,6 +476,7 @@
                 this.currentDestination = null;  // 現在の送信先
                 this.pendingLogEntries = [];     // 保留中のログエントリ
                 this.logUpdateInterval = null;   // ログ更新用インターバル
+                this.animationFrames = new Map();// アニメーションフレームを追跡 - 追加
                 this.stats = {                   // 統計情報
                     packetsCreated: 0,
                     packetsDelivered: 0,
@@ -495,16 +497,52 @@
                 this.startLogUpdater();
                 
                 // ウィンドウサイズ変更時の処理
-                window.addEventListener('resize', () => {
-                    this.calculateScaleFactor();
-                    this.renderNetwork();
-                });
+                this.resizeHandler = this.handleResize.bind(this);
+                window.addEventListener('resize', this.resizeHandler);
                 
                 // キーボードショートカット
-                document.addEventListener('keydown', this.handleKeyboardShortcuts.bind(this));
+                this.keydownHandler = this.handleKeyboardShortcuts.bind(this);
+                document.addEventListener('keydown', this.keydownHandler);
                 
                 // ヘルプモーダル
                 this.setupHelpModal();
+            }
+            
+            // リソース解放 - 追加されたメソッド
+            dispose() {
+                // イベントリスナーの削除
+                window.removeEventListener('resize', this.resizeHandler);
+                document.removeEventListener('keydown', this.keydownHandler);
+                
+                // インターバルの停止
+                this.stopContinuousSending();
+                
+                if (this.logUpdateInterval) {
+                    clearInterval(this.logUpdateInterval);
+                    this.logUpdateInterval = null;
+                }
+                
+                // アニメーションフレームのキャンセル
+                for (const [id, frameId] of this.animationFrames.entries()) {
+                    cancelAnimationFrame(frameId);
+                }
+                this.animationFrames.clear();
+                
+                // UIクリア
+                this.clearPackets();
+                
+                // メモリリークを防ぐためにDOM参照をクリア
+                this.nodes = {};
+                this.connections = [];
+                this.packets = [];
+                this.activeElements.clear();
+                this.pendingLogEntries = [];
+            }
+            
+            // ウィンドウサイズ変更ハンドラー - 追加されたメソッド
+            handleResize() {
+                this.calculateScaleFactor();
+                this.renderNetwork();
             }
             
             // UIコンポーネントの初期化
@@ -620,17 +658,7 @@
                     
                     // シミュレーションが実行中なら停止
                     if (this.isRunning) {
-                        this.stopContinuousSending();
-                        this.clearPackets();
-                        this.activeElements.clear();
-                        this.renderNetwork();
-                        this.addLogEntry('シミュレーションを停止しました。', 'info');
-                        const sendBtn = document.getElementById('send-btn');
-                        if (sendBtn) {
-                            sendBtn.disabled = false;
-                            sendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                        }
-                        this.updateSimulationStatus();
+                        this.stopSimulation();
                     }
                 }
                 
@@ -653,17 +681,7 @@
                 if (e.key === 's' || e.key === 'S') {
                     if (this.isRunning) {
                         // 停止
-                        this.stopContinuousSending();
-                        this.clearPackets();
-                        this.activeElements.clear();
-                        this.renderNetwork();
-                        this.addLogEntry('シミュレーションを停止しました。', 'info');
-                        const sendBtn = document.getElementById('send-btn');
-                        if (sendBtn) {
-                            sendBtn.disabled = false;
-                            sendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                        }
-                        this.updateSimulationStatus();
+                        this.stopSimulation();
                     } else {
                         // 開始
                         const source = document.getElementById('source').value;
@@ -691,6 +709,30 @@
                 }
             }
             
+            // シミュレーション停止処理を統一 - 追加されたメソッド
+            stopSimulation() {
+                // 同時に複数の停止処理が実行されるのを防ぐ
+                if (this.isCleaningUp) return;
+                
+                this.isCleaningUp = true;
+                
+                this.stopContinuousSending();
+                this.clearPackets();
+                this.activeElements.clear();
+                this.renderNetwork();
+                this.addLogEntry('シミュレーションを停止しました。', 'info');
+                
+                const sendBtn = document.getElementById('send-btn');
+                if (sendBtn) {
+                    sendBtn.disabled = false;
+                    sendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+                
+                this.updateSimulationStatus();
+                
+                this.isCleaningUp = false;
+            }
+            
             // シミュレーション状態表示の更新
             updateSimulationStatus() {
                 const statusEl = document.getElementById('simulation-status');
@@ -712,6 +754,9 @@
                 
                 const containerWidth = networkEl.clientWidth;
                 const containerHeight = networkEl.clientHeight;
+                
+                // 値がゼロの場合は計算しない（DOM未準備）
+                if (containerWidth === 0 || containerHeight === 0) return;
                 
                 // 表示サイズと設計サイズに基づいてスケール係数を計算
                 const scaleX = containerWidth / this.baseWidth;
@@ -745,6 +790,8 @@
                 for (const connection of this.connections) {
                     const fromNode = this.nodes[connection.from];
                     const toNode = this.nodes[connection.to];
+                    
+                    if (!fromNode || !toNode) continue; // 無効なノード参照を防止 - 追加
                     
                     const fromPos = this.scalePosition(fromNode.x, fromNode.y);
                     const toPos = this.scalePosition(toNode.x, toNode.y);
@@ -861,6 +908,8 @@
                 const sourceSelect = document.getElementById('source');
                 const destSelect = document.getElementById('destination');
                 
+                if (!sourceSelect || !destSelect) return; // DOM要素がない場合は何もしない - 追加
+                
                 // Shiftキーが押されていれば送信先に設定
                 if (window.event && window.event.shiftKey) {
                     destSelect.value = id;
@@ -904,7 +953,9 @@
             
             // ルーティングテーブルの描画
             renderRoutingTable() {
-                const tableBody = document.getElementById('routing-table').querySelector('tbody');
+                const tableBody = document.querySelector('#routing-table tbody');
+                if (!tableBody) return; // DOM要素がない場合は何もしない - 追加
+                
                 tableBody.innerHTML = '';
                 
                 // ルータXのエントリ
@@ -927,6 +978,8 @@
             
             // ルーティングテーブルのセクション追加
             addRoutingTableSection(tableBody, title) {
+                if (!tableBody) return; // DOM要素がない場合は何もしない - 追加
+                
                 const row = document.createElement('tr');
                 row.classList.add('bg-gray-50');
                 const cell = document.createElement('td');
@@ -939,6 +992,8 @@
             
             // ルーティングテーブルの行追加
             addRoutingTableRow(tableBody, destination, port) {
+                if (!tableBody) return; // DOM要素がない場合は何もしない - 追加
+                
                 const row = document.createElement('tr');
                 row.classList.add('hover:bg-gray-50', 'transition-colors');
                 
@@ -987,20 +1042,7 @@
                 if (stopBtn) {
                     stopBtn.addEventListener('click', () => {
                         if (this.isRunning) {
-                            this.stopContinuousSending();
-                            this.clearPackets();
-                            this.activeElements.clear();
-                            this.renderNetwork();
-                            this.addLogEntry('シミュレーションを停止しました。', 'info');
-                            
-                            // ボタン状態をリセット
-                            if (sendBtn) {
-                                sendBtn.disabled = false;
-                                sendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                            }
-                            
-                            // シミュレーション状態を更新
-                            this.updateSimulationStatus();
+                            this.stopSimulation();
                         }
                     });
                 }
@@ -1067,8 +1109,13 @@
             
             // 選択された端末のハイライト更新
             updateActiveTerminals() {
-                const source = document.getElementById('source').value;
-                const destination = document.getElementById('destination').value;
+                const sourceSelect = document.getElementById('source');
+                const destSelect = document.getElementById('destination');
+                
+                if (!sourceSelect || !destSelect) return; // DOM要素がない場合は何もしない - 追加
+                
+                const source = sourceSelect.value;
+                const destination = destSelect.value;
                 
                 // ターミナルのハイライトをリセット
                 document.querySelectorAll('.terminal').forEach(el => {
@@ -1086,6 +1133,7 @@
             // フルスクリーン表示の切り替え
             toggleFullscreen() {
                 const appContainer = document.getElementById('app-container');
+                if (!appContainer) return; // DOM要素がない場合は何もしない - 追加
                 
                 if (!document.fullscreenElement &&
                     !document.mozFullScreenElement &&
@@ -1203,14 +1251,30 @@
                     clearInterval(this.cleanupInterval);
                     this.cleanupInterval = null;
                 }
+                
+                // アニメーションフレームをすべてキャンセル - 追加
+                for (const [id, frameId] of this.animationFrames.entries()) {
+                    cancelAnimationFrame(frameId);
+                }
+                this.animationFrames.clear();
             }
             
             // 完了したパケットのクリーンアップ
             cleanupCompletedPackets() {
+                if (!this.isRunning) return; // シミュレーションが停止している場合は何もしない - 追加
+                
+                const now = Date.now();
+                
                 // 完了または停滞したパケットを削除
                 for (let i = this.packets.length - 1; i >= 0; i--) {
                     const packet = this.packets[i];
-                    if (packet.completed || Date.now() - packet.createdAt > 30000) { // 30秒タイムアウト
+                    if (packet.completed || now - packet.createdAt > 30000) { // 30秒タイムアウト
+                        // パケットに関連するアニメーションフレームをキャンセル - 追加
+                        if (this.animationFrames.has(packet.id)) {
+                            cancelAnimationFrame(this.animationFrames.get(packet.id));
+                            this.animationFrames.delete(packet.id);
+                        }
+                        
                         this.packets.splice(i, 1);
                     }
                 }
@@ -1220,6 +1284,8 @@
             
             // パケットの送信
             sendPacket(source, destination) {
+                if (!this.isRunning) return; // シミュレーションが停止している場合は何もしない - 追加
+                
                 this.packetId++;
                 const id = this.packetId;
                 
@@ -1234,6 +1300,12 @@
                     completed: false,
                     hops: 0
                 };
+                
+                // 次のホップが無効な場合はエラーを記録して送信しない - 追加
+                if (!packet.nextNode) {
+                    this.addLogEntry(`パケット #${id}: 無効なルート設定です。`, 'error');
+                    return;
+                }
                 
                 this.packets.push(packet);
                 this.stats.packetsCreated++;
@@ -1299,14 +1371,15 @@
             
             // パケットの移動
             movePacket(packet) {
-                if (!this.isRunning) return;
+                if (!this.isRunning || packet.completed) return; // 条件チェック強化
                 
                 const fromNode = this.nodes[packet.currentNode];
                 const toNode = this.nodes[packet.nextNode];
                 
                 if (!fromNode || !toNode) {
-                    this.addLogEntry(`パケット #${packet.id}: 無効なルートです。`, 'error');
+                    this.addLogEntry(`パケット #${packet.id}: 無効なルートです (${packet.currentNode} -> ${packet.nextNode})。`, 'error');
                     packet.completed = true;
+                    this.updatePacketCounter();
                     return;
                 }
                 
@@ -1335,8 +1408,14 @@
                     }
                 }
                 
-                // パケットを視覚的に表示
+                // ネットワーク要素の取得
                 const networkEl = document.getElementById('network');
+                if (!networkEl) {
+                    packet.completed = true;
+                    return;
+                }
+                
+                // パケットを視覚的に表示
                 const packetEl = document.createElement('div');
                 packetEl.classList.add('packet');
                 packetEl.textContent = packet.id;
@@ -1351,17 +1430,38 @@
                 
                 networkEl.appendChild(packetEl);
                 
-                // requestAnimationFrameを使用してパケット移動をスムーズにアニメーション
+                // パケット移動アニメーションを開始
+                this.animatePacket(packet, packetEl, fromNode, toNode);
+            }
+            
+            // パケットのアニメーション - 追加されたメソッド
+            animatePacket(packet, packetEl, fromNode, toNode) {
+                if (!this.isRunning || packet.completed) {
+                    try {
+                        if (packetEl.parentNode) {
+                            packetEl.parentNode.removeChild(packetEl);
+                        }
+                    } catch (e) {
+                        console.error('パケット要素削除エラー:', e);
+                    }
+                    return;
+                }
+                
                 const startTime = performance.now();
                 const duration = 1000; // 1秒
                 
                 const animate = (currentTime) => {
-                    if (!this.isRunning) {
+                    // シミュレーションが停止している場合はアニメーションを中止
+                    if (!this.isRunning || packet.completed) {
                         try {
-                            networkEl.removeChild(packetEl);
+                            if (packetEl.parentNode) {
+                                packetEl.parentNode.removeChild(packetEl);
+                            }
                         } catch (e) {
-                            // 要素がすでに削除されている可能性がある
+                            console.error('パケット要素削除エラー:', e);
                         }
+                        // アニメーション追跡から削除
+                        this.animationFrames.delete(packet.id);
                         return;
                     }
                     
@@ -1374,65 +1474,100 @@
                     const x = fromPos.x + (toPos.x - fromPos.x) * progress;
                     const y = fromPos.y + (toPos.y - fromPos.y) * progress;
                     
-                    packetEl.style.left = `${x}px`;
-                    packetEl.style.top = `${y}px`;
+                    try {
+                        packetEl.style.left = `${x}px`;
+                        packetEl.style.top = `${y}px`;
+                    } catch (e) {
+                        console.error('パケット位置設定エラー:', e);
+                        this.animationFrames.delete(packet.id);
+                        return;
+                    }
                     
                     if (progress < 1) {
-                        requestAnimationFrame(animate);
+                        // アニメーション継続
+                        const frameId = requestAnimationFrame(animate);
+                        this.animationFrames.set(packet.id, frameId);
                     } else {
                         // パケットが目標に到達
                         try {
                             packetEl.classList.add('animate-fadeOut');
                             setTimeout(() => {
                                 try {
-                                    networkEl.removeChild(packetEl);
+                                    if (packetEl.parentNode) {
+                                        packetEl.parentNode.removeChild(packetEl);
+                                    }
                                 } catch (e) {
-                                    // 要素がすでに削除されている可能性がある
+                                    console.error('パケット要素削除エラー:', e);
                                 }
                             }, 300);
                         } catch (e) {
-                            // 要素がすでに削除されている可能性がある
+                            console.error('パケットアニメーション終了エラー:', e);
                         }
                         
-                        // パケットの状態を更新
-                        packet.currentNode = packet.nextNode;
+                        // アニメーション追跡から削除
+                        this.animationFrames.delete(packet.id);
                         
-                        if (packet.currentNode === packet.destination) {
-                            // パケットが最終目的地に到達
-                            this.stats.packetsDelivered++;
-                            this.stats.totalHops += packet.hops;
-                            
-                            // 平均ホップ数の計算
-                            const avgHops = this.stats.totalHops / this.stats.packetsDelivered;
-                            
-                            this.addLogEntry(`パケット #${packet.id}: 端末 ${packet.destination} に到達しました。 (${packet.hops}ホップ)`, 'success');
-                            packet.completed = true;
-                            this.updatePacketCounter();
-                            
-                            // このパケットのアクティブ要素を削除（他のパケットが使用していない場合のみ）
-                            this.cleanupActiveConnections();
-                        } else {
-                            // 次のホップに進む
-                            const oldNext = packet.nextNode;
-                            packet.nextNode = this.getNextHop(packet.currentNode, packet.destination);
-                            
-                            // 他のパケットが使用していない場合、古い接続からアクティブ要素を削除
-                            const oldConnectionId = this.getConnectionId(packet.currentNode, oldNext);
-                            if (oldConnectionId) {
-                                this.cleanupActiveElement(oldConnectionId);
-                                this.cleanupActiveElement(`port-${oldConnectionId}`);
-                            }
-                            
-                            // ネットワーク全体を再描画せずに接続を更新
-                            this.updateActiveConnections();
-                            
-                            // メインスレッドのブロックを防ぐためにsetTimeoutを使用して次のホップに進む
-                            setTimeout(() => this.movePacket(packet), 100);
-                        }
+                        // パケット処理を続行
+                        this.processPacketNextHop(packet);
                     }
                 };
                 
-                requestAnimationFrame(animate);
+                // 初回アニメーションフレームを開始し追跡する
+                const frameId = requestAnimationFrame(animate);
+                this.animationFrames.set(packet.id, frameId);
+            }
+            
+            // パケットの次ホップへの処理 - 追加されたメソッド
+            processPacketNextHop(packet) {
+                if (!this.isRunning || packet.completed) return;
+                
+                // パケットの状態を更新
+                packet.currentNode = packet.nextNode;
+                
+                if (packet.currentNode === packet.destination) {
+                    // パケットが最終目的地に到達
+                    this.stats.packetsDelivered++;
+                    this.stats.totalHops += packet.hops;
+                    
+                    // 平均ホップ数の計算
+                    const avgHops = this.stats.totalHops / this.stats.packetsDelivered;
+                    
+                    this.addLogEntry(`パケット #${packet.id}: 端末 ${packet.destination} に到達しました。 (${packet.hops}ホップ)`, 'success');
+                    packet.completed = true;
+                    this.updatePacketCounter();
+                    
+                    // このパケットのアクティブ要素を削除（他のパケットが使用していない場合のみ）
+                    this.cleanupActiveConnections();
+                } else {
+                    // 次のホップに進む
+                    const oldNext = packet.nextNode;
+                    packet.nextNode = this.getNextHop(packet.currentNode, packet.destination);
+                    
+                    // 次のホップが無効な場合はパケットを完了としてマーク
+                    if (!packet.nextNode) {
+                        this.addLogEntry(`パケット #${packet.id}: 次ホップが見つかりません。パケットは破棄されます。`, 'error');
+                        packet.completed = true;
+                        this.updatePacketCounter();
+                        return;
+                    }
+                    
+                    // 他のパケットが使用していない場合、古い接続からアクティブ要素を削除
+                    const oldConnectionId = this.getConnectionId(packet.currentNode, oldNext);
+                    if (oldConnectionId) {
+                        this.cleanupActiveElement(oldConnectionId);
+                        this.cleanupActiveElement(`port-${oldConnectionId}`);
+                    }
+                    
+                    // ネットワーク全体を再描画せずに接続を更新
+                    this.updateActiveConnections();
+                    
+                    // メインスレッドのブロックを防ぐためにsetTimeoutを使用して次のホップに進む
+                    setTimeout(() => {
+                        if (this.isRunning && !packet.completed) {
+                            this.movePacket(packet);
+                        }
+                    }, 100);
+                }
             }
             
             // アクティブな接続の更新
@@ -1474,31 +1609,48 @@
             
             // アクティブ接続のクリーンアップ
             cleanupActiveConnections() {
-                // ネットワークを再描画せずにアクティブ要素をクリーンアップ
+                // 要素IDごとの参照カウントを保持 - 改善
+                const referenceCount = new Map();
+                
+                // 全アクティブ要素の初期参照カウントを0に設定
                 for (const element of this.activeElements) {
-                    // ノードID（A, B, Cなど）の場合はスキップ
-                    if (element.length === 1) continue;
-                    
-                    let stillActive = false;
-                    
-                    // パケットがまだこの接続を使用しているか確認
-                    for (const packet of this.packets) {
-                        if (!packet.completed) {
-                            const currentConnectionId = this.getConnectionId(packet.currentNode, packet.nextNode);
-                            if (currentConnectionId === element || `port-${currentConnectionId}` === element) {
-                                stillActive = true;
-                                break;
-                            }
+                    referenceCount.set(element, 0);
+                }
+                
+                // 各パケットがどの要素を使用しているかカウント
+                for (const packet of this.packets) {
+                    if (!packet.completed) {
+                        // 現在のノードとパケットが使用する接続を追跡
+                        const currentConnectionId = this.getConnectionId(packet.currentNode, packet.nextNode);
+                        
+                        if (currentConnectionId) {
+                            // 接続と関連要素の参照カウントを増やす
+                            this.incrementReferenceCount(referenceCount, packet.currentNode);
+                            this.incrementReferenceCount(referenceCount, packet.nextNode);
+                            this.incrementReferenceCount(referenceCount, currentConnectionId);
+                            this.incrementReferenceCount(referenceCount, `port-${currentConnectionId}`);
                         }
                     }
-                    
-                    if (!stillActive) {
+                }
+                
+                // 参照カウントが0の要素を削除
+                for (const [element, count] of referenceCount.entries()) {
+                    if (count === 0) {
                         this.activeElements.delete(element);
                     }
                 }
                 
                 // ネットワーク全体を再描画せずに接続を更新
                 this.updateActiveConnections();
+            }
+            
+            // 参照カウント増加ヘルパーメソッド - 追加されたメソッド
+            incrementReferenceCount(countMap, key) {
+                if (countMap.has(key)) {
+                    countMap.set(key, countMap.get(key) + 1);
+                } else {
+                    countMap.set(key, 1);
+                }
             }
             
             // 個別のアクティブ要素のクリーンアップ
@@ -1523,6 +1675,12 @@
             
             // すべてのパケットをクリア
             clearPackets() {
+                // アニメーションフレームをすべてキャンセル - 追加
+                for (const [id, frameId] of this.animationFrames.entries()) {
+                    cancelAnimationFrame(frameId);
+                }
+                this.animationFrames.clear();
+                
                 this.packets = [];
                 this.updatePacketCounter();
                 
@@ -1533,9 +1691,18 @@
                 const packetEls = networkEl.querySelectorAll('.packet');
                 packetEls.forEach(el => {
                     try {
-                        networkEl.removeChild(el);
+                        el.classList.add('animate-fadeOut');
+                        setTimeout(() => {
+                            try {
+                                if (el.parentNode) {
+                                    el.parentNode.removeChild(el);
+                                }
+                            } catch (e) {
+                                console.error('パケット要素削除エラー:', e);
+                            }
+                        }, 300);
                     } catch (e) {
-                        // 要素がすでに削除されている可能性がある
+                        console.error('パケット削除アニメーションエラー:', e);
                     }
                 });
             }
@@ -1620,6 +1787,13 @@
         document.addEventListener('DOMContentLoaded', () => {
             try {
                 window.simulation = new NetworkSimulation();
+                
+                // ページアンロード時のクリーンアップ - 追加
+                window.addEventListener('beforeunload', () => {
+                    if (window.simulation) {
+                        window.simulation.dispose();
+                    }
+                });
             } catch (e) {
                 console.error('シミュレーションの初期化エラー:', e);
             }
