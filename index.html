@@ -6,127 +6,276 @@
     <title>ネットワークルーティングシミュレーション</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Noto Sans JP', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                    },
+                    animation: {
+                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                },
+            },
+        };
+    </script>
 </head>
 <body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen font-sans text-gray-800 overflow-hidden">
     <div id="app-container" class="w-full h-screen flex flex-col">
-        <div class="flex flex-wrap items-center justify-between p-4 bg-white shadow-md">
-            <h1 class="text-2xl font-bold text-gray-800">ネットワークルーティングシミュレーション</h1>
-            
-            <div class="flex flex-wrap items-center gap-2 md:gap-4">
-                <div class="flex items-center mr-2">
-                    <div class="mr-2 text-sm whitespace-nowrap">送信間隔:</div>
-                    <select id="packet-rate" class="border border-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 transition-all duration-200 text-sm">
-                        <option value="500">非常に速い (0.5秒)</option>
-                        <option value="1000" selected>速い (1秒)</option>
-                        <option value="2000">普通 (2秒)</option>
-                        <option value="5000">遅い (5秒)</option>
-                    </select>
+        <!-- ヘッダー部分 -->
+        <div class="bg-white shadow-md border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 flex items-center">
+                            <svg class="h-8 w-8 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+                            </svg>
+                            <h1 class="ml-2 text-xl font-bold text-gray-800">ネットワークルーティングシミュレーション</h1>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="text-sm text-gray-500">
+                            <span id="simulation-status" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                <span class="h-2 w-2 mr-1 rounded-full bg-red-400"></span>
+                                停止中
+                            </span>
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="flex items-center">
-                    <label for="source" class="text-sm whitespace-nowrap mr-1">送信:</label>
-                    <select id="source" class="border border-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 transition-all duration-200 text-sm">
-                        <option value="A">端末 A</option>
-                        <option value="B">端末 B</option>
-                        <option value="C">端末 C</option>
-                        <option value="D" selected>端末 D</option>
-                        <option value="E">端末 E</option>
-                    </select>
-                </div>
-                
-                <div class="flex items-center">
-                    <label for="destination" class="text-sm whitespace-nowrap mr-1">受信:</label>
-                    <select id="destination" class="border border-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 transition-all duration-200 text-sm">
-                        <option value="A">端末 A</option>
-                        <option value="B" selected>端末 B</option>
-                        <option value="C">端末 C</option>
-                        <option value="D">端末 D</option>
-                        <option value="E">端末 E</option>
-                    </select>
-                </div>
-                
-                <div class="flex items-center gap-2">
-                    <button id="send-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-3 rounded-lg transition-all duration-200 flex items-center shadow-md hover:shadow-lg text-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" />
-                        </svg>
-                        送信開始
-                    </button>
+            </div>
+        </div>
+
+        <!-- コントロールパネル -->
+        <div class="bg-white shadow-sm border-b border-gray-200 py-3">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-wrap items-center gap-4">
+                    <div class="flex items-center">
+                        <label for="source" class="block text-sm font-medium text-gray-700 mr-2">送信元:</label>
+                        <select id="source" class="block w-24 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md shadow-sm">
+                            <option value="A">端末 A</option>
+                            <option value="B">端末 B</option>
+                            <option value="C">端末 C</option>
+                            <option value="D" selected>端末 D</option>
+                            <option value="E">端末 E</option>
+                        </select>
+                    </div>
                     
-                    <button id="stop-btn" class="bg-red-600 hover:bg-red-700 text-white font-medium py-1 px-3 rounded-lg transition-all duration-200 flex items-center shadow-md hover:shadow-lg text-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd" />
-                        </svg>
-                        停止
-                    </button>
+                    <div class="flex items-center">
+                        <label for="destination" class="block text-sm font-medium text-gray-700 mr-2">送信先:</label>
+                        <select id="destination" class="block w-24 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md shadow-sm">
+                            <option value="A">端末 A</option>
+                            <option value="B" selected>端末 B</option>
+                            <option value="C">端末 C</option>
+                            <option value="D">端末 D</option>
+                            <option value="E">端末 E</option>
+                        </select>
+                    </div>
                     
-                    <button id="fullscreen-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-medium py-1 px-3 rounded-lg transition-all duration-200 flex items-center shadow-md hover:shadow-lg text-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 0h-4m4 0l-5-5" />
-                        </svg>
-                        全画面
-                    </button>
+                    <div class="flex items-center">
+                        <label for="packet-rate" class="block text-sm font-medium text-gray-700 mr-2">送信間隔:</label>
+                        <select id="packet-rate" class="block w-40 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md shadow-sm">
+                            <option value="500">非常に速い (0.5秒)</option>
+                            <option value="1000" selected>速い (1秒)</option>
+                            <option value="2000">普通 (2秒)</option>
+                            <option value="5000">遅い (5秒)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="flex items-center ml-auto gap-3">
+                        <button id="send-btn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" />
+                            </svg>
+                            送信開始
+                        </button>
+                        
+                        <button id="stop-btn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd" />
+                            </svg>
+                            停止
+                        </button>
+                        
+                        <button id="fullscreen-btn" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 0h-4m4 0l-5-5" />
+                            </svg>
+                            全画面
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
         
-        <div class="flex flex-1 overflow-hidden">
-            <div id="network-container" class="flex-1 p-4 relative overflow-hidden">
-                <div id="network" class="w-full h-full relative overflow-hidden border border-gray-100 rounded-lg bg-gradient-to-br from-gray-50 to-white">
-                    <!-- ネットワーク可視化はここに動的に表示されます -->
+        <!-- メインコンテンツ -->
+        <div class="flex-1 overflow-hidden">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+                <div class="flex h-full py-4 gap-6">
+                    <!-- ネットワーク表示エリア -->
+                    <div id="network-container" class="flex-1 bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden flex flex-col">
+                        <div class="px-4 py-2 flex justify-between items-center border-b border-gray-200">
+                            <h2 class="text-lg font-medium text-gray-900">ネットワークトポロジー</h2>
+                            <div id="packet-counter" class="text-sm font-medium text-gray-500 bg-gray-100 rounded-full px-3 py-1">
+                                アクティブパケット: <span class="font-bold text-primary-600">0</span>
+                            </div>
+                        </div>
+                        <div id="network" class="flex-1 relative overflow-hidden">
+                            <!-- ネットワーク可視化はここに動的に表示されます -->
+                        </div>
+                    </div>
+                    
+                    <!-- サイドバー -->
+                    <div id="sidebar" class="w-80 bg-white rounded-lg shadow-md border border-gray-200 overflow-y-auto flex flex-col">
+                        <!-- ルーティングテーブル -->
+                        <div class="p-4 border-b border-gray-200">
+                            <div class="flex items-center mb-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                </svg>
+                                <h2 class="text-lg font-medium text-gray-900">ルーティングテーブル</h2>
+                            </div>
+                            <div class="overflow-x-auto rounded-lg border border-gray-200">
+                                <table id="routing-table" class="min-w-full divide-y divide-gray-200">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 border-b border-gray-200">宛先</th>
+                                            <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 border-b border-gray-200">転送先</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        <!-- ルーティングテーブルの項目はここに動的に追加されます -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- パケットログ -->
+                        <div class="flex-1 p-4 flex flex-col min-h-0">
+                            <div class="flex items-center mb-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                                </svg>
+                                <h2 class="text-lg font-medium text-gray-900">パケットログ</h2>
+                            </div>
+                            <div id="log-container" class="flex-1 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50 font-mono text-sm">
+                                <div class="text-gray-400 italic">シミュレーションを開始すると、ここにログが表示されます...</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div id="packet-counter" class="absolute top-6 right-6 bg-white bg-opacity-80 shadow-md rounded-lg px-3 py-1 text-sm font-medium">アクティブパケット: 0</div>
             </div>
-            
-            <div id="sidebar" class="w-80 bg-white shadow-lg overflow-y-auto flex flex-col">
-                <div class="p-4 border-b border-gray-200">
-                    <div class="flex items-center mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </div>
+        
+        <!-- ヘルプモーダル -->
+        <div id="help-modal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-lg max-w-2xl mx-auto p-6 shadow-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-gray-900">ネットワークルーティングシミュレーションの使い方</h2>
+                    <button id="close-help" class="text-gray-400 hover:text-gray-500 focus:outline-none">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
-                        <h2 class="text-lg font-bold">ルーティングテーブル</h2>
+                    </button>
+                </div>
+                <div class="space-y-4 text-gray-700">
+                    <div>
+                        <h3 class="font-medium text-gray-900 mb-1">基本操作</h3>
+                        <p>このシミュレーションでは、選択した送信元から送信先へのパケット転送をリアルタイムで観察できます。</p>
                     </div>
-                    <div class="overflow-x-auto rounded-lg">
-                        <table id="routing-table" class="w-full border-collapse">
-                            <thead>
-                                <tr>
-                                    <th class="border border-gray-200 bg-gray-50 px-3 py-2 text-left font-semibold rounded-tl-lg">宛先</th>
-                                    <th class="border border-gray-200 bg-gray-50 px-3 py-2 text-left font-semibold rounded-tr-lg">転送先</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- ルーティングテーブルの項目はここに動的に追加されます -->
-                            </tbody>
-                        </table>
+                    <div>
+                        <h3 class="font-medium text-gray-900 mb-1">操作手順</h3>
+                        <ol class="list-decimal pl-5 space-y-1">
+                            <li>「送信元」と「送信先」をドロップダウンから選択します。</li>
+                            <li>「送信間隔」でパケットが生成される頻度を設定します。</li>
+                            <li>「送信開始」ボタンをクリックして、シミュレーションを開始します。</li>
+                            <li>「停止」ボタンで、シミュレーションを停止できます。</li>
+                        </ol>
+                    </div>
+                    <div>
+                        <h3 class="font-medium text-gray-900 mb-1">表示の説明</h3>
+                        <ul class="list-disc pl-5 space-y-1">
+                            <li>青色の丸数字は各接続のポート番号を表します。</li>
+                            <li>青色で強調された経路は、現在パケットが通過中の経路です。</li>
+                            <li>ルーティングテーブルは、各ルータがパケットをどこへ転送するかの判断基準を示しています。</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="font-medium text-gray-900 mb-1">キーボードショートカット</h3>
+                        <ul class="list-disc pl-5 space-y-1">
+                            <li><kbd class="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs">S</kbd> - シミュレーション開始/停止の切り替え</li>
+                            <li><kbd class="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs">F</kbd> - 全画面表示の切り替え</li>
+                            <li><kbd class="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs">H</kbd> - このヘルプの表示/非表示</li>
+                            <li><kbd class="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs">Esc</kbd> - モーダル閉じる/シミュレーション停止</li>
+                        </ul>
                     </div>
                 </div>
-                
-                <div class="flex-1 p-4 flex flex-col overflow-hidden">
-                    <div class="flex items-center mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                        </svg>
-                        <h2 class="text-lg font-bold">パケットログ</h2>
-                    </div>
-                    <div id="log-container" class="flex-1 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50 font-mono text-sm"></div>
+                <div class="mt-6 flex justify-end">
+                    <button id="close-help-btn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        閉じる
+                    </button>
                 </div>
             </div>
+        </div>
+
+        <!-- ショートカットガイド -->
+        <div class="fixed bottom-4 right-4">
+            <button id="help-btn" class="flex items-center justify-center h-10 w-10 bg-primary-600 text-white rounded-full shadow-lg hover:bg-primary-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="ヘルプを表示">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                </svg>
+            </button>
         </div>
     </div>
 
     <style>
-        body {
-            font-family: 'Noto Sans JP', sans-serif;
+        /* アニメーションとビジュアル効果 */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
         }
         
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        
+        .animate-fadeIn {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        .animate-fadeOut {
+            animation: fadeOut 0.3s ease-out;
+        }
+        
+        /* ノードと接続のスタイル */
         .node {
             position: absolute;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            background-color: white;
             border: 2px solid;
             transform: translate(-50%, -50%);
             z-index: 10;
@@ -232,18 +381,6 @@
             will-change: transform, left, top;
         }
         
-        @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
-            }
-            70% {
-                box-shadow: 0 0 0 6px rgba(59, 130, 246, 0);
-            }
-            100% {
-                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
-            }
-        }
-        
         .port-label {
             position: absolute;
             width: 22px;
@@ -269,10 +406,12 @@
             z-index: 16;
         }
         
-        .port-label.received {
-            background-color: #EF4444;
+        .port-label:hover {
+            transform: translate(-50%, -50%) scale(1.1);
+            cursor: pointer;
         }
         
+        /* スクロールバーのスタイル */
         #log-container::-webkit-scrollbar {
             width: 8px;
         }
@@ -297,19 +436,19 @@
         }
 
         /* レスポンシブ対応 */
+        @media (max-width: 1024px) {
+            #sidebar {
+                width: 320px;
+            }
+        }
+        
         @media (max-width: 768px) {
             #sidebar {
-                width: 100%;
-                height: 300px;
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                z-index: 50;
+                display: none;
             }
             
-            #network-container {
-                margin-bottom: 300px;
+            .responsive-sidebar-toggle {
+                display: block;
             }
         }
     </style>
@@ -318,6 +457,7 @@
         // ネットワークトポロジーとルーティングシミュレーション
         class NetworkSimulation {
             constructor() {
+                // 基本設定
                 this.nodes = {};                 // ノード情報を格納
                 this.connections = [];           // ノード間の接続情報
                 this.packets = [];               // パケット情報
@@ -335,22 +475,24 @@
                 this.currentDestination = null;  // 現在の送信先
                 this.pendingLogEntries = [];     // 保留中のログエントリ
                 this.logUpdateInterval = null;   // ログ更新用インターバル
+                this.stats = {                   // 統計情報
+                    packetsCreated: 0,
+                    packetsDelivered: 0,
+                    totalHops: 0
+                };
                 
-                // ノード位置の初期化
+                // データ初期化
                 this.initializeNodes();
-                
-                // ノード間の接続を作成
                 this.createConnections();
                 
-                // イベントリスナーの設定
+                // UI初期化
+                this.initUI();
                 this.setupEventListeners();
-                
-                // ネットワークの描画
-                this.calculateScaleFactor();
                 this.renderNetwork();
-                
-                // ルーティングテーブルの表示
                 this.renderRoutingTable();
+                this.updatePacketCounter();
+                this.updateActiveTerminals();
+                this.startLogUpdater();
                 
                 // ウィンドウサイズ変更時の処理
                 window.addEventListener('resize', () => {
@@ -358,18 +500,38 @@
                     this.renderNetwork();
                 });
                 
-                // パケットカウンターの更新
-                this.updatePacketCounter();
+                // キーボードショートカット
+                document.addEventListener('keydown', this.handleKeyboardShortcuts.bind(this));
                 
-                // 初期のターミナルハイライト表示
-                this.updateActiveTerminals();
-                
-                // ログ更新インターバルを開始
-                this.startLogUpdater();
+                // ヘルプモーダル
+                this.setupHelpModal();
             }
             
+            // UIコンポーネントの初期化
+            initUI() {
+                this.calculateScaleFactor();
+                
+                // ログコンテナの初期メッセージをクリア
+                const logContainer = document.getElementById('log-container');
+                if (logContainer) {
+                    logContainer.innerHTML = '';
+                    this.addLogEntry('ネットワークルーティングシミュレーションを初期化しました。', 'system');
+                    this.addLogEntry('「送信開始」ボタンをクリックしてシミュレーションを開始します。', 'system');
+                    this.addLogEntry('「H」キーを押すとヘルプが表示されます。', 'system');
+                }
+                
+                // パケットレートの初期値を設定
+                const packetRateSelect = document.getElementById('packet-rate');
+                if (packetRateSelect) {
+                    this.sendRate = parseInt(packetRateSelect.value);
+                }
+                
+                // シミュレーションの状態表示を更新
+                this.updateSimulationStatus();
+            }
+            
+            // ノード位置の初期化
             initializeNodes() {
-                // 800x700キャンバスの基準位置
                 this.nodes.A = { x: 100, y: 170, type: 'terminal', label: 'A' };
                 this.nodes.B = { x: 100, y: 350, type: 'terminal', label: 'B' };
                 this.nodes.C = { x: 100, y: 530, type: 'terminal', label: 'C' };
@@ -381,8 +543,8 @@
                 this.nodes.Z = { x: 500, y: 350, type: 'router', label: 'ルータ Z' };
             }
             
+            // ノード間の接続を作成
             createConnections() {
-                // ノード間の接続を定義
                 this.connections = [
                     { from: 'A', to: 'X', fromPort: null, toPort: 1, portLabel: 1, id: 'A-X' },
                     { from: 'X', to: 'B', fromPort: 2, toPort: null, portLabel: 2, id: 'X-B' },
@@ -395,6 +557,155 @@
                 ];
             }
             
+            // ヘルプモーダルの設定
+            setupHelpModal() {
+                const helpModal = document.getElementById('help-modal');
+                const helpBtn = document.getElementById('help-btn');
+                const closeHelp = document.getElementById('close-help');
+                const closeHelpBtn = document.getElementById('close-help-btn');
+                
+                if (helpBtn) {
+                    helpBtn.addEventListener('click', () => {
+                        helpModal.classList.remove('hidden');
+                        helpModal.classList.add('animate-fadeIn');
+                    });
+                }
+                
+                if (closeHelp) {
+                    closeHelp.addEventListener('click', () => {
+                        helpModal.classList.add('animate-fadeOut');
+                        setTimeout(() => {
+                            helpModal.classList.add('hidden');
+                            helpModal.classList.remove('animate-fadeOut');
+                        }, 300);
+                    });
+                }
+                
+                if (closeHelpBtn) {
+                    closeHelpBtn.addEventListener('click', () => {
+                        helpModal.classList.add('animate-fadeOut');
+                        setTimeout(() => {
+                            helpModal.classList.add('hidden');
+                            helpModal.classList.remove('animate-fadeOut');
+                        }, 300);
+                    });
+                }
+                
+                // 背景クリックで閉じる
+                helpModal.addEventListener('click', (e) => {
+                    if (e.target === helpModal) {
+                        helpModal.classList.add('animate-fadeOut');
+                        setTimeout(() => {
+                            helpModal.classList.add('hidden');
+                            helpModal.classList.remove('animate-fadeOut');
+                        }, 300);
+                    }
+                });
+            }
+            
+            // キーボードショートカットの処理
+            handleKeyboardShortcuts(e) {
+                // Escキー
+                if (e.key === 'Escape') {
+                    // モーダルが表示されている場合は閉じる
+                    const helpModal = document.getElementById('help-modal');
+                    if (helpModal && !helpModal.classList.contains('hidden')) {
+                        helpModal.classList.add('animate-fadeOut');
+                        setTimeout(() => {
+                            helpModal.classList.add('hidden');
+                            helpModal.classList.remove('animate-fadeOut');
+                        }, 300);
+                        return;
+                    }
+                    
+                    // シミュレーションが実行中なら停止
+                    if (this.isRunning) {
+                        this.stopContinuousSending();
+                        this.clearPackets();
+                        this.activeElements.clear();
+                        this.renderNetwork();
+                        this.addLogEntry('シミュレーションを停止しました。', 'info');
+                        const sendBtn = document.getElementById('send-btn');
+                        if (sendBtn) {
+                            sendBtn.disabled = false;
+                            sendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        }
+                        this.updateSimulationStatus();
+                    }
+                }
+                
+                // Hキー: ヘルプ表示
+                if (e.key === 'h' || e.key === 'H') {
+                    const helpModal = document.getElementById('help-modal');
+                    if (helpModal.classList.contains('hidden')) {
+                        helpModal.classList.remove('hidden');
+                        helpModal.classList.add('animate-fadeIn');
+                    } else {
+                        helpModal.classList.add('animate-fadeOut');
+                        setTimeout(() => {
+                            helpModal.classList.add('hidden');
+                            helpModal.classList.remove('animate-fadeOut');
+                        }, 300);
+                    }
+                }
+                
+                // Sキー: シミュレーション開始/停止
+                if (e.key === 's' || e.key === 'S') {
+                    if (this.isRunning) {
+                        // 停止
+                        this.stopContinuousSending();
+                        this.clearPackets();
+                        this.activeElements.clear();
+                        this.renderNetwork();
+                        this.addLogEntry('シミュレーションを停止しました。', 'info');
+                        const sendBtn = document.getElementById('send-btn');
+                        if (sendBtn) {
+                            sendBtn.disabled = false;
+                            sendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        }
+                        this.updateSimulationStatus();
+                    } else {
+                        // 開始
+                        const source = document.getElementById('source').value;
+                        const destination = document.getElementById('destination').value;
+                        
+                        if (source === destination) {
+                            this.addLogEntry('同一端末に送信することはできません。', 'error');
+                            return;
+                        }
+                        
+                        this.startContinuousSending(source, destination);
+                        
+                        const sendBtn = document.getElementById('send-btn');
+                        if (sendBtn) {
+                            sendBtn.disabled = true;
+                            sendBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                        }
+                        this.updateSimulationStatus();
+                    }
+                }
+                
+                // Fキー: 全画面表示
+                if (e.key === 'f' || e.key === 'F') {
+                    this.toggleFullscreen();
+                }
+            }
+            
+            // シミュレーション状態表示の更新
+            updateSimulationStatus() {
+                const statusEl = document.getElementById('simulation-status');
+                if (!statusEl) return;
+                
+                if (this.isRunning) {
+                    statusEl.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800';
+                    statusEl.innerHTML = '<span class="h-2 w-2 mr-1 rounded-full bg-green-400 animate-pulse"></span>実行中';
+                } else {
+                    statusEl.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800';
+                    statusEl.innerHTML = '<span class="h-2 w-2 mr-1 rounded-full bg-red-400"></span>停止中';
+                }
+            }
+            
+            // スケール係数の計算
             calculateScaleFactor() {
                 const networkEl = document.getElementById('network');
                 if (!networkEl) return;
@@ -414,6 +725,7 @@
                 this.offsetY = (containerHeight - (this.baseHeight * this.scaleFactor)) / 2;
             }
             
+            // 位置のスケーリング
             scalePosition(x, y) {
                 return {
                     x: (x * this.scaleFactor) + this.offsetX,
@@ -421,6 +733,7 @@
                 };
             }
             
+            // ネットワークの描画
             renderNetwork() {
                 const networkEl = document.getElementById('network');
                 if (!networkEl) return;
@@ -453,6 +766,9 @@
                     connectionEl.style.width = `${length}px`;
                     connectionEl.style.transform = `rotate(${angle}rad)`;
                     
+                    // ホバー時のツールチップ
+                    connectionEl.title = `接続: ${connection.from} → ${connection.to}`;
+                    
                     networkEl.appendChild(connectionEl);
                     
                     // ポートラベルを表示（設定されている場合）
@@ -463,6 +779,7 @@
                         const portLabelEl = document.createElement('div');
                         portLabelEl.classList.add('port-label');
                         portLabelEl.dataset.id = `port-${connection.id}`;
+                        portLabelEl.dataset.port = connection.portLabel;
                         if (this.activeElements.has(`port-${connection.id}`)) {
                             portLabelEl.classList.add('active');
                         }
@@ -470,6 +787,9 @@
                         portLabelEl.textContent = connection.portLabel;
                         portLabelEl.style.left = `${midX}px`;
                         portLabelEl.style.top = `${midY}px`;
+                        
+                        // ホバー時のツールチップ
+                        portLabelEl.title = `ポート ${connection.portLabel}: ${connection.from} → ${connection.to}`;
                         
                         networkEl.appendChild(portLabelEl);
                     }
@@ -495,6 +815,9 @@
                         nodeEl.addEventListener('click', () => {
                             this.handleTerminalClick(id);
                         });
+                        
+                        // ホバー時のツールチップ
+                        nodeEl.title = `端末 ${id}`;
                     } else if (node.type === 'router') {
                         nodeEl.classList.add('router');
                         
@@ -512,6 +835,9 @@
                         
                         nodeEl.appendChild(iconEl);
                         nodeEl.appendChild(labelEl);
+                        
+                        // ホバー時のツールチップ
+                        nodeEl.title = `${node.label}`;
                     }
                     
                     nodeEl.style.left = `${pos.x}px`;
@@ -530,6 +856,7 @@
                 }
             }
             
+            // 端末クリック時の処理
             handleTerminalClick(id) {
                 const sourceSelect = document.getElementById('source');
                 const destSelect = document.getElementById('destination');
@@ -545,6 +872,7 @@
                 this.updateActiveTerminals();
             }
             
+            // 接続のハイライト表示
             highlightConnections(nodeId) {
                 // このノードに関連するすべての接続を検索
                 for (const conn of this.connections) {
@@ -558,6 +886,7 @@
                 }
             }
             
+            // 接続のハイライト解除
             unhighlightConnections(nodeId) {
                 // アクティブなパケットで使用されていない接続のみハイライトを解除
                 for (const conn of this.connections) {
@@ -573,6 +902,7 @@
                 }
             }
             
+            // ルーティングテーブルの描画
             renderRoutingTable() {
                 const tableBody = document.getElementById('routing-table').querySelector('tbody');
                 tableBody.innerHTML = '';
@@ -595,26 +925,29 @@
                 this.addRoutingTableRow(tableBody, 'その他', '5');
             }
             
+            // ルーティングテーブルのセクション追加
             addRoutingTableSection(tableBody, title) {
                 const row = document.createElement('tr');
+                row.classList.add('bg-gray-50');
                 const cell = document.createElement('td');
                 cell.setAttribute('colspan', '2');
-                cell.classList.add('bg-blue-50', 'font-bold', 'text-center', 'border', 'border-gray-200', 'px-4', 'py-2', 'text-blue-800');
+                cell.classList.add('px-3', 'py-2', 'font-medium', 'text-primary-700', 'text-center', 'border-t', 'border-b', 'border-gray-200');
                 cell.textContent = title;
                 row.appendChild(cell);
                 tableBody.appendChild(row);
             }
             
+            // ルーティングテーブルの行追加
             addRoutingTableRow(tableBody, destination, port) {
                 const row = document.createElement('tr');
                 row.classList.add('hover:bg-gray-50', 'transition-colors');
                 
                 const destCell = document.createElement('td');
-                destCell.classList.add('border', 'border-gray-200', 'px-4', 'py-2');
+                destCell.classList.add('px-3', 'py-2', 'border-b', 'border-gray-200', 'text-sm');
                 destCell.textContent = destination;
                 
                 const portCell = document.createElement('td');
-                portCell.classList.add('border', 'border-gray-200', 'px-4', 'py-2', 'font-medium', 'text-blue-600');
+                portCell.classList.add('px-3', 'py-2', 'border-b', 'border-gray-200', 'text-sm', 'font-medium', 'text-primary-600');
                 portCell.textContent = port;
                 
                 row.appendChild(destCell);
@@ -622,6 +955,7 @@
                 tableBody.appendChild(row);
             }
             
+            // イベントリスナーの設定
             setupEventListeners() {
                 const sendBtn = document.getElementById('send-btn');
                 const stopBtn = document.getElementById('stop-btn');
@@ -644,6 +978,9 @@
                         // ボタン状態を更新
                         sendBtn.disabled = true;
                         sendBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                        
+                        // シミュレーション状態を更新
+                        this.updateSimulationStatus();
                     });
                 }
                 
@@ -661,6 +998,9 @@
                                 sendBtn.disabled = false;
                                 sendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                             }
+                            
+                            // シミュレーション状態を更新
+                            this.updateSimulationStatus();
                         }
                     });
                 }
@@ -725,6 +1065,7 @@
                 });
             }
             
+            // 選択された端末のハイライト更新
             updateActiveTerminals() {
                 const source = document.getElementById('source').value;
                 const destination = document.getElementById('destination').value;
@@ -742,6 +1083,7 @@
                 if (destEl) destEl.classList.add('active');
             }
             
+            // フルスクリーン表示の切り替え
             toggleFullscreen() {
                 const appContainer = document.getElementById('app-container');
                 
@@ -773,6 +1115,7 @@
                 }
             }
             
+            // フルスクリーンボタンの更新
             updateFullscreenButton() {
                 const fullscreenBtn = document.getElementById('fullscreen-btn');
                 
@@ -784,7 +1127,7 @@
                     document.msFullscreenElement) {
                     // フルスクリーンモード
                     fullscreenBtn.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                         全画面解除
@@ -792,7 +1135,7 @@
                 } else {
                     // 通常モード
                     fullscreenBtn.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 0h-4m4 0l-5-5" />
                         </svg>
                         全画面
@@ -800,6 +1143,7 @@
                 }
             }
             
+            // 連続送信の開始
             startContinuousSending(source, destination) {
                 if (this.isRunning) {
                     this.stopContinuousSending();
@@ -808,6 +1152,11 @@
                 this.isRunning = true;
                 this.currentSource = source;
                 this.currentDestination = destination;
+                
+                // 統計情報をリセット
+                this.stats.packetsCreated = 0;
+                this.stats.packetsDelivered = 0;
+                this.stats.totalHops = 0;
                 
                 // 最初のパケットをすぐに送信
                 this.sendPacket(source, destination);
@@ -839,6 +1188,7 @@
                 this.addLogEntry(`端末 ${source} から 端末 ${destination} への連続送信を開始しました。間隔: ${this.sendRate}ミリ秒`, 'info');
             }
             
+            // 連続送信の停止
             stopContinuousSending() {
                 this.isRunning = false;
                 this.currentSource = null;
@@ -855,6 +1205,7 @@
                 }
             }
             
+            // 完了したパケットのクリーンアップ
             cleanupCompletedPackets() {
                 // 完了または停滞したパケットを削除
                 for (let i = this.packets.length - 1; i >= 0; i--) {
@@ -867,6 +1218,7 @@
                 this.updatePacketCounter();
             }
             
+            // パケットの送信
             sendPacket(source, destination) {
                 this.packetId++;
                 const id = this.packetId;
@@ -879,10 +1231,12 @@
                     nextNode: this.getNextHop(source, destination),
                     status: 'created',
                     createdAt: Date.now(),
-                    completed: false
+                    completed: false,
+                    hops: 0
                 };
                 
                 this.packets.push(packet);
+                this.stats.packetsCreated++;
                 this.addLogEntry(`パケット #${id}: 端末 ${source} から 端末 ${destination} へ送信します。`, 'info');
                 this.updatePacketCounter();
                 
@@ -890,6 +1244,7 @@
                 this.movePacket(packet);
             }
             
+            // 次のホップを取得
             getNextHop(currentNode, destination) {
                 // 端末から直接接続されたルータへの経路
                 if (currentNode === 'A') return 'X';
@@ -920,6 +1275,7 @@
                 return null;
             }
             
+            // ポート番号を取得
             getPortNumber(fromNode, toNode) {
                 // 接続を検索
                 for (const conn of this.connections) {
@@ -930,6 +1286,7 @@
                 return null;
             }
             
+            // 接続IDを取得
             getConnectionId(fromNode, toNode) {
                 // 接続IDを検索
                 for (const conn of this.connections) {
@@ -940,6 +1297,7 @@
                 return null;
             }
             
+            // パケットの移動
             movePacket(packet) {
                 if (!this.isRunning) return;
                 
@@ -951,6 +1309,9 @@
                     packet.completed = true;
                     return;
                 }
+                
+                // ホップ数を増やす
+                packet.hops++;
                 
                 const portNumber = this.getPortNumber(packet.currentNode, packet.nextNode);
                 const connectionId = this.getConnectionId(packet.currentNode, packet.nextNode);
@@ -980,6 +1341,9 @@
                 packetEl.classList.add('packet');
                 packetEl.textContent = packet.id;
                 packetEl.dataset.id = `packet-${packet.id}`;
+                
+                // ホバー時のツールチップ
+                packetEl.title = `パケット #${packet.id}: ${packet.source} → ${packet.destination}`;
                 
                 const fromPos = this.scalePosition(fromNode.x, fromNode.y);
                 packetEl.style.left = `${fromPos.x}px`;
@@ -1018,7 +1382,14 @@
                     } else {
                         // パケットが目標に到達
                         try {
-                            networkEl.removeChild(packetEl);
+                            packetEl.classList.add('animate-fadeOut');
+                            setTimeout(() => {
+                                try {
+                                    networkEl.removeChild(packetEl);
+                                } catch (e) {
+                                    // 要素がすでに削除されている可能性がある
+                                }
+                            }, 300);
                         } catch (e) {
                             // 要素がすでに削除されている可能性がある
                         }
@@ -1028,7 +1399,13 @@
                         
                         if (packet.currentNode === packet.destination) {
                             // パケットが最終目的地に到達
-                            this.addLogEntry(`パケット #${packet.id}: 端末 ${packet.destination} に到達しました。`, 'success');
+                            this.stats.packetsDelivered++;
+                            this.stats.totalHops += packet.hops;
+                            
+                            // 平均ホップ数の計算
+                            const avgHops = this.stats.totalHops / this.stats.packetsDelivered;
+                            
+                            this.addLogEntry(`パケット #${packet.id}: 端末 ${packet.destination} に到達しました。 (${packet.hops}ホップ)`, 'success');
                             packet.completed = true;
                             this.updatePacketCounter();
                             
@@ -1058,6 +1435,7 @@
                 requestAnimationFrame(animate);
             }
             
+            // アクティブな接続の更新
             updateActiveConnections() {
                 // ネットワーク全体を再描画せずに接続を更新
                 for (const connection of this.connections) {
@@ -1094,6 +1472,7 @@
                 }
             }
             
+            // アクティブ接続のクリーンアップ
             cleanupActiveConnections() {
                 // ネットワークを再描画せずにアクティブ要素をクリーンアップ
                 for (const element of this.activeElements) {
@@ -1122,6 +1501,7 @@
                 this.updateActiveConnections();
             }
             
+            // 個別のアクティブ要素のクリーンアップ
             cleanupActiveElement(element) {
                 let stillActive = false;
                 
@@ -1141,6 +1521,7 @@
                 }
             }
             
+            // すべてのパケットをクリア
             clearPackets() {
                 this.packets = [];
                 this.updatePacketCounter();
@@ -1159,11 +1540,12 @@
                 });
             }
             
+            // パケットカウンターの更新
             updatePacketCounter() {
                 const counter = document.getElementById('packet-counter');
                 if (counter) {
                     const activeCount = this.packets.filter(p => !p.completed).length;
-                    counter.textContent = `アクティブパケット: ${activeCount}`;
+                    counter.innerHTML = `アクティブパケット: <span class="font-bold text-primary-600">${activeCount}</span>`;
                 }
             }
             
@@ -1194,18 +1576,26 @@
                 // すべての保留中のエントリーを処理
                 for (const entry of this.pendingLogEntries) {
                     const logEntry = document.createElement('div');
-                    logEntry.classList.add('py-1', 'border-b', 'border-gray-200');
+                    logEntry.classList.add('py-1', 'border-b', 'border-gray-200', 'animate-fadeIn');
                     
+                    // タイプに基づいてスタイルとアイコンを設定
                     if (entry.type === 'error') {
                         logEntry.classList.add('text-red-600');
                         logEntry.innerHTML = `<span class="text-red-500">❌</span> ${entry.message}`;
                     } else if (entry.type === 'success') {
                         logEntry.classList.add('text-green-600');
                         logEntry.innerHTML = `<span class="text-green-500">✅</span> ${entry.message}`;
+                    } else if (entry.type === 'system') {
+                        logEntry.classList.add('text-gray-500', 'italic');
+                        logEntry.innerHTML = `<span class="text-gray-400">ℹ️</span> ${entry.message}`;
                     } else {
                         logEntry.classList.add('text-blue-600');
                         logEntry.innerHTML = `<span class="text-blue-500">ℹ️</span> ${entry.message}`;
                     }
+                    
+                    // タイムスタンプを追加
+                    const time = new Date(entry.timestamp).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    logEntry.innerHTML += `<span class="float-right text-xs text-gray-400">${time}</span>`;
                     
                     fragment.appendChild(logEntry);
                 }
