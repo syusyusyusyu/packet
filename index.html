@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ルーティングシュミレータ</title>
+    <title>拡張ルーティングシュミレータ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@300;400;500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
     <script>
@@ -107,30 +107,30 @@
         }
         
         .terminal {
-            width: 64px;
-            height: 64px;
-            border-radius: 12px;
-            font-size: 26px;
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            font-size: 22px;
             border-color: #4B5563;
             background: linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%);
-            box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.12), 0 3px 6px -1px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 8px -2px rgba(0, 0, 0, 0.12), 0 2px 4px -1px rgba(0, 0, 0, 0.05);
         }
         
         .terminal.active {
             border-color: #0b89ff;
             background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
-            box-shadow: 0 0 0 4px rgba(11, 137, 255, 0.25), 0 8px 16px -2px rgba(11, 137, 255, 0.25);
+            box-shadow: 0 0 0 3px rgba(11, 137, 255, 0.25), 0 6px 12px -2px rgba(11, 137, 255, 0.25);
             animation: pulse 2s infinite;
         }
         
         .router {
-            width: 90px;
-            height: 90px;
+            width: 70px;
+            height: 70px;
             flex-direction: column;
             border-color: #4B5563;
-            border-radius: 16px;
+            border-radius: 14px;
             background: linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%);
-            box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.12), 0 3px 6px -1px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 8px -2px rgba(0, 0, 0, 0.12), 0 2px 4px -1px rgba(0, 0, 0, 0.05);
         }
         
         .router.active {
@@ -144,12 +144,12 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             grid-template-rows: 1fr 1fr;
-            width: 44px;
-            height: 44px;
-            margin-bottom: 6px;
-            border-radius: 8px;
+            width: 34px;
+            height: 34px;
+            margin-bottom: 4px;
+            border-radius: 6px;
             overflow: hidden;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.12);
         }
         
         .router-icon div {
@@ -342,7 +342,7 @@
                             <svg class="h-9 w-9 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
                             </svg>
-                            <h1 class="ml-2.5 text-2xl font-display font-bold text-gray-800 tracking-tight">ルーティングシュミレータ</h1>
+                            <h1 class="ml-2.5 text-2xl font-display font-bold text-gray-800 tracking-tight">拡張ルーティングシュミレータ</h1>
                         </div>
                     </div>
                     <div class="flex items-center">
@@ -369,6 +369,8 @@
                             <option value="C">端末 C</option>
                             <option value="D" selected>端末 D</option>
                             <option value="E">端末 E</option>
+                            <option value="F">端末 F</option>
+                            <option value="G">端末 G</option>
                         </select>
                     </div>
                     
@@ -380,6 +382,8 @@
                             <option value="C">端末 C</option>
                             <option value="D">端末 D</option>
                             <option value="E">端末 E</option>
+                            <option value="F">端末 F</option>
+                            <option value="G">端末 G</option>
                         </select>
                     </div>
                     
@@ -842,28 +846,41 @@
             // ノード位置の初期化
             initializeNodes() {
                 this.nodes = {
-                    A: { x: 100, y: 170, type: 'terminal', label: 'A' },
-                    B: { x: 100, y: 350, type: 'terminal', label: 'B' },
-                    C: { x: 100, y: 530, type: 'terminal', label: 'C' },
-                    D: { x: 700, y: 170, type: 'terminal', label: 'D' },
-                    E: { x: 700, y: 530, type: 'terminal', label: 'E' },
-                    X: { x: 300, y: 170, type: 'router', label: 'ルータ X' },
-                    Y: { x: 300, y: 450, type: 'router', label: 'ルータ Y' },
-                    Z: { x: 500, y: 350, type: 'router', label: 'ルータ Z' }
+                    // 端末
+                    A: { x: 100, y: 100, type: 'terminal', label: 'A' },
+                    B: { x: 100, y: 300, type: 'terminal', label: 'B' },
+                    C: { x: 100, y: 500, type: 'terminal', label: 'C' },
+                    D: { x: 700, y: 100, type: 'terminal', label: 'D' },
+                    E: { x: 700, y: 300, type: 'terminal', label: 'E' },
+                    F: { x: 700, y: 500, type: 'terminal', label: 'F' },
+                    G: { x: 400, y: 600, type: 'terminal', label: 'G' },
+                    
+                    // ルータ
+                    W: { x: 250, y: 200, type: 'router', label: 'ルータ W' },
+                    X: { x: 250, y: 400, type: 'router', label: 'ルータ X' },
+                    Y: { x: 400, y: 300, type: 'router', label: 'ルータ Y' },
+                    Z: { x: 550, y: 300, type: 'router', label: 'ルータ Z' }
                 };
             }
             
             // ノード間の接続を作成
             createConnections() {
                 this.connections = [
-                    { from: 'A', to: 'X', fromPort: null, toPort: 1, portLabel: 1, id: 'A-X' },
-                    { from: 'X', to: 'B', fromPort: 2, toPort: null, portLabel: 2, id: 'X-B' },
-                    { from: 'C', to: 'Y', fromPort: null, toPort: 3, portLabel: 3, id: 'C-Y' },
-                    { from: 'X', to: 'Y', fromPort: 4, toPort: 4, portLabel: 4, id: 'X-Y' },
-                    { from: 'Y', to: 'Z', fromPort: 5, toPort: 5, portLabel: 5, id: 'Y-Z' },
-                    { from: 'X', to: 'Z', fromPort: 6, toPort: 6, portLabel: 6, id: 'X-Z' },
-                    { from: 'Z', to: 'D', fromPort: 7, toPort: null, portLabel: 7, id: 'Z-D' },
-                    { from: 'Z', to: 'E', fromPort: 8, toPort: null, portLabel: 8, id: 'Z-E' }
+                    // 元々の接続
+                    { from: 'A', to: 'W', fromPort: null, toPort: 1, portLabel: 1, id: 'A-W' },
+                    { from: 'B', to: 'W', fromPort: null, toPort: 2, portLabel: 2, id: 'B-W' },
+                    { from: 'C', to: 'X', fromPort: null, toPort: 3, portLabel: 3, id: 'C-X' },
+                    { from: 'W', to: 'X', fromPort: 4, toPort: 4, portLabel: 4, id: 'W-X' },
+                    { from: 'W', to: 'Y', fromPort: 5, toPort: 5, portLabel: 5, id: 'W-Y' },
+                    { from: 'X', to: 'Y', fromPort: 6, toPort: 6, portLabel: 6, id: 'X-Y' },
+                    { from: 'Y', to: 'Z', fromPort: 7, toPort: 7, portLabel: 7, id: 'Y-Z' },
+                    { from: 'Z', to: 'D', fromPort: 8, toPort: null, portLabel: 8, id: 'Z-D' },
+                    { from: 'Z', to: 'E', fromPort: 9, toPort: null, portLabel: 9, id: 'Z-E' },
+                    
+                    // 新しい接続
+                    { from: 'Z', to: 'F', fromPort: 10, toPort: null, portLabel: 10, id: 'Z-F' },
+                    { from: 'X', to: 'G', fromPort: 11, toPort: null, portLabel: 11, id: 'X-G' },
+                    { from: 'X', to: 'Z', fromPort: 12, toPort: 12, portLabel: 12, id: 'X-Z' }
                 ];
             }
             
@@ -1193,19 +1210,29 @@
                 tableBody.innerHTML = '';
                 
                 const sections = [
-                    { title: 'ルータ X', routes: [
+                    { title: 'ルータ W', routes: [
                         { dest: '端末 A', port: '1' },
                         { dest: '端末 B', port: '2' },
-                        { dest: 'その他', port: '6' }
+                        { dest: '端末 C', port: '4' },
+                        { dest: '端末 G', port: '4' },
+                        { dest: 'その他', port: '5' }
+                    ]},
+                    { title: 'ルータ X', routes: [
+                        { dest: '端末 C', port: '3' },
+                        { dest: '端末 G', port: '11' },
+                        { dest: '端末 A, B', port: '4' },
+                        { dest: 'その他', port: '12' }
                     ]},
                     { title: 'ルータ Y', routes: [
-                        { dest: '端末 C', port: '3' },
-                        { dest: 'その他', port: '4' }
+                        { dest: '端末 A, B', port: '5' },
+                        { dest: '端末 C, G', port: '6' },
+                        { dest: 'その他', port: '7' }
                     ]},
                     { title: 'ルータ Z', routes: [
-                        { dest: '端末 D', port: '7' },
-                        { dest: '端末 E', port: '8' },
-                        { dest: 'その他', port: '5' }
+                        { dest: '端末 D', port: '8' },
+                        { dest: '端末 E', port: '9' },
+                        { dest: '端末 F', port: '10' },
+                        { dest: 'その他', port: '7' }
                     ]}
                 ];
                 
@@ -1548,29 +1575,40 @@
             // 次のホップを取得
             getNextHop(currentNode, destination) {
                 // 端末から直接接続されたルータへの経路
-                if (currentNode === 'A') return 'X';
-                if (currentNode === 'B') return 'X';
-                if (currentNode === 'C') return 'Y';
+                if (currentNode === 'A') return 'W';
+                if (currentNode === 'B') return 'W';
+                if (currentNode === 'C') return 'X';
                 if (currentNode === 'D') return 'Z';
                 if (currentNode === 'E') return 'Z';
+                if (currentNode === 'F') return 'Z';
+                if (currentNode === 'G') return 'X';
                 
-                // ルータのロジック
-                if (currentNode === 'X') {
+                // ルータからの経路（拡張されたルーティングロジック）
+                if (currentNode === 'W') {
                     if (destination === 'A') return 'A';
                     if (destination === 'B') return 'B';
-                    if (destination === 'C') return 'Y';
-                    return 'Z'; // D と E 宛て
+                    if (destination === 'C' || destination === 'G') return 'X';
+                    return 'Y'; // D, E, F 宛て
+                }
+                
+                if (currentNode === 'X') {
+                    if (destination === 'C') return 'C';
+                    if (destination === 'G') return 'G';
+                    if (destination === 'A' || destination === 'B') return 'W';
+                    return 'Z'; // D, E, F 宛て
                 }
                 
                 if (currentNode === 'Y') {
-                    if (destination === 'C') return 'C';
-                    return 'Z'; // D と E 宛て
+                    if (destination === 'A' || destination === 'B') return 'W';
+                    if (destination === 'C' || destination === 'G') return 'X';
+                    return 'Z'; // D, E, F 宛て
                 }
                 
                 if (currentNode === 'Z') {
                     if (destination === 'D') return 'D';
                     if (destination === 'E') return 'E';
-                    return 'X'; // A, B, C 宛て
+                    if (destination === 'F') return 'F';
+                    return 'Y'; // A, B, C, G 宛て
                 }
                 
                 return null;
