@@ -1,0 +1,375 @@
+/* アニメーションとビジュアル効果 */
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(11, 137, 255, 0.5); }
+    70% { box-shadow: 0 0 0 8px rgba(11, 137, 255, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(11, 137, 255, 0); }
+}
+
+.animate-fadeIn { animation: fadeIn 0.4s ease-in; }
+.animate-fadeOut { animation: fadeOut 0.4s ease-out; }
+.animate-float { animation: float 3s ease-in-out infinite; }
+
+/* グラスモーフィズム効果 */
+.glass-effect {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+}
+
+/* ノードと接続のスタイル */
+.node {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border: 2px solid;
+    transform: translate(-50%, -50%) scale(1.1);
+    z-index: 10;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: transform;
+}
+
+.node:hover {
+    transform: translate(-50%, -50%) scale(1.2);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    cursor: pointer;
+    z-index: 20;
+}
+
+.terminal {
+    width: 56px;
+    height: 56px;
+    border-radius: 10px;
+    font-size: 24px;
+    border-color: #4B5563;
+    background: linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%);
+    box-shadow: 0 4px 8px -2px rgba(0, 0, 0, 0.12), 0 2px 4px -1px rgba(0, 0, 0, 0.05);
+}
+
+.terminal.active {
+    border-color: #0b89ff;
+    background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+    box-shadow: 0 0 0 3px rgba(11, 137, 255, 0.25), 0 6px 12px -2px rgba(11, 137, 255, 0.25);
+    animation: pulse 2s infinite;
+}
+
+.router {
+    width: 76px;
+    height: 76px;
+    flex-direction: column;
+    border-color: #4B5563;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%);
+    box-shadow: 0 4px 8px -2px rgba(0, 0, 0, 0.12), 0 2px 4px -1px rgba(0, 0, 0, 0.05);
+}
+
+.router.active {
+    border-color: #0b89ff;
+    background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+    box-shadow: 0 0 0 4px rgba(11, 137, 255, 0.25), 0 8px 16px -2px rgba(11, 137, 255, 0.25);
+    animation: pulse 2s infinite;
+}
+
+.router-icon {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    width: 34px;
+    height: 34px;
+    margin-bottom: 4px;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.12);
+}
+
+.router-icon div {
+    background-color: #111827;
+    border: 1px solid #F3F4F6;
+}
+
+.router-icon div:nth-child(2),
+.router-icon div:nth-child(3) {
+    background-color: #F3F4F6;
+    border: 1px solid #111827;
+}
+
+.connection {
+    position: absolute;
+    background-color: #9CA3AF;
+    transform-origin: 0 0;
+    height: 3px;
+    z-index: 1;
+    border-radius: 3px;
+    opacity: 0.5;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.connection.active {
+    background-color: #0b89ff;
+    height: 5px;
+    opacity: 1;
+    box-shadow: 0 0 12px rgba(11, 137, 255, 0.6);
+}
+
+.packet {
+    position: absolute;
+    width: 36px;
+    height: 24px;
+    background-color: #0b89ff;
+    color: white;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    z-index: 20;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 3px 8px rgba(11, 137, 255, 0.3);
+    animation: pulse 1.5s infinite;
+    will-change: transform, left, top;
+}
+
+.packet::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    bottom: -4px;
+    left: -4px;
+    border-radius: 16px;
+    background: radial-gradient(circle at center, rgba(11, 137, 255, 0.8) 0%, rgba(11, 137, 255, 0) 70%);
+    z-index: -1;
+    opacity: 0.5;
+}
+
+.port-label {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    background-color: #0b89ff;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    z-index: 15;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.port-label.active {
+    transform: translate(-50%, -50%) scale(1.25);
+    background-color: #0055b6;
+    box-shadow: 0 0 0 4px rgba(11, 137, 255, 0.25), 0 4px 8px rgba(0, 85, 182, 0.5);
+    z-index: 16;
+}
+
+.port-label:hover {
+    transform: translate(-50%, -50%) scale(1.15);
+    cursor: pointer;
+    box-shadow: 0 0 0 2px rgba(11, 137, 255, 0.15), 0 4px 8px rgba(0, 85, 182, 0.3);
+}
+
+/* スクロールバーのスタイル */
+#log-container {
+    height: auto;
+    max-height: calc(55vh - 130px);
+    overflow-y: auto;
+}
+
+#log-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+#log-container::-webkit-scrollbar-track {
+    background: #F3F4F6;
+    border-radius: 4px;
+}
+
+#log-container::-webkit-scrollbar-thumb {
+    background-color: #D1D5DB;
+    border-radius: 4px;
+    border: 2px solid #F3F4F6;
+}
+
+#log-container::-webkit-scrollbar-thumb:hover {
+    background-color: #9CA3AF;
+}
+
+/* 改善されたログエントリースタイル */
+.log-entry {
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 0.5rem;
+    border-left-width: 4px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    background-color: white;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: flex-start;
+}
+
+.log-entry:hover {
+    transform: scale(1.01);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* ログエントリーの種類ごとのスタイル */
+.log-entry.info {
+    border-left-color: #0b89ff;
+    background-color: rgba(240, 247, 255, 0.8);
+}
+
+.log-entry.success {
+    border-left-color: #32ab53;
+    background-color: rgba(242, 251, 244, 0.8);
+}
+
+.log-entry.error {
+    border-left-color: #EF4444;
+    background-color: rgba(254, 242, 242, 0.8);
+}
+
+.log-entry.system {
+    border-left-color: #9CA3AF;
+    background-color: rgba(249, 250, 251, 0.8);
+}
+
+.log-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-right: 0.5rem;
+    border-radius: 9999px;
+    flex-shrink: 0;
+}
+
+.log-timestamp {
+    font-size: 0.75rem;
+    color: #9CA3AF;
+    font-family: monospace;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.log-message {
+    flex-grow: 1;
+}
+
+.log-filtered {
+    display: none;
+}
+
+/* サイドバーのトランジション */
+.sidebar-container {
+    transform: translateX(0);
+    transition: transform 0.3s ease-in-out, width 0.3s ease-in-out;
+}
+
+.sidebar-container.collapsed {
+    transform: translateX(100%);
+}
+
+/* レイアウト最適化 */
+#network-container {
+    min-height: calc(100vh - 130px);
+}
+
+#sidebar {
+    width: 380px;
+    max-height: calc(100vh - 130px);
+    display: grid;
+    grid-template-rows: minmax(0, auto) minmax(0, 1fr);
+    gap: 1rem;
+}
+
+.routing-table-container {
+    max-height: 45vh;
+    overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+    #sidebar {
+        position: fixed;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 40;
+        background: white;
+        padding: 1rem;
+        height: 100vh;
+        width: 320px;
+    }
+    
+    .routing-table-container {
+        max-height: 40vh;
+    }
+    
+    #log-container {
+        max-height: calc(70vh - 100px);
+    }
+}
+
+@media (max-width: 768px) {
+    .sidebar-container {
+        position: fixed;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        background: white;
+        z-index: 40;
+        padding: 1rem;
+        margin-top: 4rem;
+    }
+    
+    .sidebar-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 30;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease-in-out;
+    }
+    
+    .sidebar-backdrop.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    #log-container {
+        height: calc(100vh - 400px);
+        min-height: 200px;
+    }
+}
+
+/* フレックスグリッドシステム */
+.grid-auto-fit {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+/* レスポンシブスケーリング */
+@media (min-width: 1536px) {
+    .container {
+        max-width: none;
+        padding: 0 2rem;
+    }
+}
+
+/* アニメーションの最適化 */
+.network-container {
+    will-change: transform;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+}
