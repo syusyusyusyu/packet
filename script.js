@@ -292,27 +292,17 @@ class NetworkSimulation {
     initializeNodes() {
         const baseScale = 1.2; // スケールを20%増加
         this.nodes = {
-            // 左側の端末グループ
+            // 端末ノード
             A: { x: 80 * baseScale, y: 150 * baseScale, type: 'terminal', label: 'A' },
             B: { x: 80 * baseScale, y: 350 * baseScale, type: 'terminal', label: 'B' },
+            C: { x: 80 * baseScale, y: 520 * baseScale, type: 'terminal', label: 'C' },
+            D: { x: 700 * baseScale, y: 150 * baseScale, type: 'terminal', label: 'D' },
+            E: { x: 700 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'E' },
             
-            // 上部の端末グループ
-            C: { x: 300 * baseScale, y: 80 * baseScale, type: 'terminal', label: 'C' },
-            D: { x: 500 * baseScale, y: 80 * baseScale, type: 'terminal', label: 'D' },
-            
-            // 右側の端末グループ
-            E: { x: 720 * baseScale, y: 150 * baseScale, type: 'terminal', label: 'E' },
-            F: { x: 720 * baseScale, y: 350 * baseScale, type: 'terminal', label: 'F' },
-            
-            // 下部の端末グループ
-            G: { x: 300 * baseScale, y: 520 * baseScale, type: 'terminal', label: 'G' },
-            H: { x: 500 * baseScale, y: 520 * baseScale, type: 'terminal', label: 'H' },
-            
-            // ルータ（菱形配置）
-            W: { x: 250 * baseScale, y: 250 * baseScale, type: 'router', label: 'ルータ W' },
-            X: { x: 400 * baseScale, y: 180 * baseScale, type: 'router', label: 'ルータ X' },
-            Y: { x: 400 * baseScale, y: 420 * baseScale, type: 'router', label: 'ルータ Y' },
-            Z: { x: 550 * baseScale, y: 250 * baseScale, type: 'router', label: 'ルータ Z' }
+            // ルータノード
+            X: { x: 300 * baseScale, y: 180 * baseScale, type: 'router', label: 'ルータ X' },
+            Y: { x: 300 * baseScale, y: 420 * baseScale, type: 'router', label: 'ルータ Y' },
+            Z: { x: 550 * baseScale, y: 300 * baseScale, type: 'router', label: 'ルータ Z' }
         };
 
         // 基準サイズも更新
@@ -323,27 +313,29 @@ class NetworkSimulation {
     // ノード間の接続を作成
     createConnections() {
         this.connections = [
-            // 左側端末とルータWの接続
-            { from: 'A', to: 'W', fromPort: null, toPort: 1, portLabel: 1, id: 'A-W' },
-            { from: 'B', to: 'W', fromPort: null, toPort: 2, portLabel: 2, id: 'B-W' },
+            // 端末AとルータXの接続
+            { from: 'A', to: 'X', fromPort: null, toPort: 1, portLabel: 1, id: 'A-X' },
             
-            // 上部端末とルータXの接続
-            { from: 'C', to: 'X', fromPort: null, toPort: 3, portLabel: 3, id: 'C-X' },
-            { from: 'D', to: 'X', fromPort: null, toPort: 4, portLabel: 4, id: 'D-X' },
+            // 端末BとルータXの接続
+            { from: 'B', to: 'X', fromPort: null, toPort: 2, portLabel: 2, id: 'B-X' },
             
-            // 右側端末とルータZの接続
-            { from: 'E', to: 'Z', fromPort: null, toPort: 5, portLabel: 5, id: 'E-Z' },
-            { from: 'F', to: 'Z', fromPort: null, toPort: 6, portLabel: 6, id: 'F-Z' },
+            // 端末CとルータYの接続
+            { from: 'C', to: 'Y', fromPort: null, toPort: 3, portLabel: 3, id: 'C-Y' },
             
-            // 下部端末とルータYの接続
-            { from: 'G', to: 'Y', fromPort: null, toPort: 7, portLabel: 7, id: 'G-Y' },
-            { from: 'H', to: 'Y', fromPort: null, toPort: 8, portLabel: 8, id: 'H-Y' },
+            // 端末DとルータZの接続
+            { from: 'D', to: 'Z', fromPort: null, toPort: 7, portLabel: 7, id: 'D-Z' },
             
-            // ルータ間の接続（菱形状）
-            { from: 'W', to: 'X', fromPort: 9, toPort: 9, portLabel: 9, id: 'W-X' },
-            { from: 'X', to: 'Z', fromPort: 10, toPort: 10, portLabel: 10, id: 'X-Z' },
-            { from: 'Z', to: 'Y', fromPort: 11, toPort: 11, portLabel: 11, id: 'Z-Y' },
-            { from: 'Y', to: 'W', fromPort: 12, toPort: 12, portLabel: 12, id: 'Y-W' }
+            // 端末EとルータZの接続
+            { from: 'E', to: 'Z', fromPort: null, toPort: 8, portLabel: 8, id: 'E-Z' },
+            
+            // ルータXとルータZの接続
+            { from: 'X', to: 'Z', fromPort: 6, toPort: 6, portLabel: 6, id: 'X-Z' },
+            
+            // ルータYとルータZの接続
+            { from: 'Y', to: 'Z', fromPort: 5, toPort: 5, portLabel: 5, id: 'Y-Z' },
+            
+            // ルータXとルータYの接続
+            { from: 'X', to: 'Y', fromPort: 4, toPort: 4, portLabel: 4, id: 'X-Y' }
         ];
     }
     
@@ -673,33 +665,22 @@ class NetworkSimulation {
         tableBody.innerHTML = '';
         
         const sections = [
-            { title: 'ルータ W', routes: [
+            { title: 'ルータ X', routes: [
                 { dest: '端末 A', port: '1' },
                 { dest: '端末 B', port: '2' },
-                { dest: '端末 C,D', port: '9' },
-                { dest: '端末 E,F', port: '9' },
-                { dest: '端末 G,H', port: '12' }
-            ]},
-            { title: 'ルータ X', routes: [
-                { dest: '端末 C', port: '3' },
-                { dest: '端末 D', port: '4' },
-                { dest: '端末 A,B', port: '9' },
-                { dest: '端末 E,F', port: '10' },
-                { dest: '端末 G,H', port: '10' }
+                { dest: '端末 C', port: '4' },
+                { dest: '端末 D,E', port: '6' }
             ]},
             { title: 'ルータ Y', routes: [
-                { dest: '端末 G', port: '7' },
-                { dest: '端末 H', port: '8' },
-                { dest: '端末 A,B', port: '12' },
-                { dest: '端末 C,D', port: '12' },
-                { dest: '端末 E,F', port: '11' }
+                { dest: '端末 C', port: '3' },
+                { dest: '端末 A,B', port: '4' },
+                { dest: '端末 D,E', port: '5' }
             ]},
             { title: 'ルータ Z', routes: [
-                { dest: '端末 E', port: '5' },
-                { dest: '端末 F', port: '6' },
-                { dest: '端末 A,B', port: '10' },
-                { dest: '端末 C,D', port: '10' },
-                { dest: '端末 G,H', port: '11' }
+                { dest: '端末 D', port: '7' },
+                { dest: '端末 E', port: '8' },
+                { dest: '端末 A,B', port: '6' },
+                { dest: '端末 C', port: '5' }
             ]}
         ];
         
@@ -807,6 +788,10 @@ class NetworkSimulation {
         const destSelect = document.getElementById('destination');
         
         if (sourceSelect && destSelect) {
+            // 選択肢を更新
+            this.updateTerminalOptions(sourceSelect);
+            this.updateTerminalOptions(destSelect);
+            
             sourceSelect.addEventListener('change', () => {
                 this.updateActiveTerminals();
             });
@@ -828,6 +813,35 @@ class NetworkSimulation {
             this.renderNetwork();
             this.updateFullscreenButton();
         });
+    }
+    
+    // ドロップダウンの選択肢を更新
+    updateTerminalOptions(selectElement) {
+        if (!selectElement) return;
+        
+        // 既存の選択肢をクリア
+        selectElement.innerHTML = '';
+        
+        // 端末ノードを選択肢として追加
+        const terminalNodes = Object.entries(this.nodes)
+            .filter(([_, node]) => node.type === 'terminal')
+            .map(([id, _]) => id);
+            
+        terminalNodes.forEach(id => {
+            const option = document.createElement('option');
+            option.value = id;
+            option.textContent = `端末 ${id}`;
+            selectElement.appendChild(option);
+        });
+        
+        // 初期選択値を設定
+        if (terminalNodes.length > 0) {
+            if (selectElement.id === 'source') {
+                selectElement.value = terminalNodes[0]; // 最初の端末を送信元に
+            } else if (selectElement.id === 'destination') {
+                selectElement.value = terminalNodes.length > 1 ? terminalNodes[1] : terminalNodes[0]; // 2番目の端末を送信先に
+            }
+        }
     }
     
     // 選択された端末のハイライト更新
@@ -1041,44 +1055,29 @@ class NetworkSimulation {
     
     // 次のホップを取得
     getNextHop(currentNode, destination) {
-        const LEFT_TERMINALS = ['A', 'B'];
-        const TOP_TERMINALS = ['C', 'D'];
-        const RIGHT_TERMINALS = ['E', 'F'];
-        const BOTTOM_TERMINALS = ['G', 'H'];
-
         // 端末からルータへの直接接続
-        if (LEFT_TERMINALS.includes(currentNode)) return 'W';
-        if (TOP_TERMINALS.includes(currentNode)) return 'X';
-        if (RIGHT_TERMINALS.includes(currentNode)) return 'Z';
-        if (BOTTOM_TERMINALS.includes(currentNode)) return 'Y';
-
-        // ルータWからの経路
-        if (currentNode === 'W') {
-            if (LEFT_TERMINALS.includes(destination)) return destination;
-            if (TOP_TERMINALS.includes(destination) || RIGHT_TERMINALS.includes(destination)) return 'X';
-            return 'Y'; // G, H宛て
-        }
+        if (currentNode === 'A' || currentNode === 'B') return 'X';
+        if (currentNode === 'C') return 'Y';
+        if (currentNode === 'D' || currentNode === 'E') return 'Z';
 
         // ルータXからの経路
         if (currentNode === 'X') {
-            if (TOP_TERMINALS.includes(destination)) return destination;
-            if (RIGHT_TERMINALS.includes(destination)) return 'Z';
-            if (LEFT_TERMINALS.includes(destination)) return 'W';
-            return 'Z'; // G, H宛て
+            if (destination === 'A' || destination === 'B') return destination;
+            if (destination === 'C') return 'Y';
+            return 'Z'; // D,E宛て
         }
 
         // ルータYからの経路
         if (currentNode === 'Y') {
-            if (BOTTOM_TERMINALS.includes(destination)) return destination;
-            if (LEFT_TERMINALS.includes(destination)) return 'W';
+            if (destination === 'C') return destination;
             return 'Z'; // その他宛て
         }
 
         // ルータZからの経路
         if (currentNode === 'Z') {
-            if (RIGHT_TERMINALS.includes(destination)) return destination;
-            if (BOTTOM_TERMINALS.includes(destination)) return 'Y';
-            return 'X'; // その他宛て
+            if (destination === 'D' || destination === 'E') return destination;
+            if (destination === 'C') return 'Y';
+            return 'X'; // A,B宛て
         }
 
         return null;
@@ -1447,7 +1446,7 @@ class NetworkSimulation {
         const counter = document.getElementById('packet-counter');
         if (counter) {
             const activeCount = this.packets.filter(p => !p.completed).length;
-            counter.innerHTML = `アクティブパケット: <span class="font-bold text-primary-600">${activeCount}</span>`;
+            counter.innerHTML = `アクティブパケット: <span class="font-bold text-miku-300">${activeCount}</span>`;
         }
     }
     
