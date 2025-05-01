@@ -1,7 +1,8 @@
-// ログマネージャークラス
+// ログマネージャークラス - モバイル対応拡張
 class LogManager {
-    constructor(containerId = 'log-entries') {
+    constructor(containerId = 'log-entries', mobileContainerId = 'mobile-log-entries') {
         this.container = document.getElementById(containerId);
+        this.mobileContainer = document.getElementById(mobileContainerId);
         this.pendingEntries = [];
         this.maxEntries = 100;
         this.setupEventListeners();
@@ -10,14 +11,26 @@ class LogManager {
     setupEventListeners() {
         // フィルターコントロールのイベントリスナー
         const filterSelect = document.getElementById('log-filter');
+        const mobileFilterSelect = document.getElementById('mobile-log-filter');
+        
         if (filterSelect) {
             filterSelect.addEventListener('change', () => this.applyFilter(filterSelect.value));
+        }
+        
+        if (mobileFilterSelect) {
+            mobileFilterSelect.addEventListener('change', () => this.applyFilter(mobileFilterSelect.value));
         }
 
         // クリアボタンのイベントリスナー
         const clearBtn = document.getElementById('clear-log');
+        const mobileClearBtn = document.getElementById('mobile-clear-log');
+        
         if (clearBtn) {
             clearBtn.addEventListener('click', () => this.clearLogs());
+        }
+        
+        if (mobileClearBtn) {
+            mobileClearBtn.addEventListener('click', () => this.clearLogs());
         }
 
         // 定期的なログ更新
@@ -31,57 +44,87 @@ class LogManager {
 
     // 保留中のエントリーをDOMに反映
     flushEntries() {
-        if (!this.pendingEntries.length || !this.container) return;
+        if (!this.pendingEntries.length) return;
+        if (!this.container && !this.mobileContainer) return;
 
         const fragment = document.createDocumentFragment();
+        const mobileFragment = document.createDocumentFragment();
         const currentFilter = document.getElementById('log-filter')?.value || 'all';
+        const mobileFilter = document.getElementById('mobile-log-filter')?.value || 'all';
 
         this.pendingEntries.forEach(entry => {
-            const logEntry = document.createElement('div');
-            logEntry.className = `log-entry ${entry.type} flex items-start`;
-            
-            // フィルター適用
-            if (currentFilter !== 'all' && entry.type !== currentFilter) {
-                logEntry.classList.add('log-filtered');
+            // デスクトップ用ログエントリー
+            if (this.container) {
+                const logEntry = this.createLogEntryElement(entry, currentFilter);
+                fragment.appendChild(logEntry);
             }
-
-            // アイコンとメッセージを含む内部要素
-            const iconSpan = document.createElement('span');
-            iconSpan.className = `log-icon ${this.getIconClass(entry.type)}`;
-            iconSpan.textContent = this.getIcon(entry.type);
-
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'log-message';
-            messageDiv.textContent = entry.message;
-
-            const timeSpan = document.createElement('span');
-            timeSpan.className = 'log-timestamp';
-            timeSpan.textContent = entry.timestamp.toLocaleTimeString('ja-JP', { 
-                hour: '2-digit', minute: '2-digit', second: '2-digit' 
-            });
-
-            logEntry.appendChild(iconSpan);
-            logEntry.appendChild(messageDiv);
-            logEntry.appendChild(timeSpan);
-            fragment.appendChild(logEntry);
+            
+            // モバイル用ログエントリー
+            if (this.mobileContainer) {
+                const mobileLogEntry = this.createLogEntryElement(entry, mobileFilter);
+                mobileFragment.appendChild(mobileLogEntry);
+            }
         });
 
-        this.container.appendChild(fragment);
-        this.limitLogEntries();
-        this.scrollToBottom();
+        // デスクトップログコンテナに追加
+        if (this.container) {
+            this.container.appendChild(fragment);
+            this.limitLogEntries(this.container);
+            this.scrollToBottom(this.container);
+        }
+        
+        // モバイルログコンテナに追加
+        if (this.mobileContainer) {
+            this.mobileContainer.appendChild(mobileFragment);
+            this.limitLogEntries(this.mobileContainer);
+            this.scrollToBottom(this.mobileContainer);
+        }
+
         this.pendingEntries = [];
+    }
+    
+    // ログエントリーの要素を作成
+    createLogEntryElement(entry, currentFilter) {
+        const logEntry = document.createElement('div');
+        logEntry.className = `log-entry ${entry.type} flex items-start`;
+        
+        // フィルター適用
+        if (currentFilter !== 'all' && entry.type !== currentFilter) {
+            logEntry.classList.add('log-filtered');
+        }
+
+        // アイコンとメッセージを含む内部要素
+        const iconSpan = document.createElement('span');
+        iconSpan.className = `log-icon ${this.getIconClass(entry.type)}`;
+        iconSpan.textContent = this.getIcon(entry.type);
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'log-message';
+        messageDiv.textContent = entry.message;
+
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'log-timestamp';
+        timeSpan.textContent = entry.timestamp.toLocaleTimeString('ja-JP', { 
+            hour: '2-digit', minute: '2-digit', second: '2-digit' 
+        });
+
+        logEntry.appendChild(iconSpan);
+        logEntry.appendChild(messageDiv);
+        logEntry.appendChild(timeSpan);
+        
+        return logEntry;
     }
 
     // ログエントリーの数を制限
-    limitLogEntries() {
-        while (this.container.children.length > this.maxEntries) {
-            this.container.removeChild(this.container.firstChild);
+    limitLogEntries(container) {
+        while (container.children.length > this.maxEntries) {
+            container.removeChild(container.firstChild);
         }
     }
 
     // 一番下にスクロール
-    scrollToBottom() {
-        const logContainer = this.container.parentElement;
+    scrollToBottom(container) {
+        const logContainer = container.parentElement;
         if (logContainer) {
             logContainer.scrollTop = logContainer.scrollHeight;
         }
@@ -89,7 +132,21 @@ class LogManager {
 
     // フィルターを適用
     applyFilter(filterType) {
-        const entries = this.container.querySelectorAll('.log-entry');
+        // デスクトップログにフィルター適用
+        if (this.container) {
+            const entries = this.container.querySelectorAll('.log-entry');
+            this.applyFilterToEntries(entries, filterType);
+        }
+        
+        // モバイルログにもフィルター適用
+        if (this.mobileContainer) {
+            const mobileEntries = this.mobileContainer.querySelectorAll('.log-entry');
+            this.applyFilterToEntries(mobileEntries, filterType);
+        }
+    }
+    
+    // エントリー集合にフィルターを適用
+    applyFilterToEntries(entries, filterType) {
         entries.forEach(entry => {
             if (filterType === 'all') {
                 entry.classList.remove('log-filtered');
@@ -101,13 +158,24 @@ class LogManager {
 
     // ログをクリア
     clearLogs() {
+        // デスクトップログクリア
         if (this.container) {
-            const defaultMessage = document.createElement('div');
-            defaultMessage.className = 'text-gray-400 italic p-2';
-            defaultMessage.textContent = 'ログがクリアされました...';
-            this.container.innerHTML = '';
-            this.container.appendChild(defaultMessage);
+            this.clearLogContainer(this.container);
         }
+        
+        // モバイルログクリア
+        if (this.mobileContainer) {
+            this.clearLogContainer(this.mobileContainer);
+        }
+    }
+    
+    // コンテナのログをクリア
+    clearLogContainer(container) {
+        const defaultMessage = document.createElement('div');
+        defaultMessage.className = 'text-gray-400 italic p-2';
+        defaultMessage.textContent = 'ログがクリアされました...';
+        container.innerHTML = '';
+        container.appendChild(defaultMessage);
     }
 
     // タイプに基づくアイコンを取得
@@ -139,7 +207,7 @@ class LogManager {
     }
 }
 
-// ネットワークトポロジーとルーティングシミュレーション
+// ネットワークトポロジーとルーティングシミュレーション - モバイル対応拡張
 class NetworkSimulation {
     constructor() {
         // 基本設定
@@ -166,8 +234,8 @@ class NetworkSimulation {
             totalHops: 0
         };
         
-        // ログマネージャーの初期化
-        this.logManager = new LogManager('log-entries');
+        // ログマネージャーの初期化（デスクトップとモバイル両方のコンテナを指定）
+        this.logManager = new LogManager('log-entries', 'mobile-log-entries');
         
         // データ初期化
         this.initializeNodes();
@@ -192,8 +260,8 @@ class NetworkSimulation {
         // ヘルプモーダル
         this.setupHelpModal();
 
-        // サイドバーコントロール
-        this.setupSidebarControls();
+        // モバイルタブの初期化
+        this.setupTabControls();
     }
     
     // リソース解放
@@ -226,47 +294,80 @@ class NetworkSimulation {
     handleResize() {
         this.calculateScaleFactor();
         this.renderNetwork();
-        
-        // モバイルビューでのサイドバー状態リセット
-        if (window.innerWidth >= 768) {
-            const sidebar = document.getElementById('sidebar');
-            const backdrop = document.querySelector('.sidebar-backdrop');
-            if (sidebar) sidebar.classList.remove('collapsed');
-            if (backdrop) backdrop.classList.remove('active');
-        }
     }
 
-    setupSidebarControls() {
-        const collapseBtn = document.getElementById('collapse-sidebar');
-        const sidebar = document.getElementById('sidebar');
-        
-        if (collapseBtn && sidebar) {
-            collapseBtn.addEventListener('click', () => {
-                sidebar.classList.toggle('collapsed');
+    // タブコントロールのセットアップ
+    setupTabControls() {
+        // デスクトップタブ
+        const tabButtons = document.querySelectorAll('.tab-button');
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetId = button.getAttribute('data-tab');
                 
-                // モバイル用バックドロップの追加
-                if (window.innerWidth < 768) {
-                    let backdrop = document.querySelector('.sidebar-backdrop');
-                    if (!backdrop) {
-                        backdrop = document.createElement('div');
-                        backdrop.className = 'sidebar-backdrop';
-                        document.body.appendChild(backdrop);
+                // タブボタンの状態更新
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                // タブ内容表示切替
+                const tabContents = document.querySelectorAll('.tab-content');
+                tabContents.forEach(content => {
+                    if (content.id === targetId) {
+                        content.classList.add('active');
+                    } else {
+                        content.classList.remove('active');
                     }
-                    backdrop.classList.toggle('active');
-                    
-                    // バックドロップクリックでサイドバーを閉じる
-                    backdrop.addEventListener('click', () => {
-                        sidebar.classList.add('collapsed');
-                        backdrop.classList.remove('active');
-                    });
-                }
+                });
+            });
+        });
+        
+        // モバイルタブ
+        const mobileTabButtons = document.querySelectorAll('.mobile-tab-button');
+        mobileTabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetId = button.getAttribute('data-tab');
+                
+                // タブボタンの状態更新
+                mobileTabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                // タブ内容表示切替
+                const tabContents = document.querySelectorAll('#sidebar-drawer .tab-content');
+                tabContents.forEach(content => {
+                    if (content.id === targetId) {
+                        content.classList.add('active');
+                    } else {
+                        content.classList.remove('active');
+                    }
+                });
+            });
+        });
+        
+        // モバイルドロワー
+        const toggleDrawerBtn = document.getElementById('toggle-drawer');
+        const drawerEl = document.getElementById('sidebar-drawer');
+        const backdropEl = document.getElementById('drawer-backdrop');
+        
+        if (toggleDrawerBtn && drawerEl) {
+            toggleDrawerBtn.addEventListener('click', () => {
+                drawerEl.classList.toggle('open');
+                if (backdropEl) backdropEl.classList.toggle('open');
             });
         }
         
-        // ウィンドウリサイズ時のレイアウト調整
-        window.addEventListener('resize', () => {
-            this.handleResize();
-        });
+        if (backdropEl) {
+            backdropEl.addEventListener('click', () => {
+                if (drawerEl) drawerEl.classList.remove('open');
+                backdropEl.classList.remove('open');
+            });
+        }
+        
+        const drawerHandle = document.querySelector('.drawer-handle');
+        if (drawerHandle && drawerEl) {
+            drawerHandle.addEventListener('click', () => {
+                drawerEl.classList.toggle('open');
+                if (backdropEl) backdropEl.classList.toggle('open');
+            });
+        }
     }
 
     // UIコンポーネントの初期化
@@ -386,6 +487,15 @@ class NetworkSimulation {
             const helpModal = document.getElementById('help-modal');
             if (helpModal && !helpModal.classList.contains('hidden')) {
                 this.closeHelpModal(helpModal);
+                return;
+            }
+            
+            // モバイルドロワーが開いていれば閉じる
+            const drawerEl = document.getElementById('sidebar-drawer');
+            const backdropEl = document.getElementById('drawer-backdrop');
+            if (drawerEl && drawerEl.classList.contains('open')) {
+                drawerEl.classList.remove('open');
+                if (backdropEl) backdropEl.classList.remove('open');
                 return;
             }
             
@@ -659,7 +769,16 @@ class NetworkSimulation {
     
     // ルーティングテーブルの描画
     renderRoutingTable() {
-        const tableBody = document.querySelector('#routing-table tbody');
+        // デスクトップルーティングテーブルを更新
+        this.updateRoutingTable('routing-table');
+        
+        // モバイルルーティングテーブルも更新
+        this.updateRoutingTable('mobile-routing-table');
+    }
+    
+    // ルーティングテーブルを更新
+    updateRoutingTable(tableId) {
+        const tableBody = document.querySelector(`#${tableId} tbody`);
         if (!tableBody) return;
         
         tableBody.innerHTML = '';
@@ -697,10 +816,10 @@ class NetworkSimulation {
         if (!tableBody) return;
         
         const row = document.createElement('tr');
-        row.classList.add('bg-gray-50');
+        row.classList.add('bg-space-800', 'bg-opacity-80');
         const cell = document.createElement('td');
         cell.setAttribute('colspan', '2');
-        cell.classList.add('px-4', 'py-2.5', 'font-medium', 'text-primary-700', 'text-center', 'border-t', 'border-b', 'border-gray-200');
+        cell.classList.add('px-4', 'py-2.5', 'font-medium', 'text-miku-300', 'text-center', 'border-t', 'border-b', 'border-miku-800');
         cell.textContent = title;
         row.appendChild(cell);
         tableBody.appendChild(row);
@@ -711,14 +830,14 @@ class NetworkSimulation {
         if (!tableBody) return;
         
         const row = document.createElement('tr');
-        row.classList.add('hover:bg-gray-50', 'transition-colors');
+        row.classList.add('hover:bg-space-800', 'hover:bg-opacity-50', 'transition-colors');
         
         const destCell = document.createElement('td');
-        destCell.classList.add('px-4', 'py-2.5', 'border-b', 'border-gray-200', 'text-sm');
+        destCell.classList.add('px-4', 'py-2.5', 'border-b', 'border-miku-800', 'text-sm', 'text-white');
         destCell.textContent = destination;
         
         const portCell = document.createElement('td');
-        portCell.classList.add('px-4', 'py-2.5', 'border-b', 'border-gray-200', 'text-sm', 'font-medium', 'text-primary-600');
+        portCell.classList.add('px-4', 'py-2.5', 'border-b', 'border-miku-800', 'text-sm', 'font-medium', 'text-miku-300');
         portCell.textContent = port;
         
         row.appendChild(destCell);

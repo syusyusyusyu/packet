@@ -284,6 +284,124 @@
             animation-delay: calc(var(--delay) * 1s);
             box-shadow: 0 0 4px rgba(255, 221, 69, 0.7);
         }
+
+        /* タブ切り替え用のスタイル追加 */
+        .tab-button {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem 0.5rem 0 0;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .tab-button.active {
+            background-color: rgba(57, 240, 236, 0.15);
+            border-bottom: 3px solid #39f0ec;
+            font-weight: 600;
+        }
+
+        .tab-button:hover:not(.active) {
+            background-color: rgba(57, 240, 236, 0.05);
+            border-bottom: 3px solid rgba(57, 240, 236, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+            height: 100%;
+        }
+
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* モバイルレスポンシブ対応の強化 */
+        @media (max-width: 640px) {
+            .control-panel {
+                flex-direction: column;
+            }
+            
+            .control-group {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+            
+            .button-group {
+                width: 100%;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.5rem;
+            }
+            
+            .packet-counter {
+                width: 100%;
+                text-align: center;
+                margin-bottom: 0.5rem;
+            }
+        }
+
+        /* モバイルでの全画面表示 */
+        @media (max-width: 768px) {
+            .sidebar-drawer {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 50vh;
+                transform: translateY(100%);
+                transition: transform 0.3s ease-in-out;
+                z-index: 30;
+                border-radius: 1rem 1rem 0 0;
+                box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25);
+            }
+            
+            .sidebar-drawer.open {
+                transform: translateY(0);
+            }
+            
+            .drawer-handle {
+                position: absolute;
+                top: -20px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 80px;
+                height: 20px;
+                background: rgba(57, 240, 236, 0.8);
+                border-radius: 10px 10px 0 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            
+            .drawer-handle::after {
+                content: '';
+                width: 40px;
+                height: 4px;
+                background: rgba(255, 255, 255, 0.7);
+                border-radius: 2px;
+            }
+            
+            .drawer-backdrop {
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.5);
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.3s ease-in-out;
+                z-index: 25;
+                backdrop-filter: blur(3px);
+            }
+            
+            .drawer-backdrop.open {
+                opacity: 1;
+                visibility: visible;
+            }
+            
+            /* モバイルでタブをより大きくする */
+            .tab-button {
+                padding: 0.75rem 1rem;
+                font-size: 1rem;
+            }
+        }
     </style>
     <script>
         tailwind.config = {
@@ -350,7 +468,6 @@
         };
     </script>
     <link rel="stylesheet" href="styles.css">
-    <script src="script.js"></script>
 </head>
 <body class="starry-bg font-sans text-white overflow-hidden">
     <!-- 流れ星の背景エフェクト -->
@@ -401,8 +518,8 @@
         <!-- コントロールパネル -->
         <div class="bg-space-900 bg-opacity-80 shadow-lg border-b-2 border-miku-400 py-4">
             <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex flex-wrap items-center gap-5">
-                    <div class="flex items-center bg-space-800 bg-opacity-80 rounded-lg px-3 py-2 border border-miku-400">
+                <div class="flex flex-wrap items-center gap-5 control-panel">
+                    <div class="flex items-center bg-space-800 bg-opacity-80 rounded-lg px-3 py-2 border border-miku-400 control-group">
                         <label for="source" class="block text-base font-medium text-white mr-3">送信元:</label>
                         <select id="source" class="block w-28 pl-3 pr-10 py-2 text-base border-2 border-miku-400 focus:outline-none focus:ring-miku-300 focus:border-miku-300 sm:text-sm rounded-md shadow-sm bg-space-900 bg-opacity-90 text-white hover:bg-space-800 transition-colors duration-200">
                             <option value="A">端末 A</option>
@@ -413,7 +530,7 @@
                         </select>
                     </div>
                     
-                    <div class="flex items-center bg-space-800 bg-opacity-80 rounded-lg px-3 py-2 border border-miku-400">
+                    <div class="flex items-center bg-space-800 bg-opacity-80 rounded-lg px-3 py-2 border border-miku-400 control-group">
                         <label for="destination" class="block text-base font-medium text-white mr-3">送信先:</label>
                         <select id="destination" class="block w-28 pl-3 pr-10 py-2 text-base border-2 border-miku-400 focus:outline-none focus:ring-miku-300 focus:border-miku-300 sm:text-sm rounded-md shadow-sm bg-space-900 bg-opacity-90 text-white hover:bg-space-800 transition-colors duration-200">
                             <option value="A" selected>端末 A</option>
@@ -424,7 +541,7 @@
                         </select>
                     </div>
                     
-                    <div class="flex items-center bg-space-800 bg-opacity-80 rounded-lg px-3 py-2 border border-miku-400">
+                    <div class="flex items-center bg-space-800 bg-opacity-80 rounded-lg px-3 py-2 border border-miku-400 control-group">
                         <label for="packet-rate" class="block text-base font-medium text-white mr-3">送信間隔:</label>
                         <select id="packet-rate" class="block w-40 pl-3 pr-10 py-2 text-base border-2 border-miku-400 focus:outline-none focus:ring-miku-300 focus:border-miku-300 sm:text-sm rounded-md shadow-sm bg-space-900 bg-opacity-90 text-white hover:bg-space-800 transition-colors duration-200">
                             <option value="500">非常に速い (0.5秒)</option>
@@ -434,7 +551,7 @@
                         </select>
                     </div>
                     
-                    <div class="flex items-center ml-auto gap-3">
+                    <div class="flex items-center ml-auto gap-3 button-group">
                         <button id="send-btn" class="inline-flex items-center px-5 py-3 border-2 border-transparent text-base font-medium rounded-lg shadow-md text-white bg-gradient-to-r from-miku-400 to-miku-600 hover:from-miku-300 hover:to-miku-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-miku-500 transition-all duration-200 transform hover:scale-105 miku-glow">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" />
@@ -465,7 +582,7 @@
             <div class="max-w-none mx-auto px-1 sm:px-2 lg:px-3 h-full">
                 <div class="flex h-full gap-2 sm:gap-4">
                     <!-- ネットワーク表示エリア -->
-                    <div id="network-container" class="flex-1 bg-space-900 bg-opacity-80 rounded-xl shadow-glassy border border-miku-400 overflow-hidden flex flex-col">
+                    <div id="network-container" class="flex-1 bg-space-900 bg-opacity-80 rounded-xl shadow-glassy border border-miku-400 overflow-hidden flex flex-col relative">
                         <div class="px-5 py-3 flex justify-between items-center border-b border-miku-400 bg-space-800 bg-opacity-80">
                             <h2 class="text-xl font-display font-semibold text-white flex items-center">
                                 <svg class="h-6 w-6 mr-2 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -473,73 +590,98 @@
                                 </svg>
                                 ネットワークトポロジー
                             </h2>
-                            <div id="packet-counter" class="text-sm font-medium text-white bg-space-800 bg-opacity-90 rounded-full px-4 py-1.5 shadow-sm border border-miku-400">
+                            <div id="packet-counter" class="text-sm font-medium text-white bg-space-800 bg-opacity-90 rounded-full px-4 py-1.5 shadow-sm border border-miku-400 packet-counter">
                                 アクティブパケット: <span class="font-bold text-miku-300">0</span>
                             </div>
                         </div>
                         <div id="network" class="flex-1 relative overflow-hidden starry-bg">
                             <!-- ネットワーク可視化はここに動的に表示されます -->
                         </div>
+                        
+                        <!-- モバイル用ドロワーコントロール -->
+                        <button id="toggle-drawer" class="lg:hidden absolute bottom-4 right-4 bg-miku-400 text-white rounded-full p-3 shadow-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                            </svg>
+                        </button>
                     </div>
                     
-                    <!-- サイドバー -->
-                    <div id="sidebar" class="w-80 lg:w-96 flex-shrink-0">
-                        <!-- ルーティングテーブル -->
-                        <div class="routing-table-container bg-space-900 bg-opacity-80 rounded-xl shadow-glassy-sm border border-miku-400 overflow-y-auto">
-                            <div class="p-4 border-b border-miku-400 bg-space-800 bg-opacity-80 rounded-t-xl">
-                                <div class="flex items-center mb-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2.5 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <!-- デスクトップ用サイドバー -->
+                    <div id="sidebar" class="w-80 lg:w-96 flex-shrink-0 hidden lg:block">
+                        <div class="bg-space-900 bg-opacity-80 rounded-xl shadow-glassy-sm border border-miku-400 overflow-hidden h-full flex flex-col">
+                            <!-- タブ切り替えボタン -->
+                            <div class="flex border-b border-miku-400">
+                                <button class="tab-button active flex-1 text-center text-white" data-tab="routing-tab">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1.5 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                     </svg>
-                                    <h2 class="text-lg font-display font-semibold text-white">ルーティングテーブル</h2>
-                                </div>
-                                <p class="text-sm text-white ml-7">各ルータがパケットを転送する際の経路決定基準</p>
+                                    ルーティング
+                                </button>
+                                <button class="tab-button flex-1 text-center text-white" data-tab="log-tab">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1.5 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    パケットログ
+                                </button>
                             </div>
-                            <div class="p-4">
-                                <div class="overflow-x-auto rounded-lg border border-miku-400">
-                                    <table id="routing-table" class="min-w-full divide-y divide-miku-800 table-fixed">
-                                        <thead>
-                                            <tr>
-                                                <th scope="col" class="px-4 py-3 text-left text-sm font-medium text-white uppercase tracking-wider bg-space-800 bg-opacity-80 border-b border-miku-800 w-1/2">宛先</th>
-                                                <th scope="col" class="px-4 py-3 text-left text-sm font-medium text-white uppercase tracking-wider bg-space-800 bg-opacity-80 border-b border-miku-800 w-1/2">転送先</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="bg-space-900 bg-opacity-70 divide-y divide-miku-800">
-                                            <!-- ルーティングテーブルの項目はここに動的に追加されます -->
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- パケットログ -->
-                        <div class="bg-space-900 bg-opacity-80 rounded-xl shadow-glassy-sm border border-miku-400 overflow-hidden flex flex-col mt-4">
-                            <div class="p-3 border-b border-miku-400 bg-space-800 bg-opacity-80">
-                                <div class="flex items-center justify-between gap-2">
-                                    <h2 class="text-lg font-display font-semibold text-white flex items-center">
+                            
+                            <!-- ルーティングテーブルのタブコンテンツ -->
+                            <div id="routing-tab" class="tab-content active flex-1 overflow-hidden">
+                                <div class="p-4 border-b border-miku-400 bg-space-800 bg-opacity-80">
+                                    <div class="flex items-center mb-2">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2.5 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                         </svg>
-                                        パケットログ
-                                    </h2>
-                                    <div class="flex gap-2">
-                                        <input id="log-search" type="text" placeholder="検索" 
-                                            class="w-24 text-sm border border-miku-400 rounded px-2 py-1 bg-space-900 bg-opacity-80 text-white">
-                                        <select id="log-filter" class="text-sm border border-miku-400 rounded px-2 py-1 bg-space-900 bg-opacity-80 text-white">
-                                            <option value="all">全て</option>
-                                            <option value="info">情報</option>
-                                            <option value="success">成功</option>
-                                            <option value="error">エラー</option>
-                                        </select>
-                                        <button id="clear-log" class="text-sm bg-space-800 bg-opacity-90 border border-miku-400 rounded px-3 py-1 text-white hover:bg-space-700 transition-colors">
-                                            クリア
-                                        </button>
+                                        <h2 class="text-lg font-display font-semibold text-white">ルーティングテーブル</h2>
+                                    </div>
+                                    <p class="text-sm text-white ml-7">各ルータがパケットを転送する際の経路決定基準</p>
+                                </div>
+                                <div class="p-4 flex-1 overflow-y-auto">
+                                    <div class="overflow-x-auto rounded-lg border border-miku-400">
+                                        <table id="routing-table" class="min-w-full divide-y divide-miku-800 table-fixed">
+                                            <thead>
+                                                <tr>
+                                                    <th scope="col" class="px-4 py-3 text-left text-sm font-medium text-white uppercase tracking-wider bg-space-800 bg-opacity-80 border-b border-miku-800 w-1/2">宛先</th>
+                                                    <th scope="col" class="px-4 py-3 text-left text-sm font-medium text-white uppercase tracking-wider bg-space-800 bg-opacity-80 border-b border-miku-800 w-1/2">転送先</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="bg-space-900 bg-opacity-70 divide-y divide-miku-800">
+                                                <!-- ルーティングテーブルの項目はここに動的に追加されます -->
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </div>
-                            <div id="log-container" class="bg-space-900 bg-opacity-70">
-                                <div id="log-entries" class="p-3 space-y-2">
-                                    <!-- ログエントリーがここに追加されます -->
+                            
+                            <!-- パケットログのタブコンテンツ -->
+                            <div id="log-tab" class="tab-content flex-1 overflow-hidden">
+                                <div class="p-3 border-b border-miku-400 bg-space-800 bg-opacity-80">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <h2 class="text-lg font-display font-semibold text-white flex items-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2.5 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            パケットログ
+                                        </h2>
+                                        <div class="flex gap-2">
+                                            <input id="log-search" type="text" placeholder="検索" 
+                                                class="w-24 text-sm border border-miku-400 rounded px-2 py-1 bg-space-900 bg-opacity-80 text-white">
+                                            <select id="log-filter" class="text-sm border border-miku-400 rounded px-2 py-1 bg-space-900 bg-opacity-80 text-white">
+                                                <option value="all">全て</option>
+                                                <option value="info">情報</option>
+                                                <option value="success">成功</option>
+                                                <option value="error">エラー</option>
+                                            </select>
+                                            <button id="clear-log" class="text-sm bg-space-800 bg-opacity-90 border border-miku-400 rounded px-3 py-1 text-white hover:bg-space-700 transition-colors">
+                                                クリア
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="log-container" class="flex-1 overflow-y-auto bg-space-900 bg-opacity-70">
+                                    <div id="log-entries" class="p-3 space-y-2">
+                                        <!-- ログエントリーがここに追加されます -->
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -547,6 +689,86 @@
                 </div>
             </div>
         </div>
+        
+        <!-- モバイル用ドロワー -->
+        <div id="sidebar-drawer" class="sidebar-drawer bg-space-900 bg-opacity-90 border-t-2 border-miku-400 lg:hidden">
+            <div class="drawer-handle"></div>
+            <div class="h-full overflow-hidden flex flex-col">
+                <!-- タブ切り替えボタン -->
+                <div class="flex border-b border-miku-400">
+                    <button class="mobile-tab-button active flex-1 text-center text-white py-3" data-tab="mobile-routing-tab">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1.5 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        ルーティング
+                    </button>
+                    <button class="mobile-tab-button flex-1 text-center text-white py-3" data-tab="mobile-log-tab">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1.5 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        パケットログ
+                    </button>
+                </div>
+                
+                <!-- ルーティングテーブルのタブコンテンツ -->
+                <div id="mobile-routing-tab" class="tab-content active flex-1 overflow-hidden">
+                    <div class="p-3 border-b border-miku-400 bg-space-800 bg-opacity-80">
+                        <h2 class="text-lg font-display font-semibold text-white flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                            ルーティングテーブル
+                        </h2>
+                    </div>
+                    <div class="p-3 flex-1 overflow-y-auto">
+                        <div class="overflow-x-auto rounded-lg border border-miku-400">
+                            <table id="mobile-routing-table" class="min-w-full divide-y divide-miku-800 table-fixed">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="px-3 py-2 text-left text-sm font-medium text-white uppercase tracking-wider bg-space-800 bg-opacity-80 border-b border-miku-800 w-1/2">宛先</th>
+                                        <th scope="col" class="px-3 py-2 text-left text-sm font-medium text-white uppercase tracking-wider bg-space-800 bg-opacity-80 border-b border-miku-800 w-1/2">転送先</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-space-900 bg-opacity-70 divide-y divide-miku-800">
+                                    <!-- モバイル用ルーティングテーブルが動的に追加されます -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- パケットログのタブコンテンツ -->
+                <div id="mobile-log-tab" class="tab-content flex-1 overflow-hidden">
+                    <div class="p-3 border-b border-miku-400 bg-space-800 bg-opacity-80">
+                        <div class="flex items-center justify-between gap-2">
+                            <h2 class="text-lg font-display font-semibold text-white flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                パケットログ
+                            </h2>
+                            <div class="flex gap-2">
+                                <select id="mobile-log-filter" class="text-sm border border-miku-400 rounded px-2 py-1 bg-space-900 bg-opacity-80 text-white">
+                                    <option value="all">全て</option>
+                                    <option value="info">情報</option>
+                                    <option value="success">成功</option>
+                                    <option value="error">エラー</option>
+                                </select>
+                                <button id="mobile-clear-log" class="text-sm bg-space-800 bg-opacity-90 border border-miku-400 rounded px-3 py-1 text-white hover:bg-space-700 transition-colors">
+                                    クリア
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="mobile-log-container" class="flex-1 overflow-y-auto bg-space-900 bg-opacity-70">
+                        <div id="mobile-log-entries" class="p-3 space-y-2">
+                            <!-- モバイル用ログエントリーがここに追加されます -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="drawer-backdrop" class="drawer-backdrop"></div>
         
         <!-- ヘルプモーダル -->
         <div id="help-modal" class="fixed inset-0 bg-space-900 bg-opacity-75 flex items-center justify-center z-50 hidden backdrop-blur-sm transition-all duration-300">
@@ -669,57 +891,168 @@
                         }, 3000);
                     }, 2000);
                 }
-            });
-        </script>
-    </div>
-
-    <script>
-        // 星の背景アニメーション
-        document.addEventListener('DOMContentLoaded', function() {
-            // 流れ星のアニメーションをランダム化
-            const meteors = document.querySelectorAll('.meteor');
-            meteors.forEach(meteor => {
-                const randomDelay = Math.random() * 10;
-                const randomDuration = 2 + Math.random() * 3;
-                meteor.style.setProperty('--delay', randomDelay);
-                meteor.style.animationDuration = `${randomDuration}s`;
                 
-                // 位置をランダム化
-                meteor.style.top = `${Math.random() * 70}%`;
-                meteor.style.left = `${70 + Math.random() * 30}%`;
+                // タブ切り替え処理
+                const tabButtons = document.querySelectorAll('.tab-button');
+                const tabContents = document.querySelectorAll('.tab-content');
                 
-                // アニメーションを開始
-                setTimeout(() => {
-                    meteor.style.opacity = '1';
-                }, randomDelay * 1000);
-            });
-            
-            // ミニ星のアニメーションをランダム化
-            const stars = document.querySelectorAll('.floating-star');
-            stars.forEach(star => {
-                const randomDelay = Math.random() * 5;
-                const randomDuration = 4 + Math.random() * 4;
-                star.style.setProperty('--delay', randomDelay);
-                star.style.animationDuration = `${randomDuration}s`;
-            });
-            
-            // ポートラベルを星に変更
-            const observer = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
-                    if (mutation.addedNodes.length) {
-                        const portLabels = document.querySelectorAll('.port-label');
-                        portLabels.forEach(label => {
-                            if (!label.classList.contains('star-converted')) {
-                                label.classList.add('star-label', 'star-converted');
-                                label.classList.remove('port-label');
+                tabButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        const tabId = button.getAttribute('data-tab');
+                        
+                        // タブボタンの切り替え
+                        tabButtons.forEach(btn => btn.classList.remove('active'));
+                        button.classList.add('active');
+                        
+                        // タブコンテンツの切り替え
+                        tabContents.forEach(content => {
+                            if (content.id === tabId) {
+                                content.classList.add('active');
+                            } else {
+                                content.classList.remove('active');
+                            }
+                        });
+                    });
+                });
+                
+                // モバイル用のタブ切り替え処理
+                const mobileTabButtons = document.querySelectorAll('.mobile-tab-button');
+                
+                mobileTabButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        const tabId = button.getAttribute('data-tab');
+                        
+                        // タブボタンの切り替え
+                        mobileTabButtons.forEach(btn => btn.classList.remove('active'));
+                        button.classList.add('active');
+                        
+                        // タブコンテンツの切り替え
+                        tabContents.forEach(content => {
+                            if (content.id === tabId) {
+                                content.classList.add('active');
+                            } else {
+                                content.classList.remove('active');
+                            }
+                        });
+                    });
+                });
+                
+                // モバイルドロワー処理
+                const toggleDrawerBtn = document.getElementById('toggle-drawer');
+                const drawerEl = document.getElementById('sidebar-drawer');
+                const backdropEl = document.getElementById('drawer-backdrop');
+                
+                if (toggleDrawerBtn && drawerEl && backdropEl) {
+                    // ドロワー開閉
+                    toggleDrawerBtn.addEventListener('click', () => {
+                        drawerEl.classList.toggle('open');
+                        backdropEl.classList.toggle('open');
+                    });
+                    
+                    // ドロワーハンドル操作
+                    const drawerHandle = document.querySelector('.drawer-handle');
+                    if (drawerHandle) {
+                        drawerHandle.addEventListener('click', () => {
+                            drawerEl.classList.toggle('open');
+                            backdropEl.classList.toggle('open');
+                        });
+                    }
+                    
+                    // 背景タップでドロワー閉じる
+                    backdropEl.addEventListener('click', () => {
+                        drawerEl.classList.remove('open');
+                        backdropEl.classList.remove('open');
+                    });
+                }
+                
+                // ログ同期（通常とモバイル両方に反映させる）
+                const syncElements = [
+                    { desktop: 'log-filter', mobile: 'mobile-log-filter' },
+                    { desktop: 'clear-log', mobile: 'mobile-clear-log' }
+                ];
+                
+                syncElements.forEach(pair => {
+                    const desktopEl = document.getElementById(pair.desktop);
+                    const mobileEl = document.getElementById(pair.mobile);
+                    
+                    if (desktopEl && mobileEl) {
+                        // デスクトップからモバイルへ同期
+                        desktopEl.addEventListener('change', () => {
+                            if (mobileEl.tagName === 'SELECT') {
+                                mobileEl.value = desktopEl.value;
+                            }
+                        });
+                        
+                        desktopEl.addEventListener('click', () => {
+                            if (desktopEl.tagName === 'BUTTON' && mobileEl.tagName === 'BUTTON') {
+                                mobileEl.click();
+                            }
+                        });
+                        
+                        // モバイルからデスクトップへ同期
+                        mobileEl.addEventListener('change', () => {
+                            if (desktopEl.tagName === 'SELECT') {
+                                desktopEl.value = mobileEl.value;
+                            }
+                        });
+                        
+                        mobileEl.addEventListener('click', () => {
+                            if (mobileEl.tagName === 'BUTTON' && desktopEl.tagName === 'BUTTON') {
+                                desktopEl.click();
                             }
                         });
                     }
                 });
             });
             
-            observer.observe(document.getElementById('network'), { childList: true, subtree: true });
-        });
-    </script>
+            // 星の背景アニメーション
+            document.addEventListener('DOMContentLoaded', function() {
+                // 流れ星のアニメーションをランダム化
+                const meteors = document.querySelectorAll('.meteor');
+                meteors.forEach(meteor => {
+                    const randomDelay = Math.random() * 10;
+                    const randomDuration = 2 + Math.random() * 3;
+                    meteor.style.setProperty('--delay', randomDelay);
+                    meteor.style.animationDuration = `${randomDuration}s`;
+                    
+                    // 位置をランダム化
+                    meteor.style.top = `${Math.random() * 70}%`;
+                    meteor.style.left = `${70 + Math.random() * 30}%`;
+                    
+                    // アニメーションを開始
+                    setTimeout(() => {
+                        meteor.style.opacity = '1';
+                    }, randomDelay * 1000);
+                });
+                
+                // ミニ星のアニメーションをランダム化
+                const stars = document.querySelectorAll('.floating-star');
+                stars.forEach(star => {
+                    const randomDelay = Math.random() * 5;
+                    const randomDuration = 4 + Math.random() * 4;
+                    star.style.setProperty('--delay', randomDelay);
+                    star.style.animationDuration = `${randomDuration}s`;
+                });
+                
+                // ポートラベルを星に変更
+                const observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                        if (mutation.addedNodes.length) {
+                            const portLabels = document.querySelectorAll('.port-label');
+                            portLabels.forEach(label => {
+                                if (!label.classList.contains('star-converted')) {
+                                    label.classList.add('star-label', 'star-converted');
+                                    label.classList.remove('port-label');
+                                }
+                            });
+                        }
+                    });
+                });
+                
+                observer.observe(document.getElementById('network'), { childList: true, subtree: true });
+            });
+        </script>
+        <script src="script.js"></script>
+    </div>
 </body>
 </html>
