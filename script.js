@@ -1,221 +1,8 @@
-// 曲のデータ
-const songsData = [
-    { id: 1, title: "ストリートライト", artist: "加賀(ネギシャワーP)", apiToken: "HmfsoBVch26BmLCm", songUrl: "https://piapro.jp/t/ULcJ/20250205120202" },
-    { id: 2, title: "アリフレーション", artist: "雨良 Amala", apiToken: "rdja5JxMEtcYmyKP", songUrl: "https://piapro.jp/t/SuQO/20250127235813" },
-    { id: 3, title: "インフォーマルダイブ", artist: "99piano", apiToken: "CqbpJNJHwoGvXhlD", songUrl: "https://piapro.jp/t/Ppc9/20241224135843" },
-    { id: 4, title: "ハロー、フェルミ。", artist: "ど～ぱみん", apiToken: "o1B1ZygOqyhK5B3D", songUrl: "https://piapro.jp/t/oTaJ/20250204234235" },
-    { id: 5, title: "パレードレコード", artist: "きさら", apiToken: "G8MU8Wf87RotH8OR", songUrl: "https://piapro.jp/t/GCgy/20250202202635" },
-    { id: 6, title: "ロンリーラン", artist: "海風太陽", apiToken: "fI0SyBEEBzlB2f5C", songUrl: "https://piapro.jp/t/CyPO/20250128183915" }
-];
-
-// ログマネージャークラス - モバイル対応拡張
-class LogManager {
-    constructor(containerId = 'log-entries', mobileContainerId = 'mobile-log-entries') {
-        this.container = document.getElementById(containerId);
-        this.mobileContainer = document.getElementById(mobileContainerId);
-        this.pendingEntries = [];
-        this.maxEntries = 100;
-        this.setupEventListeners();
-    }
-
-    setupEventListeners() {
-        // フィルターコントロールのイベントリスナー
-        const filterSelect = document.getElementById('log-filter');
-        const mobileFilterSelect = document.getElementById('mobile-log-filter');
-        
-        if (filterSelect) {
-            filterSelect.addEventListener('change', () => this.applyFilter(filterSelect.value));
-        }
-        
-        if (mobileFilterSelect) {
-            mobileFilterSelect.addEventListener('change', () => this.applyFilter(mobileFilterSelect.value));
-        }
-
-        // クリアボタンのイベントリスナー
-        const clearBtn = document.getElementById('clear-log');
-        const mobileClearBtn = document.getElementById('mobile-clear-log');
-        
-        if (clearBtn) {
-            clearBtn.addEventListener('click', () => this.clearLogs());
-        }
-        
-        if (mobileClearBtn) {
-            mobileClearBtn.addEventListener('click', () => this.clearLogs());
-        }
-
-        // 定期的なログ更新
-        this.updateInterval = setInterval(() => this.flushEntries(), 250);
-    }
-
-    // ログを追加
-    addEntry(message, type = 'info') {
-        this.pendingEntries.push({ message, type, timestamp: new Date() });
-    }
-
-    // 保留中のエントリーをDOMに反映
-    flushEntries() {
-        if (!this.pendingEntries.length) return;
-        if (!this.container && !this.mobileContainer) return;
-
-        const fragment = document.createDocumentFragment();
-        const mobileFragment = document.createDocumentFragment();
-        const currentFilter = document.getElementById('log-filter')?.value || 'all';
-        const mobileFilter = document.getElementById('mobile-log-filter')?.value || 'all';
-
-        this.pendingEntries.forEach(entry => {
-            // デスクトップ用ログエントリー
-            if (this.container) {
-                const logEntry = this.createLogEntryElement(entry, currentFilter);
-                fragment.appendChild(logEntry);
-            }
-            
-            // モバイル用ログエントリー
-            if (this.mobileContainer) {
-                const mobileLogEntry = this.createLogEntryElement(entry, mobileFilter);
-                mobileFragment.appendChild(mobileLogEntry);
-            }
-        });
-
-        // デスクトップログコンテナに追加
-        if (this.container) {
-            this.container.appendChild(fragment);
-            this.limitLogEntries(this.container);
-            this.scrollToBottom(this.container);
-        }
-        
-        // モバイルログコンテナに追加
-        if (this.mobileContainer) {
-            this.mobileContainer.appendChild(mobileFragment);
-            this.limitLogEntries(this.mobileContainer);
-            this.scrollToBottom(this.mobileContainer);
-        }
-
-        this.pendingEntries = [];
-    }
-    
-    // ログエントリーの要素を作成
-    createLogEntryElement(entry, currentFilter) {
-        const logEntry = document.createElement('div');
-        logEntry.className = `log-entry ${entry.type} flex items-start`;
-        
-        // フィルター適用
-        if (currentFilter !== 'all' && entry.type !== currentFilter) {
-            logEntry.classList.add('log-filtered');
-        }
-
-        // アイコンとメッセージを含む内部要素
-        const iconSpan = document.createElement('span');
-        iconSpan.className = `log-icon ${this.getIconClass(entry.type)}`;
-        iconSpan.textContent = this.getIcon(entry.type);
-
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'log-message';
-        messageDiv.textContent = entry.message;
-
-        const timeSpan = document.createElement('span');
-        timeSpan.className = 'log-timestamp';
-        timeSpan.textContent = entry.timestamp.toLocaleTimeString('ja-JP', { 
-            hour: '2-digit', minute: '2-digit', second: '2-digit' 
-        });
-
-        logEntry.appendChild(iconSpan);
-        logEntry.appendChild(messageDiv);
-        logEntry.appendChild(timeSpan);
-        
-        return logEntry;
-    }
-
-    // ログエントリーの数を制限
-    limitLogEntries(container) {
-        while (container.children.length > this.maxEntries) {
-            container.removeChild(container.firstChild);
-        }
-    }
-
-    // 一番下にスクロール
-    scrollToBottom(container) {
-        const logContainer = container.parentElement;
-        if (logContainer) {
-            logContainer.scrollTop = logContainer.scrollHeight;
-        }
-    }
-
-    // フィルターを適用
-    applyFilter(filterType) {
-        // デスクトップログにフィルター適用
-        if (this.container) {
-            const entries = this.container.querySelectorAll('.log-entry');
-            this.applyFilterToEntries(entries, filterType);
-        }
-        
-        // モバイルログにもフィルター適用
-        if (this.mobileContainer) {
-            const mobileEntries = this.mobileContainer.querySelectorAll('.log-entry');
-            this.applyFilterToEntries(mobileEntries, filterType);
-        }
-    }
-    
-    // エントリー集合にフィルターを適用
-    applyFilterToEntries(entries, filterType) {
-        entries.forEach(entry => {
-            if (filterType === 'all') {
-                entry.classList.remove('log-filtered');
-            } else {
-                entry.classList.toggle('log-filtered', !entry.classList.contains(filterType));
-            }
-        });
-    }
-
-    // ログをクリア
-    clearLogs() {
-        // デスクトップログクリア
-        if (this.container) {
-            this.clearLogContainer(this.container);
-        }
-        
-        // モバイルログクリア
-        if (this.mobileContainer) {
-            this.clearLogContainer(this.mobileContainer);
-        }
-    }
-    
-    // コンテナのログをクリア
-    clearLogContainer(container) {
-        const defaultMessage = document.createElement('div');
-        defaultMessage.className = 'text-gray-400 italic p-2';
-        defaultMessage.textContent = 'ログがクリアされました...';
-        container.innerHTML = '';
-        container.appendChild(defaultMessage);
-    }
-
-    // タイプに基づくアイコンを取得
-    getIcon(type) {
-        switch (type) {
-            case 'error': return '✖';
-            case 'success': return '✓';
-            case 'system': return 'ℹ';
-            default: return '●';
-        }
-    }
-
-    // タイプに基づくアイコンクラスを取得
-    getIconClass(type) {
-        switch (type) {
-            case 'error': return 'bg-red-100 text-red-500';
-            case 'success': return 'bg-accent-100 text-accent-500';
-            case 'system': return 'bg-gray-100 text-gray-500';
-            default: return 'bg-primary-100 text-primary-500';
-        }
-    }
-
-    // リソース解放
-    dispose() {
-        if (this.updateInterval) {
-            clearInterval(this.updateInterval);
-            this.updateInterval = null;
-        }
-    }
-}
+/**
+ * ミク☆スターネットワーク歌詞シミュレーター
+ * 歌詞ネットワークシミュレーション - TextAlive API統合版
+ * 初音ミクの曲の歌詞がネットワーク上を流れる様子を表示する
+ */
 
 // TextAliveネットワークシミュレーション - 歌詞流れ可視化
 class LyricsNetworkSimulation {
@@ -249,10 +36,13 @@ class LyricsNetworkSimulation {
         this.isReady = false;            // 準備完了フラグ
         this.selectedSongIndex = 0;      // 選択された曲のインデックス
         this.isTextAliveLoaded = false;  // TextAlive API読み込み完了フラグ
+        this.userInteracted = false;     // ユーザー操作があったかフラグ
+        this.fallbackActive = false;     // フォールバックモード有効フラグ
+        this.playRequestPending = false; // 再生リクエスト中フラグ
         
         // ロード画面
         this.loadingOverlay = document.createElement('div');
-        this.loadingOverlay.className = 'fixed inset-0 flex items-center justify-center bg-space-900 bg-opacity-90 z-50';
+        this.loadingOverlay.className = 'loading-overlay';
         this.loadingOverlay.innerHTML = `
             <div class="text-center">
                 <div class="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-miku-400 mb-4"></div>
@@ -265,6 +55,15 @@ class LyricsNetworkSimulation {
         // ログマネージャーの初期化（デスクトップとモバイル両方のコンテナを指定）
         this.logManager = new LogManager('log-entries', 'mobile-log-entries');
         
+        // 鑑賞用歌詞表示のための追加設定
+        this.displayedViewerLyrics = new Map(); // 表示済み鑑賞用歌詞を追跡
+        this.viewerLyricsContainer = document.getElementById('viewer-lyrics-container') || document.createElement('div');
+        if (!this.viewerLyricsContainer.parentNode) {
+            this.viewerLyricsContainer.className = 'viewer-lyrics-container absolute bottom-4 left-0 right-0 flex flex-wrap justify-center items-center gap-2 py-2 px-4 overflow-hidden z-10 pointer-events-none';
+            const networkEl = document.getElementById('network');
+            if (networkEl) networkEl.appendChild(this.viewerLyricsContainer);
+        }
+        
         // データ初期化
         this.initializeNodes();
         this.createConnections();
@@ -276,6 +75,9 @@ class LyricsNetworkSimulation {
         this.renderRoutingTable();
         this.updateLyricCounter();
         this.updateActiveTerminals();
+        
+        // ユーザー操作の検出
+        this.setupUserInteractionDetection();
         
         // TextAlive APIスクリプトをロード
         this.loadTextAliveAPI();
@@ -295,50 +97,68 @@ class LyricsNetworkSimulation {
         this.setupTabControls();
     }
     
+    // ユーザー操作検出の設定
+    setupUserInteractionDetection() {
+        const interactionHandler = () => {
+            this.userInteracted = true;
+            
+            // 操作要求メッセージがあれば削除
+            const messageEl = document.getElementById('user-interaction-message');
+            if (messageEl && messageEl.parentNode) {
+                messageEl.parentNode.removeChild(messageEl);
+            }
+        };
+        
+        // さまざまなユーザー操作イベントを検出
+        document.addEventListener('click', interactionHandler, { once: true });
+        document.addEventListener('keydown', interactionHandler, { once: true });
+        document.addEventListener('touchstart', interactionHandler, { once: true });
+    }
+    
     // TextAlive API読み込み
     async loadTextAliveAPI() {
-        // APIがロードされるまで待機する関数
-        const waitForTextAliveAPI = () => {
-            return new Promise((resolve, reject) => {
-                // すでにロードされている場合
-                if (window.TextAliveApp) {
-                    resolve();
-                    return;
+        try {
+            // スクリプトをロード
+            this.addLogEntry('TextAlive APIスクリプトを読み込み中...', 'system');
+            
+            // すでにロード済みかどうかをチェック
+            if (typeof window.TextAliveApp === 'undefined') {
+                const existingScript = document.querySelector('script[src*="textalive-app-api"]');
+                if (!existingScript) {
+                    console.log('TextAlive APIスクリプトをロードしています...');
+                    const script = document.createElement('script');
+                    script.src = "https://unpkg.com/textalive-app-api/dist/index.js";
+                    script.async = true;
+                    
+                    // スクリプトロードを待つ
+                    await new Promise((resolve, reject) => {
+                        script.onload = () => {
+                            console.log('TextAlive APIスクリプトのロード完了');
+                            resolve();
+                        };
+                        script.onerror = (e) => {
+                            console.error('TextAlive APIスクリプトのロード失敗:', e);
+                            reject(new Error('TextAlive APIスクリプトのロードに失敗しました'));
+                        };
+                        // タイムアウト
+                        setTimeout(() => reject(new Error('TextAlive APIスクリプトのロードがタイムアウトしました')), 10000);
+                        document.head.appendChild(script);
+                    });
                 }
                 
-                // ロードされるのを待つ
-                let checkCount = 0;
-                const checkInterval = setInterval(() => {
-                    if (window.TextAliveApp) {
-                        clearInterval(checkInterval);
-                        resolve();
-                        return;
-                    }
-                    
-                    // 30秒（150×200ms）経過してもロードされなければエラー
-                    checkCount++;
-                    if (checkCount > 150) {
-                        clearInterval(checkInterval);
-                        reject(new Error("TextAlive APIのロードがタイムアウトしました"));
-                    }
-                }, 200);
-            });
-        };
-
-        try {
-            // すでにロード済みならスキップ
-            const existingScript = document.querySelector('script[src*="textalive-app-api"]');
-            if (!existingScript) {
-                // スクリプトをロード
-                this.addLogEntry('TextAlive APIスクリプトを読み込み中...', 'system');
-                const script = document.createElement('script');
-                script.src = "https://unpkg.com/textalive-app-api/dist/index.js";
-                script.async = true;
-                document.head.appendChild(script);
+                // TextAliveAppが定義されるまで待機
+                for (let i = 0; i < 50; i++) {
+                    if (typeof window.TextAliveApp !== 'undefined') break;
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
             }
             
-            // APIがロードされるまで待機
-            await waitForTextAliveAPI();
+            // TextAliveAppが定義されているかチェック
+            if (typeof window.TextAliveApp === 'undefined') {
+                console.error('TextAliveAppが見つかりません');
+                throw new Error('TextAliveAppが見つかりません。');
+            }
+            
             console.log('TextAlive APIスクリプトのロードが完了しました');
             this.isTextAliveLoaded = true;
             
@@ -346,7 +166,12 @@ class LyricsNetworkSimulation {
             console.log('TextAlive API初期化開始');
             this.addLogEntry('TextAlive API初期化中...', 'system');
             
-            this.app = new window.TextAliveApp({
+            // 正しいPlayerコンストラクタ取得
+            const { Player } = window.TextAliveApp;
+            console.log('Playerコンストラクタ取得:', Player);
+            
+            // Playerインスタンス作成
+            this.player = new Player({
                 app: {
                     token: "vP37NoaGGtVq40se",
                     name: "ミク☆スターネットワーク歌詞シミュレーター"
@@ -358,8 +183,8 @@ class LyricsNetworkSimulation {
                 }
             });
             
-            // プレイヤー取得
-            this.player = this.app.player;
+            // APIの参照を保存
+            this.app = { player: this.player };
             
             // イベントリスナー設定
             this.player.addListener({
@@ -375,7 +200,7 @@ class LyricsNetworkSimulation {
             const initialSong = songsData[this.selectedSongIndex];
             this.addLogEntry(`曲「${initialSong.title}」を読み込み中...`, 'system');
             
-            await this.app.createFromSongUrl(initialSong.songUrl, {
+            await this.player.createFromSongUrl(initialSong.songUrl, {
                 video: {
                     apiKey: initialSong.apiToken
                 }
@@ -387,7 +212,39 @@ class LyricsNetworkSimulation {
             console.error('TextAlive API初期化エラー:', error);
             this.addLogEntry(`TextAlive API初期化エラー: ${error.message}`, 'error');
             this.removeLoadingOverlay();
+            
+            // フォールバックモードをセットアップ
+            this.setupFallbackMode();
         }
+    }
+    
+    // フォールバックモードのセットアップ
+    setupFallbackMode() {
+        this.fallbackActive = true;
+        this.addLogEntry("TextAlive API接続に失敗しました。フォールバックモードで実行します。", "error");
+        this.addLogEntry("このモードでは、歌詞の正確なタイミングは提供されません。", "system");
+        
+        // フォールバック用の簡易的な歌詞データ
+        this.fallbackLyrics = [
+            { text: "マジカル", time: 1000 },
+            { text: "ミライ", time: 3000 },
+            { text: "初音", time: 5000 },
+            { text: "ミク", time: 6000 },
+            { text: "歌詞が", time: 8000 },
+            { text: "流れて", time: 9500 },
+            { text: "いく", time: 11000 }
+        ];
+        
+        // フォールバックモード用タイマー
+        this.fallbackLyricsIndex = 0;
+        
+        // APIフラグを有効化して送信ボタンを使えるようにする
+        this.isReady = true;
+        this.apiLoaded = true;
+        
+        // 選択された曲情報を表示
+        const selectedSong = songsData[this.selectedSongIndex];
+        this.addLogEntry(`フォールバックモード: ${selectedSong.title} - ${selectedSong.artist}`, 'info');
     }
     
     // TextAlive App準備完了ハンドラ
@@ -399,18 +256,65 @@ class LyricsNetworkSimulation {
     // TextAlive Video準備完了ハンドラ
     handleVideoReady(v) {
         console.log('楽曲準備完了:', v);
-        console.log('ライセンス情報:', this.player.data.song.license);
+        if (this.player.data && this.player.data.song) {
+            console.log('ライセンス情報:', this.player.data.song.license);
+        }
+        
+        // プレーヤーとビデオの準備状態をログ
+        console.log('Player状態:', this.player);
+        
+        // video と phrases の存在確認（APIによって異なる場合がある）
+        if (this.player.video) {
+            console.log('Video状態:', this.player.video);
+            if (this.player.video.phrases) {
+                console.log('Phrases状態:', this.player.video.phrases.length);
+            } else {
+                console.log('Phrasesが見つかりません（API構造を確認）');
+            }
+        } else if (this.player.data && this.player.data.video) {
+            console.log('Data.video状態:', this.player.data.video);
+        }
+        
+        // APIの主要な状態と使用可能なメソッドをログ出力（デバッグ用）
+        console.log('利用可能なメソッド:');
+        if (this.player.video) {
+            console.log('- player.video.findPhrase:', typeof this.player.video.findPhrase === 'function');
+            console.log('- player.video.findWord:', typeof this.player.video.findWord === 'function');
+        }
+        console.log('- player.findPhrase:', typeof this.player.findPhrase === 'function');
+        
+        // データ構造と利用可能なメソッドをさらに詳しくチェック
+        if (this.player.data) {
+            console.log('- player.data.findPhrase:', typeof this.player.data.findPhrase === 'function');
+            if (this.player.data.song) {
+                console.log('曲名:', this.player.data.song.name);
+            }
+        }
         
         this.isReady = true;
-        this.addLogEntry(`曲「${this.player.data.song.name}」の準備完了`, 'success');
+        if (this.player.data && this.player.data.song) {
+            this.addLogEntry(`曲「${this.player.data.song.name}」の準備完了`, 'success');
+        } else {
+            this.addLogEntry('楽曲データの準備完了', 'success');
+        }
         this.updateLyricCounter();
         
         // ロード画面を削除
         this.removeLoadingOverlay();
         
         // 歌詞データを取得
-        if (this.player.video && this.player.video.firstPhrase) {
+        let phrasesFound = false;
+        if (this.player.video && this.player.video.phrases) {
+            phrasesFound = true;
             this.addLogEntry(`歌詞データを読み込みました: ${this.player.video.phrases.length}フレーズ`, 'info');
+        } else if (this.player.data && this.player.data.phrases) {
+            phrasesFound = true;
+            this.addLogEntry(`歌詞データを読み込みました: ${this.player.data.phrases.length}フレーズ`, 'info');
+        }
+        
+        if (!phrasesFound) {
+            this.addLogEntry('歌詞データが見つかりません。フォールバックモードを使用します。', 'warning');
+            this.setupFallbackMode();
         }
     }
     
@@ -424,18 +328,64 @@ class LyricsNetworkSimulation {
     // 時間更新ハンドラ
     handleTimeUpdate(position) {
         // 現在の時間位置で表示すべき歌詞を取得
-        if (!this.player || !this.player.video) return;
+        if (!this.player) return;
         
-        const phrase = this.player.findPhrase(position);
-        if (!phrase) return;
-        
-        const word = this.player.video.findWord(position);
-        
-        // 単語単位で歌詞を流す
-        if (word && this.isRunning && word.startTime <= position && !word.processed) {
-            // この単語をまだ処理していない場合、ネットワークに流す
-            this.sendLyricWord(word);
-            word.processed = true;
+        try {
+            // APIの構造に応じて適切なメソッドを呼び出す
+            let phrase = null;
+            let word = null;
+            
+            // player.findPhrase が有効な場合
+            if (typeof this.player.findPhrase === 'function') {
+                phrase = this.player.findPhrase(position);
+                
+                // phraseが見つかり、player.video.findWord が有効な場合
+                if (phrase && this.player.video && typeof this.player.video.findWord === 'function') {
+                    word = this.player.video.findWord(position);
+                }
+                // phraseが自身でfindWordを持っている場合
+                else if (phrase && typeof phrase.findWord === 'function') {
+                    word = phrase.findWord(position);
+                }
+            } 
+            // 代替の構造: player.video.findPhrase
+            else if (this.player.video && typeof this.player.video.findPhrase === 'function') {
+                phrase = this.player.video.findPhrase(position);
+                
+                if (phrase && typeof this.player.video.findWord === 'function') {
+                    word = this.player.video.findWord(position);
+                }
+            }
+            // 代替の構造: player.data.findPhrase
+            else if (this.player.data && typeof this.player.data.findPhrase === 'function') {
+                phrase = this.player.data.findPhrase(position);
+                
+                if (phrase && this.player.data && typeof this.player.data.findWord === 'function') {
+                    word = this.player.data.findWord(position);
+                }
+            }
+            
+            if (!phrase) return;
+            
+            // 単語単位で歌詞を流す
+            if (word && this.isRunning && word.startTime <= position && !word.processed) {
+                // この単語をまだ処理していない場合、ネットワークに流す
+                this.sendLyricWord(word);
+                word.processed = true;
+            }
+        } catch (e) {
+            console.error('時間更新ハンドラエラー:', e);
+            
+            // フォールバックモードに切り替え
+            if (!this.fallbackActive) {
+                this.addLogEntry('歌詞読み込みに問題が発生しました。フォールバックモードに切り替えます。', 'error');
+                this.setupFallbackMode();
+                
+                // 既に再生中なら、フォールバックモードで再生を継続
+                if (this.isRunning) {
+                    this.initiateFallbackPlayback();
+                }
+            }
         }
     }
     
@@ -444,14 +394,41 @@ class LyricsNetworkSimulation {
         this.addLogEntry('再生開始', 'success');
         this.isRunning = true;
         this.updateSimulationStatus();
+        this.playRequestPending = false;
         
-        // 歌詞処理状態をリセット
-        if (this.player && this.player.video) {
-            this.player.video.phrases.forEach(phrase => {
-                phrase.words.forEach(word => {
-                    word.processed = false;
+        // 歌詞処理状態をリセット（API構造に応じた分岐処理）
+        try {
+            console.log('歌詞データリセット');
+            
+            // player.video.phrases が存在する場合
+            if (this.player && this.player.video && this.player.video.phrases) {
+                this.player.video.phrases.forEach(phrase => {
+                    if (phrase && phrase.words) {
+                        phrase.words.forEach(word => {
+                            if (word) word.processed = false;
+                        });
+                    }
                 });
-            });
+            }
+            // player.data.phrases が存在する場合
+            else if (this.player && this.player.data && this.player.data.phrases) {
+                this.player.data.phrases.forEach(phrase => {
+                    if (phrase && phrase.words) {
+                        phrase.words.forEach(word => {
+                            if (word) word.processed = false;
+                        });
+                    }
+                });
+            }
+        } catch (e) {
+            console.error('歌詞データ処理エラー:', e);
+            this.addLogEntry('歌詞データの処理中にエラーが発生しました', 'error');
+            
+            // フォールバックモードに切り替え
+            if (!this.fallbackActive) {
+                this.setupFallbackMode();
+                this.initiateFallbackPlayback();
+            }
         }
     }
     
@@ -459,6 +436,7 @@ class LyricsNetworkSimulation {
     handlePause() {
         this.addLogEntry('再生一時停止', 'info');
         this.isRunning = false;
+        this.playRequestPending = false;
         this.updateSimulationStatus();
     }
     
@@ -466,18 +444,20 @@ class LyricsNetworkSimulation {
     handleStop() {
         this.addLogEntry('再生停止', 'info');
         this.isRunning = false;
+        this.playRequestPending = false;
         this.clearLyrics();
         this.updateSimulationStatus();
     }
     
     // 曲変更処理
     async changeSong(songIndex) {
-        if (songIndex === this.selectedSongIndex || !this.app || !this.player) return;
+        if (songIndex === this.selectedSongIndex || !this.player) return;
         
         // 現在の再生を停止
-        this.player.pause();
-        this.isRunning = false;
-        this.clearLyrics();
+        this.stopSimulation();
+        
+        // すべてのリクエストが完了するのを待つ
+        await new Promise(resolve => setTimeout(resolve, 300));
         
         // ロード画面を表示
         document.body.appendChild(this.loadingOverlay);
@@ -490,7 +470,7 @@ class LyricsNetworkSimulation {
             
             this.addLogEntry(`曲「${selectedSong.title}」を読み込み中...`, 'system');
             
-            await this.app.createFromSongUrl(selectedSong.songUrl, {
+            await this.player.createFromSongUrl(selectedSong.songUrl, {
                 video: {
                     apiKey: selectedSong.apiToken
                 }
@@ -532,6 +512,12 @@ class LyricsNetworkSimulation {
         this.connections = [];
         this.lyrics = [];
         this.activeElements.clear();
+        
+        // 鑑賞用歌詞のクリーンアップ
+        if (this.viewerLyricsContainer) {
+            this.viewerLyricsContainer.innerHTML = '';
+        }
+        this.displayedViewerLyrics.clear();
     }
     
     // 連続送信の停止
@@ -546,6 +532,11 @@ class LyricsNetworkSimulation {
         if (this.cleanupInterval) {
             clearInterval(this.cleanupInterval);
             this.cleanupInterval = null;
+        }
+        
+        if (this.fallbackTimer) {
+            clearInterval(this.fallbackTimer);
+            this.fallbackTimer = null;
         }
     }
     
@@ -808,17 +799,43 @@ class LyricsNetworkSimulation {
     }
     
     // シミュレーション停止処理
-    stopSimulation() {
+    async stopSimulation() {
         if (this.isCleaningUp) return;
         
         this.isCleaningUp = true;
         
         // TextAlive Player一時停止
-        if (this.player) {
-            this.player.pause();
+        if (this.player && !this.fallbackActive) {
+            try {
+                console.log('再生停止リクエスト送信');
+                
+                // 再生リクエスト中に停止しないように状態チェック
+                if (this.playRequestPending) {
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                }
+                
+                this.player.requestPause();
+                
+                // 確実に停止するためのフォールバック
+                setTimeout(() => {
+                    if (this.player && this.player.isPlaying) {
+                        console.log('遅延停止リクエスト送信');
+                        this.player.requestStop();
+                    }
+                }, 500);
+            } catch (e) {
+                console.error('TextAlive Player一時停止エラー:', e);
+            }
+        }
+        
+        // フォールバック機能停止
+        if (this.fallbackTimer) {
+            clearInterval(this.fallbackTimer);
+            this.fallbackTimer = null;
         }
         
         this.isRunning = false;
+        this.playRequestPending = false;
         this.clearLyrics();
         this.activeElements.clear();
         this.renderNetwork();
@@ -837,7 +854,7 @@ class LyricsNetworkSimulation {
     
     // 再生開始処理
     startPlayback() {
-        if (!this.isReady || !this.player) {
+        if (!this.isReady) {
             this.addLogEntry('曲の準備ができていません。しばらくお待ちください。', 'error');
             return;
         }
@@ -847,14 +864,197 @@ class LyricsNetworkSimulation {
             return;
         }
         
-        // TextAlive Player再生
-        this.player.play();
+        // ユーザー操作があったかチェック、なければ要求
+        if (!this.userInteracted) {
+            // まだユーザー操作メッセージが表示されていない場合
+            if (!document.getElementById('user-interaction-message')) {
+                const messageEl = document.createElement('div');
+                messageEl.id = 'user-interaction-message';
+                messageEl.className = 'fixed top-0 left-0 right-0 bg-pink-500 text-white p-2 text-center z-50';
+                messageEl.innerHTML = 'ページ上のどこかをクリックして再生を開始してください';
+                
+                document.body.appendChild(messageEl);
+                
+                // 一度だけ実行のために一時的なイベントリスナーを追加
+                const handleInteraction = () => {
+                    this.userInteracted = true;
+                    if (messageEl.parentNode) {
+                        messageEl.parentNode.removeChild(messageEl);
+                    }
+                    
+                    document.removeEventListener('click', handleInteraction);
+                    document.removeEventListener('keydown', handleInteraction);
+                    document.removeEventListener('touchstart', handleInteraction);
+                    
+                    // 少し遅延させてから再生開始
+                    setTimeout(() => {
+                        this.actuallyStartPlayback();
+                    }, 100);
+                };
+                
+                document.addEventListener('click', handleInteraction);
+                document.addEventListener('keydown', handleInteraction);
+                document.addEventListener('touchstart', handleInteraction);
+                
+                this.addLogEntry('再生を開始するには、ページ上で操作してください。', 'info');
+                return;
+            }
+            return;
+        }
+        
+        this.actuallyStartPlayback();
+    }
+    
+    // 実際に再生を開始するメソッド
+    async actuallyStartPlayback() {
+        console.log('再生を開始します...');
+        
+        if (this.player && !this.fallbackActive) {
+            try {
+                // 再生開始中フラグを立てる
+                this.playRequestPending = true;
+                
+                // デバッグ情報
+                console.log("再生開始前の状態:");
+                console.log("- userInteracted:", this.userInteracted);
+                console.log("- player:", this.player);
+                console.log("- isReady:", this.isReady);
+                
+                if (this.player.video) {
+                    console.log("- video.phrases:", this.player.video.phrases ? this.player.video.phrases.length : "なし");
+                }
+                
+                // 再生前に確実に停止状態にする
+                if (this.player.isPlaying) {
+                    await this.player.requestPause();
+                    // 少し待機して状態が更新されるのを確認
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                }
+                
+                // 再生開始
+                await this.player.requestPlay();
+                
+                // 再生状態のフィードバック
+                setTimeout(() => {
+                    console.log("再生開始後のプレイヤー状態:", this.player.isPlaying);
+                    
+                    // 再生が開始されていない場合はフォールバックモードを検討
+                    if (!this.player.isPlaying && !this.isRunning && !this.fallbackActive) {
+                        console.log("TextAlive Playerでの再生に失敗しました。フォールバックモードへ切り替えます。");
+                        this.setupFallbackMode();
+                        this.initiateFallbackPlayback();
+                    }
+                }, 1000);
+                
+            } catch (error) {
+                console.error('TextAlive Player再生エラー:', error);
+                this.addLogEntry(`再生エラー: ${error.message}`, 'error');
+                this.playRequestPending = false;
+                
+                // フォールバックモードに切り替え
+                if (!this.fallbackActive) {
+                    this.setupFallbackMode();
+                    this.initiateFallbackPlayback();
+                }
+                return;
+            }
+        } else {
+            // フォールバックモードでの再生
+            this.initiateFallbackPlayback();
+        }
         
         const sendBtn = document.getElementById('send-btn');
         if (sendBtn) {
             sendBtn.disabled = true;
             sendBtn.classList.add('opacity-50', 'cursor-not-allowed');
         }
+    }
+    
+    // フォールバックモードでの再生開始
+    initiateFallbackPlayback() {
+        console.log('フォールバックモードで再生を開始');
+        this.isRunning = true;
+        this.updateSimulationStatus();
+        
+        // 歌詞送信タイマーを開始
+        this.fallbackLyricsIndex = 0;
+        this.fallbackStartTime = Date.now();
+        
+        // 歌詞タイマーをクリア
+        if (this.fallbackTimer) clearInterval(this.fallbackTimer);
+        
+        // 定期的に歌詞をチェックして送信
+        this.fallbackTimer = setInterval(() => {
+            if (!this.isRunning) return;
+            
+            const elapsed = Date.now() - this.fallbackStartTime;
+            
+            // 未送信の歌詞があればチェック
+            while (this.fallbackLyricsIndex < this.fallbackLyrics.length) {
+                const lyric = this.fallbackLyrics[this.fallbackLyricsIndex];
+                
+                if (lyric.time <= elapsed) {
+                    // 歌詞を送信
+                    this.sendFallbackLyric(lyric.text);
+                    this.fallbackLyricsIndex++;
+                } else {
+                    break; // まだ時間が来ていない歌詞
+                }
+            }
+            
+            // すべての歌詞を送信し終えたら停止
+            if (this.fallbackLyricsIndex >= this.fallbackLyrics.length) {
+                // ループするために初期化
+                this.fallbackLyricsIndex = 0;
+                this.fallbackStartTime = Date.now();
+            }
+        }, 100);
+    }
+    
+    // フォールバックモード用の歌詞送信
+    sendFallbackLyric(text) {
+        // 通常の歌詞送信と同じような処理
+        this.lyricId++;
+        const id = this.lyricId;
+        
+        // 送信元と送信先を取得
+        const sourceSelect = document.getElementById('source');
+        const destSelect = document.getElementById('destination');
+        
+        if (!sourceSelect || !destSelect) return;
+        
+        const source = sourceSelect.value;
+        const destination = destSelect.value;
+        
+        const lyric = {
+            id,
+            source,
+            destination,
+            text: text,
+            currentNode: source,
+            nextNode: this.getNextHop(source, destination),
+            status: 'created',
+            createdAt: Date.now(),
+            completed: false,
+            hops: 0
+        };
+        
+        // 次のホップが無効な場合はエラーを記録して送信しない
+        if (!lyric.nextNode) {
+            this.addLogEntry(`歌詞 #${id}: 無効なルート設定です。`, 'error');
+            return;
+        }
+        
+        this.lyrics.push(lyric);
+        this.stats.lyricsCreated++;
+        this.addLogEntry(`歌詞 #${id}: 「${lyric.text}」を 端末 ${source} から 端末 ${destination} へ送信します。`, 'info');
+        this.updateLyricCounter();
+        
+        // 歌詞の移動を開始
+        this.moveLyric(lyric);
+        
+        // 鑑賞用歌詞も表示
+        this.displayViewerLyric(lyric.text);
     }
     
     // シミュレーション状態表示の更新
@@ -1006,6 +1206,11 @@ class LyricsNetworkSimulation {
             nodeEl.addEventListener('mouseleave', () => this.unhighlightConnections(id));
             
             networkEl.appendChild(nodeEl);
+        }
+        
+        // 鑑賞用歌詞コンテナの再追加
+        if (this.viewerLyricsContainer && !this.viewerLyricsContainer.parentNode) {
+            networkEl.appendChild(this.viewerLyricsContainer);
         }
     }
     
@@ -1354,6 +1559,9 @@ class LyricsNetworkSimulation {
         
         // 歌詞の移動を開始
         this.moveLyric(lyric);
+        
+        // 鑑賞用歌詞も表示
+        this.displayViewerLyric(lyric.text);
     }
     
     // 次のホップを取得
@@ -1729,6 +1937,10 @@ class LyricsNetworkSimulation {
         this.lyrics = [];
         this.updateLyricCounter();
         
+        // アクティブな要素をクリア
+        this.activeElements.clear();
+        this.updateActiveConnections();
+        
         // すべての歌詞要素を削除
         const networkEl = document.getElementById('network');
         if (!networkEl) return;
@@ -1750,6 +1962,12 @@ class LyricsNetworkSimulation {
                 console.error('歌詞削除アニメーションエラー:', e);
             }
         });
+        
+        // 鑑賞用歌詞もクリア
+        if (this.viewerLyricsContainer) {
+            this.viewerLyricsContainer.innerHTML = '';
+        }
+        this.displayedViewerLyrics.clear();
     }
     
     // 歌詞カウンターの更新
@@ -1761,10 +1979,254 @@ class LyricsNetworkSimulation {
         }
     }
     
+    // 鑑賞用歌詞を表示
+    displayViewerLyric(text) {
+        // 既に表示されている場合は何もしない
+        if (this.displayedViewerLyrics.has(text)) return;
+        if (!this.viewerLyricsContainer) return;
+
+        const viewerChar = document.createElement('span');
+        viewerChar.className = 'viewer-lyric-char';
+        viewerChar.textContent = text;
+        viewerChar.style.opacity = '0';
+        this.viewerLyricsContainer.appendChild(viewerChar);
+
+        // タイプライター効果で表示
+        setTimeout(() => {
+            viewerChar.style.opacity = '1';
+            viewerChar.style.transform = 'translateY(0)';
+        }, 50);
+
+        // 歌詞要素を追跡
+        this.displayedViewerLyrics.set(text, {
+            element: viewerChar
+        });
+
+        // 一定時間後に鑑賞用歌詞を削除
+        setTimeout(() => {
+            viewerChar.style.opacity = '0';
+            setTimeout(() => {
+                if (viewerChar.parentNode) {
+                    viewerChar.parentNode.removeChild(viewerChar);
+                }
+                this.displayedViewerLyrics.delete(text);
+            }, 1000);
+        }, 8000);
+    }
+    
     // ログエントリーを追加
     addLogEntry(message, type = 'info') {
         // ログマネージャーに転送
         this.logManager.addEntry(message, type);
+    }
+}
+
+// ログマネージャークラス - モバイル対応拡張
+class LogManager {
+    constructor(containerId = 'log-entries', mobileContainerId = 'mobile-log-entries') {
+        this.container = document.getElementById(containerId);
+        this.mobileContainer = document.getElementById(mobileContainerId);
+        this.pendingEntries = [];
+        this.maxEntries = 100;
+        this.setupEventListeners();
+    }
+
+    setupEventListeners() {
+        // フィルターコントロールのイベントリスナー
+        const filterSelect = document.getElementById('log-filter');
+        const mobileFilterSelect = document.getElementById('mobile-log-filter');
+        
+        if (filterSelect) {
+            filterSelect.addEventListener('change', () => this.applyFilter(filterSelect.value));
+        }
+        
+        if (mobileFilterSelect) {
+            mobileFilterSelect.addEventListener('change', () => this.applyFilter(mobileFilterSelect.value));
+        }
+
+        // クリアボタンのイベントリスナー
+        const clearBtn = document.getElementById('clear-log');
+        const mobileClearBtn = document.getElementById('mobile-clear-log');
+        
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => this.clearLogs());
+        }
+        
+        if (mobileClearBtn) {
+            mobileClearBtn.addEventListener('click', () => this.clearLogs());
+        }
+
+        // 定期的なログ更新
+        this.updateInterval = setInterval(() => this.flushEntries(), 250);
+    }
+
+    // ログを追加
+    addEntry(message, type = 'info') {
+        this.pendingEntries.push({ message, type, timestamp: new Date() });
+    }
+
+    // 保留中のエントリーをDOMに反映
+    flushEntries() {
+        if (!this.pendingEntries.length) return;
+        if (!this.container && !this.mobileContainer) return;
+
+        const fragment = document.createDocumentFragment();
+        const mobileFragment = document.createDocumentFragment();
+        const currentFilter = document.getElementById('log-filter')?.value || 'all';
+        const mobileFilter = document.getElementById('mobile-log-filter')?.value || 'all';
+
+        this.pendingEntries.forEach(entry => {
+            // デスクトップ用ログエントリー
+            if (this.container) {
+                const logEntry = this.createLogEntryElement(entry, currentFilter);
+                fragment.appendChild(logEntry);
+            }
+            
+            // モバイル用ログエントリー
+            if (this.mobileContainer) {
+                const mobileLogEntry = this.createLogEntryElement(entry, mobileFilter);
+                mobileFragment.appendChild(mobileLogEntry);
+            }
+        });
+
+        // デスクトップログコンテナに追加
+        if (this.container) {
+            this.container.appendChild(fragment);
+            this.limitLogEntries(this.container);
+            this.scrollToBottom(this.container);
+        }
+        
+        // モバイルログコンテナに追加
+        if (this.mobileContainer) {
+            this.mobileContainer.appendChild(mobileFragment);
+            this.limitLogEntries(this.mobileContainer);
+            this.scrollToBottom(this.mobileContainer);
+        }
+
+        this.pendingEntries = [];
+    }
+    
+    // ログエントリーの要素を作成
+    createLogEntryElement(entry, currentFilter) {
+        const logEntry = document.createElement('div');
+        logEntry.className = `log-entry ${entry.type} flex items-start`;
+        
+        // フィルター適用
+        if (currentFilter !== 'all' && entry.type !== currentFilter) {
+            logEntry.classList.add('log-filtered');
+        }
+
+        // アイコンとメッセージを含む内部要素
+        const iconSpan = document.createElement('span');
+        iconSpan.className = `log-icon ${this.getIconClass(entry.type)}`;
+        iconSpan.textContent = this.getIcon(entry.type);
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'log-message';
+        messageDiv.textContent = entry.message;
+
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'log-timestamp';
+        timeSpan.textContent = entry.timestamp.toLocaleTimeString('ja-JP', { 
+            hour: '2-digit', minute: '2-digit', second: '2-digit' 
+        });
+
+        logEntry.appendChild(iconSpan);
+        logEntry.appendChild(messageDiv);
+        logEntry.appendChild(timeSpan);
+        
+        return logEntry;
+    }
+
+    // ログエントリーの数を制限
+    limitLogEntries(container) {
+        while (container.children.length > this.maxEntries) {
+            container.removeChild(container.firstChild);
+        }
+    }
+
+    // 一番下にスクロール
+    scrollToBottom(container) {
+        const logContainer = container.parentElement;
+        if (logContainer) {
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+    }
+
+    // フィルターを適用
+    applyFilter(filterType) {
+        // デスクトップログにフィルター適用
+        if (this.container) {
+            const entries = this.container.querySelectorAll('.log-entry');
+            this.applyFilterToEntries(entries, filterType);
+        }
+        
+        // モバイルログにもフィルター適用
+        if (this.mobileContainer) {
+            const mobileEntries = this.mobileContainer.querySelectorAll('.log-entry');
+            this.applyFilterToEntries(mobileEntries, filterType);
+        }
+    }
+    
+    // エントリー集合にフィルターを適用
+    applyFilterToEntries(entries, filterType) {
+        entries.forEach(entry => {
+            if (filterType === 'all') {
+                entry.classList.remove('log-filtered');
+            } else {
+                entry.classList.toggle('log-filtered', !entry.classList.contains(filterType));
+            }
+        });
+    }
+
+    // ログをクリア
+    clearLogs() {
+        // デスクトップログクリア
+        if (this.container) {
+            this.clearLogContainer(this.container);
+        }
+        
+        // モバイルログクリア
+        if (this.mobileContainer) {
+            this.clearLogContainer(this.mobileContainer);
+        }
+    }
+    
+    // コンテナのログをクリア
+    clearLogContainer(container) {
+        const defaultMessage = document.createElement('div');
+        defaultMessage.className = 'text-gray-400 italic p-2';
+        defaultMessage.textContent = 'ログがクリアされました...';
+        container.innerHTML = '';
+        container.appendChild(defaultMessage);
+    }
+
+    // タイプに基づくアイコンを取得
+    getIcon(type) {
+        switch (type) {
+            case 'error': return '✖';
+            case 'success': return '✓';
+            case 'system': return 'ℹ';
+            default: return '●';
+        }
+    }
+
+    // タイプに基づくアイコンクラスを取得
+    getIconClass(type) {
+        switch (type) {
+            case 'error': return 'bg-red-100 text-red-500';
+            case 'success': return 'bg-accent-100 text-accent-500';
+            case 'system': return 'bg-gray-100 text-gray-500';
+            default: return 'bg-primary-100 text-primary-500';
+        }
+    }
+
+    // リソース解放
+    dispose() {
+        if (this.updateInterval) {
+            clearInterval(this.updateInterval);
+            this.updateInterval = null;
+        }
     }
 }
 
