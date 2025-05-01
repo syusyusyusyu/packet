@@ -1,3 +1,13 @@
+// 曲のデータ
+const songsData = [
+    { id: 1, title: "ストリートライト", artist: "加賀(ネギシャワーP)", apiToken: "HmfsoBVch26BmLCm", songUrl: "https://piapro.jp/t/ULcJ/20250205120202" },
+    { id: 2, title: "アリフレーション", artist: "雨良 Amala", apiToken: "rdja5JxMEtcYmyKP", songUrl: "https://piapro.jp/t/SuQO/20250127235813" },
+    { id: 3, title: "インフォーマルダイブ", artist: "99piano", apiToken: "CqbpJNJHwoGvXhlD", songUrl: "https://piapro.jp/t/Ppc9/20241224135843" },
+    { id: 4, title: "ハロー、フェルミ。", artist: "ど～ぱみん", apiToken: "o1B1ZygOqyhK5B3D", songUrl: "https://piapro.jp/t/oTaJ/20250204234235" },
+    { id: 5, title: "パレードレコード", artist: "きさら", apiToken: "G8MU8Wf87RotH8OR", songUrl: "https://piapro.jp/t/GCgy/20250202202635" },
+    { id: 6, title: "ロンリーラン", artist: "海風太陽", apiToken: "fI0SyBEEBzlB2f5C", songUrl: "https://piapro.jp/t/CyPO/20250128183915" }
+];
+
 // ログマネージャークラス - モバイル対応拡張
 class LogManager {
     constructor(containerId = 'log-entries', mobileContainerId = 'mobile-log-entries') {
@@ -207,18 +217,17 @@ class LogManager {
     }
 }
 
-// ネットワークトポロジーとルーティングシミュレーション - モバイル対応拡張
-class NetworkSimulation {
+// TextAliveネットワークシミュレーション - 歌詞流れ可視化
+class LyricsNetworkSimulation {
     constructor() {
         // 基本設定
         this.nodes = {};                 // ノード情報を格納
         this.connections = [];           // ノード間の接続情報
-        this.packets = [];               // パケット情報
-        this.packetId = 0;               // パケットID（自動増加）
+        this.lyrics = [];                // 歌詞情報
+        this.lyricId = 0;                // 歌詞ID（自動増加）
         this.isRunning = false;          // シミュレーション実行中かどうか
         this.isCleaningUp = false;       // クリーンアップ処理中フラグ
         this.sendInterval = null;        // 定期送信用インターバル
-        this.sendRate = 1000;            // 送信間隔（ミリ秒）
         this.scaleFactor = 1;            // 表示スケール係数
         this.offsetX = 0;                // X軸オフセット
         this.offsetY = 0;                // Y軸オフセット
@@ -229,10 +238,29 @@ class NetworkSimulation {
         this.currentDestination = null;  // 現在の送信先
         this.animationFrames = new Map();// アニメーションフレームを追跡
         this.stats = {                   // 統計情報
-            packetsCreated: 0,
-            packetsDelivered: 0,
+            lyricsCreated: 0,
+            lyricsDelivered: 0,
             totalHops: 0
         };
+        
+        // TextAlive API関連
+        this.player = null;              // TextAlive Player
+        this.app = null;                 // TextAlive App
+        this.isReady = false;            // 準備完了フラグ
+        this.selectedSongIndex = 0;      // 選択された曲のインデックス
+        this.isTextAliveLoaded = false;  // TextAlive API読み込み完了フラグ
+        
+        // ロード画面
+        this.loadingOverlay = document.createElement('div');
+        this.loadingOverlay.className = 'fixed inset-0 flex items-center justify-center bg-space-900 bg-opacity-90 z-50';
+        this.loadingOverlay.innerHTML = `
+            <div class="text-center">
+                <div class="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-miku-400 mb-4"></div>
+                <p class="text-white text-xl font-medium mb-2">TextAlive API を読み込み中...</p>
+                <p class="text-miku-300">ライセンス情報がコンソールに表示されるまでお待ちください</p>
+            </div>
+        `;
+        document.body.appendChild(this.loadingOverlay);
         
         // ログマネージャーの初期化（デスクトップとモバイル両方のコンテナを指定）
         this.logManager = new LogManager('log-entries', 'mobile-log-entries');
@@ -246,8 +274,11 @@ class NetworkSimulation {
         this.setupEventListeners();
         this.renderNetwork();
         this.renderRoutingTable();
-        this.updatePacketCounter();
+        this.updateLyricCounter();
         this.updateActiveTerminals();
+        
+        // TextAlive APIスクリプトをロード
+        this.loadTextAliveAPI();
         
         // ウィンドウサイズ変更時の処理
         this.resizeHandler = this.handleResize.bind(this);
@@ -264,6 +295,214 @@ class NetworkSimulation {
         this.setupTabControls();
     }
     
+    // TextAlive API読み込み
+    async loadTextAliveAPI() {
+        // APIがロードされるまで待機する関数
+        const waitForTextAliveAPI = () => {
+            return new Promise((resolve, reject) => {
+                // すでにロードされている場合
+                if (window.TextAliveApp) {
+                    resolve();
+                    return;
+                }
+                
+                // ロードされるのを待つ
+                let checkCount = 0;
+                const checkInterval = setInterval(() => {
+                    if (window.TextAliveApp) {
+                        clearInterval(checkInterval);
+                        resolve();
+                        return;
+                    }
+                    
+                    // 30秒（150×200ms）経過してもロードされなければエラー
+                    checkCount++;
+                    if (checkCount > 150) {
+                        clearInterval(checkInterval);
+                        reject(new Error("TextAlive APIのロードがタイムアウトしました"));
+                    }
+                }, 200);
+            });
+        };
+
+        try {
+            // すでにロード済みならスキップ
+            const existingScript = document.querySelector('script[src*="textalive-app-api"]');
+            if (!existingScript) {
+                // スクリプトをロード
+                this.addLogEntry('TextAlive APIスクリプトを読み込み中...', 'system');
+                const script = document.createElement('script');
+                script.src = "https://unpkg.com/textalive-app-api/dist/index.js";
+                script.async = true;
+                document.head.appendChild(script);
+            }
+            
+            // APIがロードされるまで待機
+            await waitForTextAliveAPI();
+            console.log('TextAlive APIスクリプトのロードが完了しました');
+            this.isTextAliveLoaded = true;
+            
+            // 初期化処理
+            console.log('TextAlive API初期化開始');
+            this.addLogEntry('TextAlive API初期化中...', 'system');
+            
+            this.app = new window.TextAliveApp({
+                app: {
+                    token: "vP37NoaGGtVq40se",
+                    name: "ミク☆スターネットワーク歌詞シミュレーター"
+                },
+                player: {
+                    mediaElement: document.createElement("audio"),
+                    mediaBannerPosition: "bottom right",
+                    defaultFontSize: "25px"
+                }
+            });
+            
+            // プレイヤー取得
+            this.player = this.app.player;
+            
+            // イベントリスナー設定
+            this.player.addListener({
+                onAppReady: this.handleAppReady.bind(this),
+                onVideoReady: this.handleVideoReady.bind(this),
+                onTimeUpdate: this.handleTimeUpdate.bind(this),
+                onPlay: this.handlePlay.bind(this),
+                onPause: this.handlePause.bind(this),
+                onStop: this.handleStop.bind(this)
+            });
+            
+            // 初期曲の設定
+            const initialSong = songsData[this.selectedSongIndex];
+            this.addLogEntry(`曲「${initialSong.title}」を読み込み中...`, 'system');
+            
+            await this.app.createFromSongUrl(initialSong.songUrl, {
+                video: {
+                    apiKey: initialSong.apiToken
+                }
+            });
+            
+            console.log('TextAlive API初期化成功');
+        
+        } catch (error) {
+            console.error('TextAlive API初期化エラー:', error);
+            this.addLogEntry(`TextAlive API初期化エラー: ${error.message}`, 'error');
+            this.removeLoadingOverlay();
+        }
+    }
+    
+    // TextAlive App準備完了ハンドラ
+    handleAppReady(app) {
+        console.log('TextAlive App準備完了:', app);
+        this.addLogEntry('TextAlive App準備完了', 'system');
+    }
+    
+    // TextAlive Video準備完了ハンドラ
+    handleVideoReady(v) {
+        console.log('楽曲準備完了:', v);
+        console.log('ライセンス情報:', this.player.data.song.license);
+        
+        this.isReady = true;
+        this.addLogEntry(`曲「${this.player.data.song.name}」の準備完了`, 'success');
+        this.updateLyricCounter();
+        
+        // ロード画面を削除
+        this.removeLoadingOverlay();
+        
+        // 歌詞データを取得
+        if (this.player.video && this.player.video.firstPhrase) {
+            this.addLogEntry(`歌詞データを読み込みました: ${this.player.video.phrases.length}フレーズ`, 'info');
+        }
+    }
+    
+    // ロード画面を削除
+    removeLoadingOverlay() {
+        if (this.loadingOverlay && this.loadingOverlay.parentNode) {
+            this.loadingOverlay.parentNode.removeChild(this.loadingOverlay);
+        }
+    }
+    
+    // 時間更新ハンドラ
+    handleTimeUpdate(position) {
+        // 現在の時間位置で表示すべき歌詞を取得
+        if (!this.player || !this.player.video) return;
+        
+        const phrase = this.player.findPhrase(position);
+        if (!phrase) return;
+        
+        const word = this.player.video.findWord(position);
+        
+        // 単語単位で歌詞を流す
+        if (word && this.isRunning && word.startTime <= position && !word.processed) {
+            // この単語をまだ処理していない場合、ネットワークに流す
+            this.sendLyricWord(word);
+            word.processed = true;
+        }
+    }
+    
+    // 再生開始ハンドラ
+    handlePlay() {
+        this.addLogEntry('再生開始', 'success');
+        this.isRunning = true;
+        this.updateSimulationStatus();
+        
+        // 歌詞処理状態をリセット
+        if (this.player && this.player.video) {
+            this.player.video.phrases.forEach(phrase => {
+                phrase.words.forEach(word => {
+                    word.processed = false;
+                });
+            });
+        }
+    }
+    
+    // 一時停止ハンドラ
+    handlePause() {
+        this.addLogEntry('再生一時停止', 'info');
+        this.isRunning = false;
+        this.updateSimulationStatus();
+    }
+    
+    // 停止ハンドラ
+    handleStop() {
+        this.addLogEntry('再生停止', 'info');
+        this.isRunning = false;
+        this.clearLyrics();
+        this.updateSimulationStatus();
+    }
+    
+    // 曲変更処理
+    async changeSong(songIndex) {
+        if (songIndex === this.selectedSongIndex || !this.app || !this.player) return;
+        
+        // 現在の再生を停止
+        this.player.pause();
+        this.isRunning = false;
+        this.clearLyrics();
+        
+        // ロード画面を表示
+        document.body.appendChild(this.loadingOverlay);
+        this.isReady = false;
+        
+        try {
+            // 新しい曲を読み込む
+            const selectedSong = songsData[songIndex];
+            this.selectedSongIndex = songIndex;
+            
+            this.addLogEntry(`曲「${selectedSong.title}」を読み込み中...`, 'system');
+            
+            await this.app.createFromSongUrl(selectedSong.songUrl, {
+                video: {
+                    apiKey: selectedSong.apiToken
+                }
+            });
+            
+        } catch (error) {
+            console.error('曲変更エラー:', error);
+            this.addLogEntry(`曲変更エラー: ${error.message}`, 'error');
+            this.removeLoadingOverlay();
+        }
+    }
+    
     // リソース解放
     dispose() {
         window.removeEventListener('resize', this.resizeHandler);
@@ -277,17 +516,37 @@ class NetworkSimulation {
         }
         this.animationFrames.clear();
         
+        // TextAlive Player解放
+        if (this.player) {
+            this.player.dispose();
+        }
+        
         // ログマネージャーの解放
         this.logManager.dispose();
         
         // UIクリア
-        this.clearPackets();
+        this.clearLyrics();
         
         // メモリリークを防ぐためにDOM参照をクリア
         this.nodes = {};
         this.connections = [];
-        this.packets = [];
+        this.lyrics = [];
         this.activeElements.clear();
+    }
+    
+    // 連続送信の停止
+    stopContinuousSending() {
+        this.isRunning = false;
+        
+        if (this.sendInterval) {
+            clearInterval(this.sendInterval);
+            this.sendInterval = null;
+        }
+        
+        if (this.cleanupInterval) {
+            clearInterval(this.cleanupInterval);
+            this.cleanupInterval = null;
+        }
     }
     
     // ウィンドウサイズ変更ハンドラー
@@ -375,18 +634,35 @@ class NetworkSimulation {
         this.calculateScaleFactor();
         
         // ログの初期メッセージ
-        this.addLogEntry('ネットワークルーティングシミュレーションを初期化しました。', 'system');
-        this.addLogEntry('「送信開始」ボタンをクリックしてシミュレーションを開始します。', 'system');
+        this.addLogEntry('ミク☆スターネットワーク歌詞シミュレーションを初期化しました。', 'system');
+        this.addLogEntry('TextAlive APIを読み込み中です。', 'system');
+        this.addLogEntry('「送信開始」ボタンをクリックして再生を開始します。', 'system');
         this.addLogEntry('「H」キーを押すとヘルプが表示されます。', 'system');
-        
-        // パケットレートの初期値を設定
-        const packetRateSelect = document.getElementById('packet-rate');
-        if (packetRateSelect) {
-            this.sendRate = parseInt(packetRateSelect.value);
-        }
         
         // シミュレーションの状態表示を更新
         this.updateSimulationStatus();
+        
+        // 曲選択ドロップダウンを設定
+        this.updateSongSelectionDropdown();
+    }
+    
+    // 曲選択ドロップダウンの更新
+    updateSongSelectionDropdown() {
+        const songSelect = document.getElementById('song-select');
+        if (!songSelect) return;
+        
+        songSelect.innerHTML = '';
+        
+        // 曲データからオプションを生成
+        songsData.forEach((song, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = `${song.title} - ${song.artist}`;
+            songSelect.appendChild(option);
+        });
+        
+        // 初期選択値を設定
+        songSelect.value = this.selectedSongIndex;
     }
     
     // ノード位置の初期化
@@ -521,22 +797,7 @@ class NetworkSimulation {
             if (this.isRunning) {
                 this.stopSimulation();
             } else {
-                const source = document.getElementById('source').value;
-                const destination = document.getElementById('destination').value;
-                
-                if (source === destination) {
-                    this.addLogEntry('同一端末に送信することはできません。', 'error');
-                    return;
-                }
-                
-                this.startContinuousSending(source, destination);
-                
-                const sendBtn = document.getElementById('send-btn');
-                if (sendBtn) {
-                    sendBtn.disabled = true;
-                    sendBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                }
-                this.updateSimulationStatus();
+                this.startPlayback();
             }
         }
         
@@ -552,11 +813,16 @@ class NetworkSimulation {
         
         this.isCleaningUp = true;
         
-        this.stopContinuousSending();
-        this.clearPackets();
+        // TextAlive Player一時停止
+        if (this.player) {
+            this.player.pause();
+        }
+        
+        this.isRunning = false;
+        this.clearLyrics();
         this.activeElements.clear();
         this.renderNetwork();
-        this.addLogEntry('シミュレーションを停止しました。', 'info');
+        this.addLogEntry('再生を停止しました。', 'info');
         
         const sendBtn = document.getElementById('send-btn');
         if (sendBtn) {
@@ -569,17 +835,39 @@ class NetworkSimulation {
         this.isCleaningUp = false;
     }
     
+    // 再生開始処理
+    startPlayback() {
+        if (!this.isReady || !this.player) {
+            this.addLogEntry('曲の準備ができていません。しばらくお待ちください。', 'error');
+            return;
+        }
+        
+        if (this.isRunning) {
+            this.stopSimulation();
+            return;
+        }
+        
+        // TextAlive Player再生
+        this.player.play();
+        
+        const sendBtn = document.getElementById('send-btn');
+        if (sendBtn) {
+            sendBtn.disabled = true;
+            sendBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+    }
+    
     // シミュレーション状態表示の更新
     updateSimulationStatus() {
         const statusEl = document.getElementById('simulation-status');
         if (!statusEl) return;
         
         if (this.isRunning) {
-            statusEl.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-accent-100 text-accent-800 shadow-sm transition-all duration-300';
-            statusEl.innerHTML = '<span class="h-2.5 w-2.5 mr-1.5 rounded-full bg-accent-500 animate-pulse"></span>実行中';
+            statusEl.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-miku-500 bg-opacity-20 text-miku-300 shadow-sm transition-all duration-300';
+            statusEl.innerHTML = '<span class="h-2.5 w-2.5 mr-1.5 rounded-full bg-miku-400 animate-pulse"></span>再生中';
         } else {
-            statusEl.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 shadow-sm transition-all duration-300';
-            statusEl.innerHTML = '<span class="h-2.5 w-2.5 mr-1.5 rounded-full bg-red-400"></span>停止中';
+            statusEl.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-pink-500 bg-opacity-20 text-pink-300 shadow-sm transition-all duration-300';
+            statusEl.innerHTML = '<span class="h-2.5 w-2.5 mr-1.5 rounded-full bg-pink-400"></span>停止中';
         }
     }
     
@@ -850,27 +1138,11 @@ class NetworkSimulation {
         const sendBtn = document.getElementById('send-btn');
         const stopBtn = document.getElementById('stop-btn');
         const fullscreenBtn = document.getElementById('fullscreen-btn');
-        const packetRateSelect = document.getElementById('packet-rate');
+        const songSelect = document.getElementById('song-select');
         
         if (sendBtn) {
             sendBtn.addEventListener('click', () => {
-                const source = document.getElementById('source').value;
-                const destination = document.getElementById('destination').value;
-                
-                if (source === destination) {
-                    this.addLogEntry('同一端末に送信することはできません。', 'error');
-                    return;
-                }
-                
-                // 連続送信を開始
-                this.startContinuousSending(source, destination);
-                
-                // ボタン状態を更新
-                sendBtn.disabled = true;
-                sendBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                
-                // シミュレーション状態を更新
-                this.updateSimulationStatus();
+                this.startPlayback();
             });
         }
         
@@ -888,17 +1160,10 @@ class NetworkSimulation {
             });
         }
         
-        if (packetRateSelect) {
-            packetRateSelect.addEventListener('change', () => {
-                this.sendRate = parseInt(packetRateSelect.value);
-                if (this.isRunning) {
-                    // 新しいレートで再開
-                    const source = this.currentSource;
-                    const destination = this.currentDestination;
-                    this.stopContinuousSending();
-                    this.startContinuousSending(source, destination);
-                    this.addLogEntry(`送信間隔を ${this.sendRate}ミリ秒に変更しました。`, 'info');
-                }
+        if (songSelect) {
+            songSelect.addEventListener('change', () => {
+                const selectedIndex = parseInt(songSelect.value);
+                this.changeSong(selectedIndex);
             });
         }
         
@@ -1047,108 +1312,27 @@ class NetworkSimulation {
         }
     }
     
-    // 連続送信の開始
-    startContinuousSending(source, destination) {
-        if (this.isRunning) {
-            this.stopContinuousSending();
-        }
+    // 歌詞送信処理
+    sendLyricWord(word) {
+        if (!this.isRunning || !word) return;
         
-        this.isRunning = true;
-        this.currentSource = source;
-        this.currentDestination = destination;
+        this.lyricId++;
+        const id = this.lyricId;
         
-        // 統計情報をリセット
-        this.stats.packetsCreated = 0;
-        this.stats.packetsDelivered = 0;
-        this.stats.totalHops = 0;
+        // 送信元と送信先を取得
+        const sourceSelect = document.getElementById('source');
+        const destSelect = document.getElementById('destination');
         
-        // 最初のパケットをすぐに送信
-        this.sendPacket(source, destination);
+        if (!sourceSelect || !destSelect) return;
         
-        // 連続送信用インターバルを設定
-        this.sendInterval = setInterval(() => {
-            if (this.isRunning) {
-                // 現在の送信元/送信先を取得
-                const sourceSelect = document.getElementById('source');
-                const destSelect = document.getElementById('destination');
-                
-                if (sourceSelect && destSelect) {
-                    const currentSource = sourceSelect.value;
-                    const currentDest = destSelect.value;
-                    
-                    // アクティブなパケットの最大数を制限
-                    if (this.packets.filter(p => !p.completed).length < 20) {
-                        this.sendPacket(currentSource, currentDest);
-                    }
-                }
-            }
-        }, this.sendRate);
+        const source = sourceSelect.value;
+        const destination = destSelect.value;
         
-        // 完了したパケットを定期的にクリーンアップ
-        this.cleanupInterval = setInterval(() => {
-            this.cleanupCompletedPackets();
-        }, 10000); // 10秒ごと
-        
-        this.addLogEntry(`端末 ${source} から 端末 ${destination} への連続送信を開始しました。間隔: ${this.sendRate}ミリ秒`, 'info');
-    }
-    
-    // 連続送信の停止
-    stopContinuousSending() {
-        this.isRunning = false;
-        this.currentSource = null;
-        this.currentDestination = null;
-        
-        if (this.sendInterval) {
-            clearInterval(this.sendInterval);
-            this.sendInterval = null;
-        }
-        
-        if (this.cleanupInterval) {
-            clearInterval(this.cleanupInterval);
-            this.cleanupInterval = null;
-        }
-        
-        // アニメーションフレームをすべてキャンセル
-        for (const [id, frameId] of this.animationFrames.entries()) {
-            cancelAnimationFrame(frameId);
-        }
-        this.animationFrames.clear();
-    }
-    
-    // 完了したパケットのクリーンアップ
-    cleanupCompletedPackets() {
-        if (!this.isRunning) return;
-        
-        const now = Date.now();
-        
-        // 完了または停滞したパケットを削除
-        for (let i = this.packets.length - 1; i >= 0; i--) {
-            const packet = this.packets[i];
-            if (packet.completed || now - packet.createdAt > 30000) { // 30秒タイムアウト
-                // パケットに関連するアニメーションフレームをキャンセル
-                if (this.animationFrames.has(packet.id)) {
-                    cancelAnimationFrame(this.animationFrames.get(packet.id));
-                    this.animationFrames.delete(packet.id);
-                }
-                
-                this.packets.splice(i, 1);
-            }
-        }
-        
-        this.updatePacketCounter();
-    }
-    
-    // パケットの送信
-    sendPacket(source, destination) {
-        if (!this.isRunning) return;
-        
-        this.packetId++;
-        const id = this.packetId;
-        
-        const packet = {
+        const lyric = {
             id,
             source,
             destination,
+            text: word.text,
             currentNode: source,
             nextNode: this.getNextHop(source, destination),
             status: 'created',
@@ -1158,18 +1342,18 @@ class NetworkSimulation {
         };
         
         // 次のホップが無効な場合はエラーを記録して送信しない
-        if (!packet.nextNode) {
-            this.addLogEntry(`パケット #${id}: 無効なルート設定です。`, 'error');
+        if (!lyric.nextNode) {
+            this.addLogEntry(`歌詞 #${id}: 無効なルート設定です。`, 'error');
             return;
         }
         
-        this.packets.push(packet);
-        this.stats.packetsCreated++;
-        this.addLogEntry(`パケット #${id}: 端末 ${source} から 端末 ${destination} へ送信します。`, 'info');
-        this.updatePacketCounter();
+        this.lyrics.push(lyric);
+        this.stats.lyricsCreated++;
+        this.addLogEntry(`歌詞 #${id}: 「${lyric.text}」を 端末 ${source} から 端末 ${destination} へ送信します。`, 'info');
+        this.updateLyricCounter();
         
-        // パケットの移動を開始
-        this.movePacket(packet);
+        // 歌詞の移動を開始
+        this.moveLyric(lyric);
     }
     
     // 次のホップを取得
@@ -1224,29 +1408,29 @@ class NetworkSimulation {
         return null;
     }
     
-    // パケットの移動
-    movePacket(packet) {
-        if (!this.isRunning || packet.completed) return;
+    // 歌詞の移動
+    moveLyric(lyric) {
+        if (!this.isRunning || lyric.completed) return;
         
-        const fromNode = this.nodes[packet.currentNode];
-        const toNode = this.nodes[packet.nextNode];
+        const fromNode = this.nodes[lyric.currentNode];
+        const toNode = this.nodes[lyric.nextNode];
         
         if (!fromNode || !toNode) {
-            this.addLogEntry(`パケット #${packet.id}: 無効なルートです (${packet.currentNode} -> ${packet.nextNode})。`, 'error');
-            packet.completed = true;
-            this.updatePacketCounter();
+            this.addLogEntry(`歌詞 #${lyric.id}: 無効なルートです (${lyric.currentNode} -> ${lyric.nextNode})。`, 'error');
+            lyric.completed = true;
+            this.updateLyricCounter();
             return;
         }
         
         // ホップ数を増やす
-        packet.hops++;
+        lyric.hops++;
         
-        const portNumber = this.getPortNumber(packet.currentNode, packet.nextNode);
-        const connectionId = this.getConnectionId(packet.currentNode, packet.nextNode);
+        const portNumber = this.getPortNumber(lyric.currentNode, lyric.nextNode);
+        const connectionId = this.getConnectionId(lyric.currentNode, lyric.nextNode);
         
         // アクティブな要素をハイライト表示に追加
-        this.activeElements.add(packet.currentNode);
-        this.activeElements.add(packet.nextNode);
+        this.activeElements.add(lyric.currentNode);
+        this.activeElements.add(lyric.nextNode);
         if (connectionId) {
             this.activeElements.add(connectionId);
             this.activeElements.add(`port-${connectionId}`);
@@ -1255,47 +1439,55 @@ class NetworkSimulation {
         // ネットワーク全体を再描画せずに接続を更新
         this.updateActiveConnections();
         
-        if (packet.currentNode !== packet.source) {
+        if (lyric.currentNode !== lyric.source) {
             if (portNumber) {
-                this.addLogEntry(`パケット #${packet.id}: ルータ ${packet.currentNode} がパケットを受信し、ポート ${portNumber} から転送します。`, 'info');
+                this.addLogEntry(`歌詞 #${lyric.id}: ルータ ${lyric.currentNode} が「${lyric.text}」を受信し、ポート ${portNumber} から転送します。`, 'info');
             } else {
-                this.addLogEntry(`パケット #${packet.id}: ルータ ${packet.currentNode} がパケットを転送します。`, 'info');
+                this.addLogEntry(`歌詞 #${lyric.id}: ルータ ${lyric.currentNode} が「${lyric.text}」を転送します。`, 'info');
             }
         }
         
         // ネットワーク要素の取得
         const networkEl = document.getElementById('network');
         if (!networkEl) {
-            packet.completed = true;
+            lyric.completed = true;
             return;
         }
         
-        // パケットを視覚的に表示
-        const packetEl = document.createElement('div');
-        packetEl.classList.add('packet');
-        packetEl.textContent = packet.id;
-        packetEl.dataset.id = `packet-${packet.id}`;
-        packetEl.title = `パケット #${packet.id}: ${packet.source} → ${packet.destination}`;
+        // 歌詞を視覚的に表示
+        const lyricEl = document.createElement('div');
+        lyricEl.classList.add('packet'); // パケットと同じスタイルを使用
+        lyricEl.textContent = lyric.text;
+        lyricEl.dataset.id = `lyric-${lyric.id}`;
+        lyricEl.title = `歌詞 #${lyric.id}: 「${lyric.text}」 ${lyric.source} → ${lyric.destination}`;
+        
+        // 日本語の場合、スタイルを調整
+        if (lyric.text.length > 5) {
+            lyricEl.style.fontSize = '10px';
+            lyricEl.style.width = 'auto';
+            lyricEl.style.minWidth = '36px';
+            lyricEl.style.padding = '0 8px';
+        }
         
         const fromPos = this.scalePosition(fromNode.x, fromNode.y);
-        packetEl.style.left = `${fromPos.x}px`;
-        packetEl.style.top = `${fromPos.y}px`;
+        lyricEl.style.left = `${fromPos.x}px`;
+        lyricEl.style.top = `${fromPos.y}px`;
         
-        networkEl.appendChild(packetEl);
+        networkEl.appendChild(lyricEl);
         
-        // パケット移動アニメーションを開始
-        this.animatePacket(packet, packetEl, fromNode, toNode);
+        // 歌詞移動アニメーションを開始
+        this.animateLyric(lyric, lyricEl, fromNode, toNode);
     }
     
-    // パケットのアニメーション
-    animatePacket(packet, packetEl, fromNode, toNode) {
-        if (!this.isRunning || packet.completed) {
+    // 歌詞のアニメーション
+    animateLyric(lyric, lyricEl, fromNode, toNode) {
+        if (!this.isRunning || lyric.completed) {
             try {
-                if (packetEl.parentNode) {
-                    packetEl.parentNode.removeChild(packetEl);
+                if (lyricEl.parentNode) {
+                    lyricEl.parentNode.removeChild(lyricEl);
                 }
             } catch (e) {
-                console.error('パケット要素削除エラー:', e);
+                console.error('歌詞要素削除エラー:', e);
             }
             return;
         }
@@ -1305,16 +1497,16 @@ class NetworkSimulation {
         
         const animate = (currentTime) => {
             // シミュレーションが停止している場合はアニメーションを中止
-            if (!this.isRunning || packet.completed) {
+            if (!this.isRunning || lyric.completed) {
                 try {
-                    if (packetEl.parentNode) {
-                        packetEl.parentNode.removeChild(packetEl);
+                    if (lyricEl.parentNode) {
+                        lyricEl.parentNode.removeChild(lyricEl);
                     }
                 } catch (e) {
-                    console.error('パケット要素削除エラー:', e);
+                    console.error('歌詞要素削除エラー:', e);
                 }
                 // アニメーション追跡から削除
-                this.animationFrames.delete(packet.id);
+                this.animationFrames.delete(lyric.id);
                 return;
             }
             
@@ -1328,84 +1520,84 @@ class NetworkSimulation {
             const y = fromPos.y + (toPos.y - fromPos.y) * progress;
             
             try {
-                packetEl.style.left = `${x}px`;
-                packetEl.style.top = `${y}px`;
+                lyricEl.style.left = `${x}px`;
+                lyricEl.style.top = `${y}px`;
             } catch (e) {
-                console.error('パケット位置設定エラー:', e);
-                this.animationFrames.delete(packet.id);
+                console.error('歌詞位置設定エラー:', e);
+                this.animationFrames.delete(lyric.id);
                 return;
             }
             
             if (progress < 1) {
                 // アニメーション継続
                 const frameId = requestAnimationFrame(animate);
-                this.animationFrames.set(packet.id, frameId);
+                this.animationFrames.set(lyric.id, frameId);
             } else {
-                // パケットが目標に到達
+                // 歌詞が目標に到達
                 try {
-                    packetEl.classList.add('animate-fadeOut');
+                    lyricEl.classList.add('animate-fadeOut');
                     setTimeout(() => {
                         try {
-                            if (packetEl.parentNode) {
-                                packetEl.parentNode.removeChild(packetEl);
+                            if (lyricEl.parentNode) {
+                                lyricEl.parentNode.removeChild(lyricEl);
                             }
                         } catch (e) {
-                            console.error('パケット要素削除エラー:', e);
+                            console.error('歌詞要素削除エラー:', e);
                         }
                     }, 300);
                 } catch (e) {
-                    console.error('パケットアニメーション終了エラー:', e);
+                    console.error('歌詞アニメーション終了エラー:', e);
                 }
                 
                 // アニメーション追跡から削除
-                this.animationFrames.delete(packet.id);
+                this.animationFrames.delete(lyric.id);
                 
-                // パケット処理を続行
-                this.processPacketNextHop(packet);
+                // 歌詞処理を続行
+                this.processLyricNextHop(lyric);
             }
         };
         
         // 初回アニメーションフレームを開始し追跡する
         const frameId = requestAnimationFrame(animate);
-        this.animationFrames.set(packet.id, frameId);
+        this.animationFrames.set(lyric.id, frameId);
     }
     
-    // パケットの次ホップへの処理
-    processPacketNextHop(packet) {
-        if (!this.isRunning || packet.completed) return;
+    // 歌詞の次ホップへの処理
+    processLyricNextHop(lyric) {
+        if (!this.isRunning || lyric.completed) return;
         
-        // パケットの状態を更新
-        packet.currentNode = packet.nextNode;
+        // 歌詞の状態を更新
+        lyric.currentNode = lyric.nextNode;
         
-        if (packet.currentNode === packet.destination) {
-            // パケットが最終目的地に到達
-            this.stats.packetsDelivered++;
-            this.stats.totalHops += packet.hops;
+        if (lyric.currentNode === lyric.destination) {
+            // 歌詞が最終目的地に到達
+            this.stats.lyricsDelivered++;
+            this.stats.totalHops += lyric.hops;
             
             // 平均ホップ数の計算
-            const avgHops = this.stats.totalHops / this.stats.packetsDelivered;
+            const avgHops = this.stats.totalHops / this.stats.lyricsDelivered;
             
-            this.addLogEntry(`パケット #${packet.id}: 端末 ${packet.destination} に到達しました。 (${packet.hops}ホップ)`, 'success');
-            packet.completed = true;
-            this.updatePacketCounter();
+            this.addLogEntry(`歌詞 #${lyric.id}: 「${lyric.text}」が端末 ${lyric.destination} に到達しました。 (${lyric.hops}ホップ)`, 'success');
+            lyric.completed = true;
+            this.updateLyricCounter();
             
             // このパケットのアクティブ要素を削除（他のパケットが使用していない場合のみ）
             this.cleanupActiveConnections();
         } else {
             // 次のホップに進む
-            const oldNext = packet.nextNode;
-            packet.nextNode = this.getNextHop(packet.currentNode, packet.destination);
+            const oldNext = lyric.nextNode;
+            lyric.nextNode = this.getNextHop(lyric.currentNode, lyric.destination);
             
-            // 次のホップが無効な場合はパケットを完了としてマーク
-            if (!packet.nextNode) {
-                this.addLogEntry(`パケット #${packet.id}: 次ホップが見つかりません。パケットは破棄されます。`, 'error');
-                packet.completed = true;
-                this.updatePacketCounter();
+            // 次のホップが無効な場合は歌詞を完了としてマーク
+            if (!lyric.nextNode) {
+                this.addLogEntry(`歌詞 #${lyric.id}: 次ホップが見つかりません。歌詞は破棄されます。`, 'error');
+                lyric.completed = true;
+                this.updateLyricCounter();
                 return;
             }
             
             // 他のパケットが使用していない場合、古い接続からアクティブ要素を削除
-            const oldConnectionId = this.getConnectionId(packet.currentNode, oldNext);
+            const oldConnectionId = this.getConnectionId(lyric.currentNode, oldNext);
             if (oldConnectionId) {
                 this.cleanupActiveElement(oldConnectionId);
                 this.cleanupActiveElement(`port-${oldConnectionId}`);
@@ -1416,8 +1608,8 @@ class NetworkSimulation {
             
             // メインスレッドのブロックを防ぐためにsetTimeoutを使用して次のホップに進む
             setTimeout(() => {
-                if (this.isRunning && !packet.completed) {
-                    this.movePacket(packet);
+                if (this.isRunning && !lyric.completed) {
+                    this.moveLyric(lyric);
                 }
             }, 100);
         }
@@ -1470,16 +1662,16 @@ class NetworkSimulation {
             referenceCount.set(element, 0);
         }
         
-        // 各パケットがどの要素を使用しているかカウント
-        for (const packet of this.packets) {
-            if (!packet.completed) {
-                // 現在のノードとパケットが使用する接続を追跡
-                const currentConnectionId = this.getConnectionId(packet.currentNode, packet.nextNode);
+        // 各歌詞がどの要素を使用しているかカウント
+        for (const lyric of this.lyrics) {
+            if (!lyric.completed) {
+                // 現在のノードと歌詞が使用する接続を追跡
+                const currentConnectionId = this.getConnectionId(lyric.currentNode, lyric.nextNode);
                 
                 if (currentConnectionId) {
                     // 接続と関連要素の参照カウントを増やす
-                    this.incrementReferenceCount(referenceCount, packet.currentNode);
-                    this.incrementReferenceCount(referenceCount, packet.nextNode);
+                    this.incrementReferenceCount(referenceCount, lyric.currentNode);
+                    this.incrementReferenceCount(referenceCount, lyric.nextNode);
                     this.incrementReferenceCount(referenceCount, currentConnectionId);
                     this.incrementReferenceCount(referenceCount, `port-${currentConnectionId}`);
                 }
@@ -1510,10 +1702,10 @@ class NetworkSimulation {
     cleanupActiveElement(element) {
         let stillActive = false;
         
-        // パケットがまだこの接続を使用しているか確認
-        for (const packet of this.packets) {
-            if (!packet.completed) {
-                const currentConnectionId = this.getConnectionId(packet.currentNode, packet.nextNode);
+        // 歌詞がまだこの接続を使用しているか確認
+        for (const lyric of this.lyrics) {
+            if (!lyric.completed) {
+                const currentConnectionId = this.getConnectionId(lyric.currentNode, lyric.nextNode);
                 if (currentConnectionId === element || `port-${currentConnectionId}` === element) {
                     stillActive = true;
                     break;
@@ -1526,23 +1718,23 @@ class NetworkSimulation {
         }
     }
     
-    // すべてのパケットをクリア
-    clearPackets() {
+    // すべての歌詞をクリア
+    clearLyrics() {
         // アニメーションフレームをすべてキャンセル
         for (const [id, frameId] of this.animationFrames.entries()) {
             cancelAnimationFrame(frameId);
         }
         this.animationFrames.clear();
         
-        this.packets = [];
-        this.updatePacketCounter();
+        this.lyrics = [];
+        this.updateLyricCounter();
         
-        // すべてのパケット要素を削除
+        // すべての歌詞要素を削除
         const networkEl = document.getElementById('network');
         if (!networkEl) return;
         
-        const packetEls = networkEl.querySelectorAll('.packet');
-        packetEls.forEach(el => {
+        const lyricEls = networkEl.querySelectorAll('.packet');
+        lyricEls.forEach(el => {
             try {
                 el.classList.add('animate-fadeOut');
                 setTimeout(() => {
@@ -1551,21 +1743,21 @@ class NetworkSimulation {
                             el.parentNode.removeChild(el);
                         }
                     } catch (e) {
-                        console.error('パケット要素削除エラー:', e);
+                        console.error('歌詞要素削除エラー:', e);
                     }
                 }, 300);
             } catch (e) {
-                console.error('パケット削除アニメーションエラー:', e);
+                console.error('歌詞削除アニメーションエラー:', e);
             }
         });
     }
     
-    // パケットカウンターの更新
-    updatePacketCounter() {
+    // 歌詞カウンターの更新
+    updateLyricCounter() {
         const counter = document.getElementById('packet-counter');
         if (counter) {
-            const activeCount = this.packets.filter(p => !p.completed).length;
-            counter.innerHTML = `アクティブパケット: <span class="font-bold text-miku-300">${activeCount}</span>`;
+            const activeCount = this.lyrics.filter(p => !p.completed).length;
+            counter.innerHTML = `アクティブな歌詞: <span class="font-bold text-miku-300">${activeCount}</span>`;
         }
     }
     
@@ -1579,7 +1771,7 @@ class NetworkSimulation {
 // DOMが完全に読み込まれたときにシミュレーションを初期化
 document.addEventListener('DOMContentLoaded', () => {
     try {
-        window.simulation = new NetworkSimulation();
+        window.simulation = new LyricsNetworkSimulation();
         
         // ページアンロード時のクリーンアップ
         window.addEventListener('beforeunload', () => {
