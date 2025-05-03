@@ -2,7 +2,7 @@
  * ミク☆スターネットワーク歌詞シミュレーター
  * 歌詞ネットワークシミュレーション - TextAlive API統合版
  * 初音ミクの曲の歌詞がネットワーク上を流れる様子を表示する
- * モバイル対応強化版
+ * モバイル対応強化版 - 2ルーター構成
  */
 
 // TextAliveネットワークシミュレーション - 歌詞流れ可視化
@@ -724,7 +724,7 @@ class LyricsNetworkSimulation {
                 button.classList.add('active');
                 
                 // タブ内容表示切替
-                const tabContents = document.querySelectorAll('#sidebar-drawer .tab-content');
+                const tabContents = document.querySelectorAll('#mobile-tabs-container .tab-content');
                 tabContents.forEach(content => {
                     if (content.id === targetId) {
                         content.classList.add('active');
@@ -813,55 +813,40 @@ class LyricsNetworkSimulation {
         }
     }
     
-    // ノード位置の初期化
+    // ノード位置の初期化 - 4端末・2ルーター構成
     initializeNodes() {
         // モバイル用に基本サイズを調整
         const baseScale = this.isMobile ? 1.0 : 1.2; 
         this.nodes = {
-            // 端末ノード
-            A: { x: 80 * baseScale, y: 150 * baseScale, type: 'terminal', label: 'A' },
-            B: { x: 80 * baseScale, y: 350 * baseScale, type: 'terminal', label: 'B' },
-            C: { x: 80 * baseScale, y: 520 * baseScale, type: 'terminal', label: 'C' },
-            D: { x: 700 * baseScale, y: 150 * baseScale, type: 'terminal', label: 'D' },
-            E: { x: 700 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'E' },
+            // 端末ノード - 左側2台、右側2台の配置
+            A: { x: 100 * baseScale, y: 150 * baseScale, type: 'terminal', label: 'A' },
+            B: { x: 100 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'B' },
+            C: { x: 690 * baseScale, y: 150 * baseScale, type: 'terminal', label: 'C' },
+            D: { x: 690 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'D' },
             
-            // ルータノード
-            X: { x: 300 * baseScale, y: 180 * baseScale, type: 'router', label: 'ルータ X' },
-            Y: { x: 300 * baseScale, y: 420 * baseScale, type: 'router', label: 'ルータ Y' },
-            Z: { x: 550 * baseScale, y: 300 * baseScale, type: 'router', label: 'ルータ Z' }
+            // ルータノード - 中央に2台配置
+            X: { x: 270 * baseScale, y: 300 * baseScale, type: 'router', label: 'ルータ X' },
+            Z: { x: 520 * baseScale, y: 300 * baseScale, type: 'router', label: 'ルータ Z' }
         };
 
         // 基準サイズも更新
         this.baseWidth = 800 * baseScale;
-        this.baseHeight = 700 * baseScale;
+        this.baseHeight = 600 * baseScale;
     }
     
-    // ノード間の接続を作成
+    // ノード間の接続を作成 - 4端末・2ルーター構成
     createConnections() {
         this.connections = [
-            // 端末AとルータXの接続
+            // 端末A,BとルータXの接続
             { from: 'A', to: 'X', fromPort: null, toPort: 1, portLabel: 1, id: 'A-X' },
-            
-            // 端末BとルータXの接続
             { from: 'B', to: 'X', fromPort: null, toPort: 2, portLabel: 2, id: 'B-X' },
             
-            // 端末CとルータYの接続
-            { from: 'C', to: 'Y', fromPort: null, toPort: 3, portLabel: 3, id: 'C-Y' },
+            // 端末C,DとルータZの接続
+            { from: 'C', to: 'Z', fromPort: null, toPort: 3, portLabel: 3, id: 'C-Z' },
+            { from: 'D', to: 'Z', fromPort: null, toPort: 4, portLabel: 4, id: 'D-Z' },
             
-            // 端末DとルータZの接続
-            { from: 'D', to: 'Z', fromPort: null, toPort: 7, portLabel: 7, id: 'D-Z' },
-            
-            // 端末EとルータZの接続
-            { from: 'E', to: 'Z', fromPort: null, toPort: 8, portLabel: 8, id: 'E-Z' },
-            
-            // ルータXとルータZの接続
-            { from: 'X', to: 'Z', fromPort: 6, toPort: 6, portLabel: 6, id: 'X-Z' },
-            
-            // ルータYとルータZの接続
-            { from: 'Y', to: 'Z', fromPort: 5, toPort: 5, portLabel: 5, id: 'Y-Z' },
-            
-            // ルータXとルータYの接続
-            { from: 'X', to: 'Y', fromPort: 4, toPort: 4, portLabel: 4, id: 'X-Y' }
+            // ルータX-Z間の接続
+            { from: 'X', to: 'Z', fromPort: 5, toPort: 5, portLabel: 5, id: 'X-Z' }
         ];
     }
     
@@ -1467,7 +1452,7 @@ class LyricsNetworkSimulation {
         }
     }
     
-    // ルーティングテーブルの描画
+    // ルーティングテーブルの描画 - 4端末構成に更新
     renderRoutingTable() {
         // デスクトップルーティングテーブルを更新
         this.updateRoutingTable('routing-table');
@@ -1476,7 +1461,7 @@ class LyricsNetworkSimulation {
         this.updateRoutingTable('mobile-routing-table');
     }
     
-    // ルーティングテーブルを更新
+    // ルーティングテーブルを更新 - 4端末構成
     updateRoutingTable(tableId) {
         const tableBody = document.querySelector(`#${tableId} tbody`);
         if (!tableBody) return;
@@ -1487,19 +1472,12 @@ class LyricsNetworkSimulation {
             { title: 'ルータ X', routes: [
                 { dest: '端末 A', port: '1' },
                 { dest: '端末 B', port: '2' },
-                { dest: '端末 C', port: '4' },
-                { dest: '端末 D,E', port: '6' }
-            ]},
-            { title: 'ルータ Y', routes: [
-                { dest: '端末 C', port: '3' },
-                { dest: '端末 A,B', port: '4' },
-                { dest: '端末 D,E', port: '5' }
+                { dest: '端末 C,D', port: '5' }
             ]},
             { title: 'ルータ Z', routes: [
-                { dest: '端末 D', port: '7' },
-                { dest: '端末 E', port: '8' },
-                { dest: '端末 A,B', port: '6' },
-                { dest: '端末 C', port: '5' }
+                { dest: '端末 C', port: '3' },
+                { dest: '端末 D', port: '4' },
+                { dest: '端末 A,B', port: '5' }
             ]}
         ];
         
@@ -1511,7 +1489,7 @@ class LyricsNetworkSimulation {
         });
     }
     
-    // ルーティングテーブルのセクション追加
+    // ルーティングテーブルのセクション追加 
     addRoutingTableSection(tableBody, title) {
         if (!tableBody) return;
         
@@ -1543,6 +1521,27 @@ class LyricsNetworkSimulation {
         row.appendChild(destCell);
         row.appendChild(portCell);
         tableBody.appendChild(row);
+    }
+    
+    // 次のホップを取得 - 4端末構成
+    getNextHop(currentNode, destination) {
+        // 端末からルータへの直接接続
+        if (currentNode === 'A' || currentNode === 'B') return 'X';
+        if (currentNode === 'C' || currentNode === 'D') return 'Z';
+
+        // ルータXからの経路
+        if (currentNode === 'X') {
+            if (destination === 'A' || destination === 'B') return destination;
+            return 'Z'; // C,D宛て
+        }
+
+        // ルータZからの経路
+        if (currentNode === 'Z') {
+            if (destination === 'C' || destination === 'D') return destination;
+            return 'X'; // A,B宛て
+        }
+
+        return null;
     }
     
     // イベントリスナーの設定
@@ -1802,36 +1801,6 @@ class LyricsNetworkSimulation {
         
         // 鑑賞用歌詞も表示
         this.displayViewerLyric(lyric.text);
-    }
-    
-    // 次のホップを取得
-    getNextHop(currentNode, destination) {
-        // 端末からルータへの直接接続
-        if (currentNode === 'A' || currentNode === 'B') return 'X';
-        if (currentNode === 'C') return 'Y';
-        if (currentNode === 'D' || currentNode === 'E') return 'Z';
-
-        // ルータXからの経路
-        if (currentNode === 'X') {
-            if (destination === 'A' || destination === 'B') return destination;
-            if (destination === 'C') return 'Y';
-            return 'Z'; // D,E宛て
-        }
-
-        // ルータYからの経路
-        if (currentNode === 'Y') {
-            if (destination === 'C') return destination;
-            return 'Z'; // その他宛て
-        }
-
-        // ルータZからの経路
-        if (currentNode === 'Z') {
-            if (destination === 'D' || destination === 'E') return destination;
-            if (destination === 'C') return 'Y';
-            return 'X'; // A,B宛て
-        }
-
-        return null;
     }
     
     // ポート番号を取得
@@ -2396,53 +2365,52 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // サイドバー（ドロワー）閉じるボタンの設定
-const closeDrawerBtn = document.getElementById('close-drawer');
-const drawerEl = document.getElementById('sidebar-drawer');
-const backdropEl = document.getElementById('drawer-backdrop');
-const networkEl = document.getElementById('network');
+    const closeDrawerBtn = document.getElementById('close-drawer');
+    const drawerEl = document.getElementById('sidebar-drawer');
+    const backdropEl = document.getElementById('drawer-backdrop');
+    const networkEl = document.getElementById('network');
 
-if (closeDrawerBtn && drawerEl && backdropEl) {
-    // 閉じるボタンクリックでドロワーを閉じる
-    closeDrawerBtn.addEventListener('click', () => {
-        drawerEl.classList.remove('open');
-        backdropEl.classList.remove('open');
-    });
-    
-    // メインコンテンツ領域のクリックでもドロワーを閉じる
-    if (networkEl) {
-        networkEl.addEventListener('click', (e) => {
-            // ピンチズームやパケットクリック処理の妨げにならないよう、
-            // ドロワーが開いている場合のみ処理
-            if (drawerEl.classList.contains('open')) {
+    if (closeDrawerBtn && drawerEl && backdropEl) {
+        // 閉じるボタンクリックでドロワーを閉じる
+        closeDrawerBtn.addEventListener('click', () => {
+            drawerEl.classList.remove('open');
+            backdropEl.classList.remove('open');
+        });
+        
+        // メインコンテンツ領域のクリックでもドロワーを閉じる
+        if (networkEl) {
+            networkEl.addEventListener('click', (e) => {
+                // ピンチズームやパケットクリック処理の妨げにならないよう、
+                // ドロワーが開いている場合のみ処理
+                if (drawerEl.classList.contains('open')) {
+                    drawerEl.classList.remove('open');
+                    backdropEl.classList.remove('open');
+                }
+            });
+        }
+    }
+
+    // スワイプでドロワーを閉じる機能の強化
+    if (drawerEl) {
+        let startY = 0;
+        let startTime = 0;
+        
+        drawerEl.addEventListener('touchstart', (e) => {
+            startY = e.touches[0].clientY;
+            startTime = Date.now();
+        });
+        
+        drawerEl.addEventListener('touchend', (e) => {
+            const endY = e.changedTouches[0].clientY;
+            const deltaY = endY - startY;
+            const deltaTime = Date.now() - startTime;
+            
+            // 短い時間での下方向のスワイプでドロワーを閉じる
+            // しきい値を小さくして操作性向上
+            if (deltaY > 30 && deltaTime < 300) {
                 drawerEl.classList.remove('open');
                 backdropEl.classList.remove('open');
             }
         });
     }
-}
-
-// スワイプでドロワーを閉じる機能の強化
-if (drawerEl) {
-    let startY = 0;
-    let startTime = 0;
-    
-    drawerEl.addEventListener('touchstart', (e) => {
-        startY = e.touches[0].clientY;
-        startTime = Date.now();
-    });
-    
-    drawerEl.addEventListener('touchend', (e) => {
-        const endY = e.changedTouches[0].clientY;
-        const deltaY = endY - startY;
-        const deltaTime = Date.now() - startTime;
-        
-        // 短い時間での下方向のスワイプでドロワーを閉じる
-        // しきい値を小さくして操作性向上
-        if (deltaY > 30 && deltaTime < 300) {
-            drawerEl.classList.remove('open');
-            backdropEl.classList.remove('open');
-        }
-    });
-}
 });
-
