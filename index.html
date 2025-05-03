@@ -471,7 +471,7 @@
             justify-content: center;
         }
 
-        /* モバイルレスポンシブ対応の強化 */
+        /* モバイル用レスポンシブ対応の強化 */
         @media (max-width: 640px) {
             .control-panel {
                 flex-direction: column;
@@ -498,62 +498,53 @@
 
         /* モバイルでの全画面表示 */
         @media (max-width: 768px) {
-            .sidebar-drawer {
-                position: fixed;
-                bottom: 0;
+            /* モバイルで本体をスクロール可能に */
+            body {
+                overflow-y: auto !important;
+                height: auto !important;
+            }
+            
+            #app-container {
+                height: auto !important;
+                min-height: 100vh;
+            }
+            
+            /* ネットワーク可視化エリアを固定高さに */
+            #network-container {
+                height: 60vh !important;
+                min-height: 300px;
+                position: relative;
+            }
+            
+            #network {
+                position: absolute !important;
+                top: 0;
                 left: 0;
-                right: 0;
-                height: 60vh;
-                transform: translateY(100%);
-                transition: transform 0.3s ease-in-out;
-                z-index: 30;
-                border-radius: 1rem 1rem 0 0;
-                box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25);
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
             }
             
-            .sidebar-drawer.open {
-                transform: translateY(0);
+            /* モバイル用タブコンテンツを追加 */
+            #mobile-tabs-container {
+                display: block;
+                margin-top: 1rem;
             }
             
-            .drawer-handle {
-                position: absolute;
-                top: -20px;
-                left: 50%;
-                transform: translateX(-50%);
-                width: 80px;
-                height: 20px;
-                background: rgba(57, 240, 236, 0.8);
-                border-radius: 10px 10px 0 0;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            }
-            
-            .drawer-handle::after {
-                content: '';
-                width: 40px;
-                height: 4px;
-                background: rgba(255, 255, 255, 0.7);
-                border-radius: 2px;
+            /* サイドバードロワーを無効化 */
+            .sidebar-drawer {
+                display: none !important;
             }
             
             .drawer-backdrop {
-                position: fixed;
-                inset: 0;
-                background: rgba(0, 0, 0, 0.5);
-                opacity: 0;
-                visibility: hidden;
-                transition: opacity 0.3s ease-in-out;
-                z-index: 25;
-                backdrop-filter: blur(3px);
+                display: none !important;
             }
             
-            .drawer-backdrop.open {
-                opacity: 1;
-                visibility: visible;
+            #toggle-drawer {
+                display: none !important;
             }
             
-            /* モバイルでタブをより大きくする */
+            /* タブをより大きくする */
             .tab-button {
                 padding: 0.75rem 1rem;
                 font-size: 1rem;
@@ -723,7 +714,7 @@
     </script>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body class="starry-bg font-sans text-white overflow-hidden touch-manipulation">
+<body class="starry-bg font-sans text-white touch-manipulation">
     <!-- 流れ星の背景エフェクト -->
     <div class="meteor-container fixed inset-0 pointer-events-none">
         <div class="meteor" style="--delay: 0; top: 10%; left: 80%;"></div>
@@ -744,7 +735,7 @@
         <div class="floating-star" style="--delay: 1.8; top: 35%; left: 75%;"></div>
     </div>
 
-    <div id="app-container" class="w-full h-screen flex flex-col">
+    <div id="app-container" class="w-full flex flex-col">
         <!-- ヘッダー部分 -->
         <div class="bg-space-900 bg-opacity-80 shadow-md border-b border-miku-400">
             <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
@@ -829,9 +820,9 @@
         </div>
         
         <!-- メインコンテンツ -->
-        <div class="flex-1 overflow-hidden">
-            <div class="max-w-none mx-auto px-1 sm:px-2 lg:px-3 h-full">
-                <div class="flex h-full gap-2 sm:gap-4">
+        <div class="flex-1">
+            <div class="max-w-none mx-auto px-1 sm:px-2 lg:px-3">
+                <div class="flex flex-col lg:flex-row gap-2 sm:gap-4">
                     <!-- ネットワーク表示エリア -->
                     <div id="network-container" class="flex-1 bg-space-900 bg-opacity-80 rounded-xl shadow-glassy border border-miku-400 overflow-hidden flex flex-col relative">
                         <div class="px-3 sm:px-5 py-2 sm:py-3 flex justify-between items-center border-b border-miku-400 bg-space-800 bg-opacity-80">
@@ -864,13 +855,6 @@
                                 </svg>
                             </button>
                         </div>
-                        
-                        <!-- モバイル用ドロワーコントロール -->
-                        <button id="toggle-drawer" class="lg:hidden absolute bottom-4 right-4 bg-miku-400 text-white rounded-full p-3 shadow-lg mobile-control-button">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
-                            </svg>
-                        </button>
                     </div>
                     
                     <!-- デスクトップ用サイドバー -->
@@ -941,82 +925,75 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-        
-        <!-- モバイル用ドロワー -->
-        <div id="sidebar-drawer" class="sidebar-drawer bg-space-900 bg-opacity-90 border-t-2 border-miku-400 lg:hidden">
-            <div class="drawer-handle"></div>
-            <button id="close-drawer" class="absolute top-3 right-3 text-white p-2 rounded-full hover:bg-space-800 focus:outline-none transition-colors duration-200">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-            <div class="h-full overflow-hidden flex flex-col">
-                <!-- タブ切り替えボタン -->
-                <div class="flex border-b border-miku-400">
-                    <button class="mobile-tab-button active flex-1 text-center text-white py-3" data-tab="mobile-log-tab">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1.5 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        歌詞ログ
-                    </button>
-                    <button class="mobile-tab-button flex-1 text-center text-white py-3" data-tab="mobile-routing-tab">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1.5 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2-2 0 01-2-2z" />
-                        </svg>
-                        ルーティング
-                    </button>
-                </div>
                 
-                <!-- ルーティングテーブルのタブコンテンツ -->
-                <div id="mobile-routing-tab" class="tab-content flex-1 overflow-hidden">
-                    <div class="p-3 border-b border-miku-400 bg-space-800 bg-opacity-80">
-                        <h2 class="text-lg font-display font-semibold text-white flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2-2 0 01-2-2z" />
-                            </svg>
-                            ルーティングテーブル
-                        </h2>
-                    </div>
-                    <div class="p-3 flex-1 overflow-y-auto">
-                        <div class="overflow-x-auto rounded-lg border border-miku-400">
-                            <table id="mobile-routing-table" class="min-w-full divide-y divide-miku-800 table-fixed">
-                                <thead>
-                                    <tr>
-                                        <th scope="col" class="px-3 py-2 text-left text-sm font-medium text-white uppercase tracking-wider bg-space-800 bg-opacity-80 border-b border-miku-800 w-1/2">宛先</th>
-                                        <th scope="col" class="px-3 py-2 text-left text-sm font-medium text-white uppercase tracking-wider bg-space-800 bg-opacity-80 border-b border-miku-800 w-1/2">転送先</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-space-900 bg-opacity-70 divide-y divide-miku-800">
-                                    <!-- モバイル用ルーティングテーブルが動的に追加されます -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 歌詞ログのタブコンテンツ -->
-                <div id="mobile-log-tab" class="tab-content flex-1 overflow-hidden">
-                    <div class="p-3 border-b border-miku-400 bg-space-800 bg-opacity-80">
-                        <div class="flex items-center">
-                            <h2 class="text-lg font-display font-semibold text-white flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <!-- モバイル用タブパネル (新規追加) -->
+                <div id="mobile-tabs-container" class="mt-4 block lg:hidden">
+                    <div class="bg-space-900 bg-opacity-80 rounded-xl shadow-glassy-sm border border-miku-400 overflow-hidden">
+                        <!-- モバイル用タブ切り替えボタン -->
+                        <div class="flex border-b border-miku-400">
+                            <button class="mobile-tab-button active flex-1 text-center text-white py-3" data-tab="mobile-log-tab">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1.5 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                                 歌詞ログ
-                            </h2>
+                            </button>
+                            <button class="mobile-tab-button flex-1 text-center text-white py-3" data-tab="mobile-routing-tab">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1.5 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2-2 0 01-2-2z" />
+                                </svg>
+                                ルーティング
+                            </button>
                         </div>
-                    </div>
-                    <div id="mobile-log-container" class="flex-1 overflow-y-auto bg-space-900 bg-opacity-70 h-[calc(100vh-340px)]">
-                        <div id="mobile-log-entries" class="p-3 space-y-2">
-                            <!-- モバイル用ログエントリーがここに追加されます -->
+                        
+                        <!-- モバイル用ルーティングタブコンテンツ -->
+                        <div id="mobile-routing-tab" class="tab-content">
+                            <div class="p-3 border-b border-miku-400 bg-space-800 bg-opacity-80">
+                                <h2 class="text-lg font-display font-semibold text-white flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2-2 0 01-2-2z" />
+                                    </svg>
+                                    ルーティングテーブル
+                                </h2>
+                            </div>
+                            <div class="p-3 flex-1 overflow-x-auto">
+                                <div class="overflow-x-auto rounded-lg border border-miku-400">
+                                    <table id="mobile-routing-table" class="min-w-full divide-y divide-miku-800 table-fixed">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col" class="px-3 py-2 text-left text-sm font-medium text-white uppercase tracking-wider bg-space-800 bg-opacity-80 border-b border-miku-800 w-1/2">宛先</th>
+                                                <th scope="col" class="px-3 py-2 text-left text-sm font-medium text-white uppercase tracking-wider bg-space-800 bg-opacity-80 border-b border-miku-800 w-1/2">転送先</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-space-900 bg-opacity-70 divide-y divide-miku-800">
+                                            <!-- モバイル用ルーティングテーブルが動的に追加されます -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- モバイル用歌詞ログタブコンテンツ -->
+                        <div id="mobile-log-tab" class="tab-content active">
+                            <div class="p-3 border-b border-miku-400 bg-space-800 bg-opacity-80">
+                                <div class="flex items-center">
+                                    <h2 class="text-lg font-display font-semibold text-white flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        歌詞ログ
+                                    </h2>
+                                </div>
+                            </div>
+                            <div id="mobile-log-container" class="overflow-y-auto bg-space-900 bg-opacity-70 max-h-64">
+                                <div id="mobile-log-entries" class="p-3 space-y-2">
+                                    <!-- モバイル用ログエントリーがここに追加されます -->
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div id="drawer-backdrop" class="drawer-backdrop"></div>
         
         <!-- ヘルプモーダル -->
         <div id="help-modal" class="fixed inset-0 bg-space-900 bg-opacity-75 flex items-center justify-center z-50 hidden backdrop-blur-sm transition-all duration-300 p-4">
@@ -1100,8 +1077,8 @@
                             <li>ピンチ操作でネットワークを拡大/縮小できます。</li>
                             <li>ダブルタップで特定の部分を拡大できます。</li>
                             <li>左下の＋/−ボタンでズームイン/アウトできます。</li>
-                            <li>右下のボタンでログとルーティングテーブルの表示/非表示が切り替えられます。</li>
-                            <li>画面下部から上にスワイプして詳細パネルを表示できます。</li>
+                            <li>歌詞ログとルーティングテーブルはネットワークの下に表示されます。</li>
+                            <li>画面をスクロールして全ての情報を確認できます。</li>
                         </ul>
                     </div>
                 </div>
@@ -1204,7 +1181,7 @@
                         button.classList.add('active');
                         
                         // タブコンテンツの切り替え
-                        const mobileTabContents = document.querySelectorAll('#sidebar-drawer .tab-content');
+                        const mobileTabContents = document.querySelectorAll('#mobile-tabs-container .tab-content');
                         mobileTabContents.forEach(content => {
                             if (content.id === tabId) {
                                 content.classList.add('active');
@@ -1215,69 +1192,221 @@
                     });
                 });
                 
-                // モバイルドロワー処理
-                const toggleDrawerBtn = document.getElementById('toggle-drawer');
-                const drawerEl = document.getElementById('sidebar-drawer');
-                const backdropEl = document.getElementById('drawer-backdrop');
-                
-                if (toggleDrawerBtn && drawerEl && backdropEl) {
-                    // ドロワー開閉
-                    toggleDrawerBtn.addEventListener('click', () => {
-                        drawerEl.classList.toggle('open');
-                        backdropEl.classList.toggle('open');
-                    });
+                // ログ同期（通常とモバイル両方に反映させる）
+                function syncLogs(sourceLogId, targetLogId) {
+                    const sourceLog = document.getElementById(sourceLogId);
+                    const targetLog = document.getElementById(targetLogId);
                     
-                    // ドロワーハンドル操作
-                    const drawerHandle = document.querySelector('.drawer-handle');
-                    if (drawerHandle) {
-                        drawerHandle.addEventListener('click', () => {
-                            drawerEl.classList.toggle('open');
-                            backdropEl.classList.toggle('open');
+                    if (sourceLog && targetLog) {
+                        // ソース側に新規エントリが追加されたらターゲットにもコピー
+                        const observer = new MutationObserver((mutations) => {
+                            mutations.forEach((mutation) => {
+                                if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                                    // 追加されたノードをターゲットにもコピー
+                                    mutation.addedNodes.forEach((node) => {
+                                        targetLog.appendChild(node.cloneNode(true));
+                                    });
+                                }
+                            });
                         });
+                        
+                        observer.observe(sourceLog, { childList: true });
                     }
-                    
-                    // 背景タップでドロワー閉じる
-                    backdropEl.addEventListener('click', () => {
-                        drawerEl.classList.remove('open');
-                        backdropEl.classList.remove('open');
-                    });
                 }
                 
-                // ログ同期（通常とモバイル両方に反映させる）
-                const syncElements = [];
-                
-                syncElements.forEach(pair => {
-                    const desktopEl = document.getElementById(pair.desktop);
-                    const mobileEl = document.getElementById(pair.mobile);
+                // ルーティングテーブル同期
+                function syncRoutingTables() {
+                    const desktopTable = document.getElementById('routing-table');
+                    const mobileTable = document.getElementById('mobile-routing-table');
                     
-                    if (desktopEl && mobileEl) {
-                        // デスクトップからモバイルへ同期
-                        desktopEl.addEventListener('change', () => {
-                            if (mobileEl.tagName === 'SELECT') {
-                                mobileEl.value = desktopEl.value;
-                            }
+                    if (desktopTable && mobileTable) {
+                        const observer = new MutationObserver((mutations) => {
+                            // 内容が変更されたらモバイルテーブルの内容を更新
+                            mobileTable.innerHTML = desktopTable.innerHTML;
                         });
                         
-                        desktopEl.addEventListener('click', () => {
-                            if (desktopEl.tagName === 'BUTTON' && mobileEl.tagName === 'BUTTON') {
-                                mobileEl.click();
-                            }
-                        });
+                        observer.observe(desktopTable, { childList: true, subtree: true });
+                    }
+                }
+                
+                // モバイルでのログ表示高さを調整
+                function adjustMobileLogHeight() {
+                    const mobileLogContainer = document.getElementById('mobile-log-container');
+                    if (mobileLogContainer) {
+                        // 画面高さの1/3を最大高さとして設定
+                        const maxHeight = Math.max(200, window.innerHeight / 3);
+                        mobileLogContainer.style.maxHeight = `${maxHeight}px`;
+                    }
+                }
+                
+                // ウィンドウサイズ変更時にログの高さを調整
+                window.addEventListener('resize', adjustMobileLogHeight);
+                adjustMobileLogHeight();
+                
+                // ネットワーク可視化エリアのサイズ固定
+                function setupFixedNetwork() {
+                    const network = document.getElementById('network');
+                    if (network) {
+                        // ピンチズーム時にネットワークが動かないようにする
+                        const zoomArea = document.querySelector('.zoom-area');
                         
-                        // モバイルからデスクトップへ同期
-                        mobileEl.addEventListener('change', () => {
-                            if (desktopEl.tagName === 'SELECT') {
-                                desktopEl.value = mobileEl.value;
-                            }
-                        });
-                        
-                        mobileEl.addEventListener('click', () => {
-                            if (mobileEl.tagName === 'BUTTON' && desktopEl.tagName === 'BUTTON') {
-                                desktopEl.click();
-                            }
+                        if (zoomArea) {
+                            zoomArea.addEventListener('touchmove', (e) => {
+                                if (e.touches.length === 1) {
+                                    // シングルタッチ時のみイベントをキャンセル
+                                    e.preventDefault();
+                                }
+                            }, { passive: false });
+                        }
+                    }
+                }
+                
+                // モバイル用のピンチズーム機能を修正
+                function setupMobileZoom() {
+                    const network = document.getElementById('network');
+                    const zoomInBtn = document.getElementById('zoom-in-btn');
+                    const zoomOutBtn = document.getElementById('zoom-out-btn');
+                    const zoomArea = document.querySelector('.zoom-area');
+                    const zoomIndicator = document.querySelector('.zoom-indicator');
+                    
+                    if (!network || !zoomArea) return;
+                    
+                    let scale = 1;
+                    let translateX = 0;
+                    let translateY = 0;
+                    let startX = 0;
+                    let startY = 0;
+                    let lastTapTime = 0;
+                    let startPinchDistance = 0;
+                    let isPinching = false;
+                    
+                    // 変換適用関数
+                    function applyTransform() {
+                        const transformValue = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+                        network.querySelector('.network-content').style.transform = transformValue;
+                    }
+                    
+                    // ズームインボタン
+                    if (zoomInBtn) {
+                        zoomInBtn.addEventListener('click', () => {
+                            scale = Math.min(scale * 1.2, 3);
+                            applyTransform();
                         });
                     }
+                    
+                    // ズームアウトボタン
+                    if (zoomOutBtn) {
+                        zoomOutBtn.addEventListener('click', () => {
+                            scale = Math.max(scale / 1.2, 0.5);
+                            translateX = scale === 0.5 ? 0 : translateX;
+                            translateY = scale === 0.5 ? 0 : translateY;
+                            applyTransform();
+                        });
+                    }
+                    
+                    // タッチ操作
+                    zoomArea.addEventListener('touchstart', (e) => {
+                        if (e.touches.length === 2) {
+                            // ピンチ開始
+                            isPinching = true;
+                            const touch1 = e.touches[0];
+                            const touch2 = e.touches[1];
+                            startPinchDistance = Math.hypot(
+                                touch1.clientX - touch2.clientX,
+                                touch1.clientY - touch2.clientY
+                            );
+                        } else if (e.touches.length === 1) {
+                            // ダブルタップ検出
+                            const touch = e.touches[0];
+                            
+                            // ダブルタップ検出
+                            const now = new Date().getTime();
+                            const timeSince = now - lastTapTime;
+                            
+                            if (timeSince < 300 && timeSince > 0) {
+                                // ダブルタップ
+                                e.preventDefault();
+                                
+                                if (scale > 1.4) {
+                                    // ズームアウト
+                                    scale = 1;
+                                    translateX = 0;
+                                    translateY = 0;
+                                    
+                                    // ズームアウトインジケーター
+                                    showZoomIndicator(touch.clientX, touch.clientY, 'out');
+                                } else {
+                                    // ズームイン
+                                    scale = 2;
+                                    
+                                    // ズームインインジケーター
+                                    showZoomIndicator(touch.clientX, touch.clientY, 'in');
+                                }
+                                
+                                applyTransform();
+                            }
+                            
+                            lastTapTime = now;
+                        }
+                    });
+                    
+                    // ズームインジケーター表示
+                    function showZoomIndicator(x, y, type) {
+                        if (!zoomIndicator) return;
+                        
+                        zoomIndicator.style.left = `${x}px`;
+                        zoomIndicator.style.top = `${y}px`;
+                        zoomIndicator.classList.remove('zoom-in', 'zoom-out');
+                        void zoomIndicator.offsetWidth; // リフロー強制でアニメーションリセット
+                        
+                        zoomIndicator.classList.add(`zoom-${type}`);
+                        
+                        // アニメーション終了後クラス削除
+                        setTimeout(() => {
+                            zoomIndicator.classList.remove('zoom-in', 'zoom-out');
+                        }, 400);
+                    }
+                }
+                
+                // 各機能をセットアップ
+                setupFixedNetwork();
+                setupMobileZoom();
+                
+                // デスクトップからモバイルへのログ同期
+                const logObserver = new MutationObserver((mutations) => {
+                    mutations.forEach((mutation) => {
+                        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                            const mobileLogEntries = document.getElementById('mobile-log-entries');
+                            if (mobileLogEntries) {
+                                mutation.addedNodes.forEach((node) => {
+                                    if (node.nodeType === 1) { // 要素ノードの場合のみ
+                                        mobileLogEntries.appendChild(node.cloneNode(true));
+                                    }
+                                });
+                            }
+                        }
+                    });
                 });
+                
+                const logEntries = document.getElementById('log-entries');
+                if (logEntries) {
+                    logObserver.observe(logEntries, { childList: true });
+                }
+                
+                // ルーティングテーブル同期
+                const routingObserver = new MutationObserver((mutations) => {
+                    const mobileRoutingTable = document.getElementById('mobile-routing-table');
+                    const routingTable = document.getElementById('routing-table');
+                    
+                    if (mobileRoutingTable && routingTable) {
+                        mobileRoutingTable.innerHTML = routingTable.innerHTML;
+                    }
+                });
+                
+                const routingTable = document.getElementById('routing-table');
+                if (routingTable) {
+                    routingObserver.observe(routingTable, { childList: true, subtree: true });
+                }
             });
             
             // 星の背景アニメーション
@@ -1325,173 +1454,7 @@
                 });
                 
                 observer.observe(document.getElementById('network'), { childList: true, subtree: true });
-                
-                // モバイルズーム機能
-                setupMobileZoom();
             });
-
-            // モバイルズーム機能
-            function setupMobileZoom() {
-                const network = document.getElementById('network');
-                const zoomInBtn = document.getElementById('zoom-in-btn');
-                const zoomOutBtn = document.getElementById('zoom-out-btn');
-                const zoomArea = document.querySelector('.zoom-area');
-                const zoomIndicator = document.querySelector('.zoom-indicator');
-                
-                if (!network || !zoomArea) return;
-                
-                let scale = 1;
-                let translateX = 0;
-                let translateY = 0;
-                let startX = 0;
-                let startY = 0;
-                let lastTapTime = 0;
-                let startPinchDistance = 0;
-                let isPinching = false;
-                
-                // 変換適用関数
-                function applyTransform() {
-                    const transformValue = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-                    network.style.transform = transformValue;
-                }
-                
-                // ズームインボタン
-                if (zoomInBtn) {
-                    zoomInBtn.addEventListener('click', () => {
-                        scale = Math.min(scale * 1.2, 3);
-                        applyTransform();
-                    });
-                }
-                
-                // ズームアウトボタン
-                if (zoomOutBtn) {
-                    zoomOutBtn.addEventListener('click', () => {
-                        scale = Math.max(scale / 1.2, 0.5);
-                        translateX = scale === 0.5 ? 0 : translateX;
-                        translateY = scale === 0.5 ? 0 : translateY;
-                        applyTransform();
-                    });
-                }
-                
-                // タッチ操作
-                zoomArea.addEventListener('touchstart', (e) => {
-                    if (e.touches.length === 2) {
-                        // ピンチ開始
-                        isPinching = true;
-                        const touch1 = e.touches[0];
-                        const touch2 = e.touches[1];
-                        startPinchDistance = Math.hypot(
-                            touch1.clientX - touch2.clientX,
-                            touch1.clientY - touch2.clientY
-                        );
-                    } else if (e.touches.length === 1) {
-                        // ドラッグ開始またはダブルタップ検出
-                        const touch = e.touches[0];
-                        startX = touch.clientX - translateX;
-                        startY = touch.clientY - translateY;
-                        
-                        // ダブルタップ検出
-                        const now = new Date().getTime();
-                        const timeSince = now - lastTapTime;
-                        
-                        if (timeSince < 300 && timeSince > 0) {
-                            // ダブルタップ
-                            e.preventDefault();
-                            
-                            if (scale > 1.4) {
-                                // ズームアウト
-                                scale = 1;
-                                translateX = 0;
-                                translateY = 0;
-                                
-                                // ズームアウトインジケーター
-                                showZoomIndicator(touch.clientX, touch.clientY, 'out');
-                            } else {
-                                // ズームイン
-                                scale = 2;
-                                const rect = network.getBoundingClientRect();
-                                translateX = rect.width / 2 - touch.clientX * 2 + touch.clientX;
-                                translateY = rect.height / 2 - touch.clientY * 2 + touch.clientY;
-                                
-                                // ズームインインジケーター
-                                showZoomIndicator(touch.clientX, touch.clientY, 'in');
-                            }
-                            
-                            applyTransform();
-                        }
-                        
-                        lastTapTime = now;
-                    }
-                });
-                
-                zoomArea.addEventListener('touchmove', (e) => {
-                    e.preventDefault();
-                    
-                    if (isPinching && e.touches.length === 2) {
-                        // ピンチズーム
-                        const touch1 = e.touches[0];
-                        const touch2 = e.touches[1];
-                        const currentDistance = Math.hypot(
-                            touch1.clientX - touch2.clientX,
-                            touch1.clientY - touch2.clientY
-                        );
-                        
-                        const pinchRatio = currentDistance / startPinchDistance;
-                        const newScale = Math.min(Math.max(scale * pinchRatio, 0.5), 3);
-                        
-                        // スケール中心点の調整
-                        const centerX = (touch1.clientX + touch2.clientX) / 2;
-                        const centerY = (touch1.clientY + touch2.clientY) / 2;
-                        
-                        // スケール係数の変化量
-                        const scaleChange = newScale - scale;
-                        
-                        // 中心点を基準にした変換調整
-                        if (Math.abs(scaleChange) > 0.01) {
-                            translateX -= (centerX - translateX) * (scaleChange / scale);
-                            translateY -= (centerY - translateY) * (scaleChange / scale);
-                            
-                            scale = newScale;
-                            applyTransform();
-                            
-                            // 開始距離を更新してスムーズに
-                            startPinchDistance = currentDistance;
-                        }
-                    } else if (e.touches.length === 1) {
-                        // パン（ドラッグ）
-                        const touch = e.touches[0];
-                        translateX = touch.clientX - startX;
-                        translateY = touch.clientY - startY;
-                        applyTransform();
-                    }
-                });
-                
-                zoomArea.addEventListener('touchend', () => {
-                    isPinching = false;
-                    
-                    // スケールが小さすぎる場合はリセット
-                    if (scale < 0.5) {
-                        scale = 0.5;
-                        applyTransform();
-                    }
-                });
-                
-                // ズームインジケーター表示
-                function showZoomIndicator(x, y, type) {
-                    if (!zoomIndicator) return;
-                    
-                    zoomIndicator.style.left = `${x}px`;
-                    zoomIndicator.style.top = `${y}px`;zoomIndicator.classList.remove('zoom-in', 'zoom-out');
-                    void zoomIndicator.offsetWidth; // リフロー強制でアニメーションリセット
-                    
-                    zoomIndicator.classList.add(`zoom-${type}`);
-                    
-                    // アニメーション終了後クラス削除
-                    setTimeout(() => {
-                        zoomIndicator.classList.remove('zoom-in', 'zoom-out');
-                    }, 400);
-                }
-            }
 
             // ヘルプモーダルの背景クリック対応をすべてのブラウザで動作するよう修正
             document.addEventListener('DOMContentLoaded', function () {
@@ -1516,10 +1479,10 @@
             { id: 1, title: "ストリートライト", artist: "加賀(ネギシャワーP)", apiToken: "HmfsoBVch26BmLCm", songUrl: "https://piapro.jp/t/ULcJ/20250205120202" },
             { id: 2, title: "アリフレーション", artist: "雨良 Amala", apiToken: "rdja5JxMEtcYmyKP", songUrl: "https://piapro.jp/t/SuQO/20250127235813" },
             { id: 3, title: "インフォーマルダイブ", artist: "99piano", apiToken: "CqbpJNJHwoGvXhlD", songUrl: "https://piapro.jp/t/Ppc9/20241224135843" },
-            { id: 4, title: "ハロー、フェルミ。", artist: "ど～ぱみん", apiToken: "o1B1ZygOqyhK5B3D", songUrl: "https://piapro.jp/t/oTaJ/20250204234235" },
+            { id: 4, title: "ハローフェルミ。", artist: "ど～ぱみん", apiToken: "o1B1ZygOqyhK5B3D", songUrl: "https://piapro.jp/t/oTaJ/20250204234235" },
             { id: 5, title: "パレードレコード", artist: "きさら", apiToken: "G8MU8Wf87RotH8OR", songUrl: "https://piapro.jp/t/GCgy/20250202202635" },
             { id: 6, title: "ロンリーラン", artist: "海風太陽", apiToken: "fI0SyBEEBzlB2f5C", songUrl: "https://piapro.jp/t/CyPO/20250128183915" }
         ];
-    </script>
-</body>
-</html>
+        </script>
+        </body>
+        </html>
