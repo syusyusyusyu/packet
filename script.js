@@ -59,7 +59,7 @@ class LyricsNetworkSimulation {
         this.displayedViewerLyrics = new Map(); // 表示済み鑑賞用歌詞を追跡
         this.viewerLyricsContainer = document.getElementById('viewer-lyrics-container') || document.createElement('div');
         if (!this.viewerLyricsContainer.parentNode) {
-            this.viewerLyricsContainer.className = 'viewer-lyrics-container absolute bottom-4 left-0 right-0 flex flex-wrap justify-center items-center gap-2 py-2 px-4 overflow-hidden z-10 pointer-events-none';
+            this.viewerLyricsContainer.className = 'viewer-lyrics-container absolute bottom-12 left-0 right-0 flex flex-wrap justify-center items-center gap-2 py-2 px-4 overflow-hidden z-10 pointer-events-none text-2xl font-bold';
             const networkEl = document.getElementById('network');
             if (networkEl) networkEl.appendChild(this.viewerLyricsContainer);
         }
