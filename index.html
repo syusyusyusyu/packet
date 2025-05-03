@@ -76,9 +76,24 @@
             color: white;
             border-radius: 8px;
             font-weight: bold;
-            transition: all 0.3s ease;
             opacity: 0;
-            transform: translateY(10px);
+            transform: translateY(20px);
+            transition: 
+                opacity 0.3s ease-out,
+                transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .viewer-lyric-char.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .viewer-lyric-char.fade-out {
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: 
+                opacity 0.5s ease-in,
+                transform 0.5s ease-in;
         }
         
         .viewer-lyric-char.highlighted {
@@ -630,10 +645,10 @@
         <!-- コントロールパネル -->
         <div class="bg-space-900 bg-opacity-80 shadow-lg border-b-2 border-miku-400 py-4">
             <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex flex-wrap items-center gap-5 control-panel">
-                    <div class="flex items-center bg-space-800 bg-opacity-80 rounded-lg px-3 py-2 border border-miku-400 control-group">
-                        <label for="source" class="block text-base font-medium text-white mr-3">送信元:</label>
-                        <select id="source" class="block w-28 pl-3 pr-10 py-2 text-base border-2 border-miku-400 focus:outline-none focus:ring-miku-300 focus:border-miku-300 sm:text-sm rounded-md shadow-sm bg-space-900 bg-opacity-90 text-white hover:bg-space-800 transition-colors duration-200">
+                <div class="flex flex-wrap items-center gap-3 sm:gap-5 control-panel">
+                    <div class="w-full sm:w-auto flex items-center bg-space-800 bg-opacity-80 rounded-lg px-3 py-2 border border-miku-400 control-group">
+                        <label for="source" class="block text-base font-medium text-white mr-3 whitespace-nowrap">送信元:</label>
+                        <select id="source" class="flex-1 sm:w-40 pl-3 pr-10 py-2 text-base border-2 border-miku-400 focus:outline-none focus:ring-miku-300 focus:border-miku-300 sm:text-sm rounded-md shadow-sm bg-space-900 bg-opacity-90 text-white hover:bg-space-800 transition-colors duration-200">
                             <option value="A">端末 A</option>
                             <option value="B">端末 B</option>
                             <option value="C">端末 C</option>
@@ -644,7 +659,7 @@
                     
                     <div class="flex items-center bg-space-800 bg-opacity-80 rounded-lg px-3 py-2 border border-miku-400 control-group">
                         <label for="destination" class="block text-base font-medium text-white mr-3">送信先:</label>
-                        <select id="destination" class="block w-28 pl-3 pr-10 py-2 text-base border-2 border-miku-400 focus:outline-none focus:ring-miku-300 focus:border-miku-300 sm:text-sm rounded-md shadow-sm bg-space-900 bg-opacity-90 text-white hover:bg-space-800 transition-colors duration-200">
+                        <select id="destination" class="block w-40 pl-3 pr-10 py-2 text-base border-2 border-miku-400 focus:outline-none focus:ring-miku-300 focus:border-miku-300 sm:text-sm rounded-md shadow-sm bg-space-900 bg-opacity-90 text-white hover:bg-space-800 transition-colors duration-200">
                             <option value="A" selected>端末 A</option>
                             <option value="B">端末 B</option>
                             <option value="C">端末 C</option>
@@ -655,7 +670,7 @@
                     
                     <div class="flex items-center bg-space-800 bg-opacity-80 rounded-lg px-3 py-2 border border-miku-400 control-group">
                         <label for="song-select" class="block text-base font-medium text-white mr-3">曲選択:</label>
-                        <select id="song-select" class="block w-64 pl-3 pr-10 py-2 text-base border-2 border-miku-400 focus:outline-none focus:ring-miku-300 focus:border-miku-300 sm:text-sm rounded-md shadow-sm bg-space-900 bg-opacity-90 text-white hover:bg-space-800 transition-colors duration-200">
+                        <select id="song-select" class="block w-96 pl-3 pr-10 py-2 text-base border-2 border-miku-400 focus:outline-none focus:ring-miku-300 focus:border-miku-300 sm:text-sm rounded-md shadow-sm bg-space-900 bg-opacity-90 text-white hover:bg-space-800 transition-colors duration-200">
                             <!-- 曲の選択肢は動的に追加されます -->
                         </select>
                     </div>

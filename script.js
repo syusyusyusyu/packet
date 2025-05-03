@@ -1988,29 +1988,27 @@ class LyricsNetworkSimulation {
         const viewerChar = document.createElement('span');
         viewerChar.className = 'viewer-lyric-char';
         viewerChar.textContent = text;
-        viewerChar.style.opacity = '0';
         this.viewerLyricsContainer.appendChild(viewerChar);
 
-        // タイプライター効果で表示
-        setTimeout(() => {
-            viewerChar.style.opacity = '1';
-            viewerChar.style.transform = 'translateY(0)';
-        }, 50);
+        // タイプライター効果のためのディレイ
+        requestAnimationFrame(() => {
+            viewerChar.classList.add('active');
+        });
 
         // 歌詞要素を追跡
         this.displayedViewerLyrics.set(text, {
             element: viewerChar
         });
 
-        // 一定時間後に鑑賞用歌詞を削除
+        // フェードアウト効果を適用して削除
         setTimeout(() => {
-            viewerChar.style.opacity = '0';
+            viewerChar.classList.add('fade-out');
             setTimeout(() => {
                 if (viewerChar.parentNode) {
                     viewerChar.parentNode.removeChild(viewerChar);
                 }
                 this.displayedViewerLyrics.delete(text);
-            }, 1000);
+            }, 500);
         }, 8000);
     }
     
