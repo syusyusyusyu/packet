@@ -735,22 +735,22 @@
                         <div class="bg-space-900 bg-opacity-80 rounded-xl shadow-glassy-sm border border-miku-400 overflow-hidden h-full flex flex-col">
                             <!-- タブ切り替えボタン -->
                             <div class="flex border-b border-miku-400">
-                                <button class="tab-button active flex-1 text-center text-white" data-tab="routing-tab">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1.5 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                    </svg>
-                                    ルーティング
-                                </button>
-                                <button class="tab-button flex-1 text-center text-white" data-tab="log-tab">
+                                <button class="tab-button active flex-1 text-center text-white" data-tab="log-tab">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1.5 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
                                     歌詞ログ
                                 </button>
+                                <button class="tab-button flex-1 text-center text-white" data-tab="routing-tab">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1.5 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                    </svg>
+                                    ルーティング
+                                </button>
                             </div>
                             
                             <!-- ルーティングテーブルのタブコンテンツ -->
-                            <div id="routing-tab" class="tab-content active flex-1 overflow-hidden">
+                            <div id="routing-tab" class="tab-content flex-1 overflow-hidden">
                                 <div class="p-4 border-b border-miku-400 bg-space-800 bg-opacity-80">
                                     <div class="flex items-center mb-2">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2.5 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -778,7 +778,7 @@
                             </div>
                             
                             <!-- 歌詞ログのタブコンテンツ -->
-                            <div id="log-tab" class="tab-content flex-1 overflow-hidden">
+                            <div id="log-tab" class="tab-content active flex-1 overflow-hidden">
                                 <div class="p-3 border-b border-miku-400 bg-space-800 bg-opacity-80">
                                     <div class="flex items-center justify-between gap-2">
                                         <h2 class="text-lg font-display font-semibold text-white flex items-center">
@@ -820,17 +820,17 @@
             <div class="h-full overflow-hidden flex flex-col">
                 <!-- タブ切り替えボタン -->
                 <div class="flex border-b border-miku-400">
-                    <button class="mobile-tab-button active flex-1 text-center text-white py-3" data-tab="mobile-routing-tab">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1.5 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                        </svg>
-                        ルーティング
-                    </button>
                     <button class="mobile-tab-button flex-1 text-center text-white py-3" data-tab="mobile-log-tab">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1.5 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         歌詞ログ
+                    </button>
+                    <button class="mobile-tab-button active flex-1 text-center text-white py-3" data-tab="mobile-routing-tab">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1.5 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        ルーティング
                     </button>
                 </div>
                 
@@ -895,8 +895,8 @@
         <div id="drawer-backdrop" class="drawer-backdrop"></div>
         
         <!-- ヘルプモーダル -->
-        <div id="help-modal" class="fixed inset-0 bg-space-900 bg-opacity-75 flex items-center justify-center z-50 hidden backdrop-blur-sm transition-all duration-300">
-            <div class="help-modal-content rounded-xl max-w-2xl mx-auto p-6 shadow-glassy overflow-hidden animate-scaleIn">
+        <div id="help-modal" class="fixed inset-0 bg-space-900 bg-opacity-75 flex items-center justify-center z-50 hidden backdrop-blur-sm transition-all duration-300 p-4">
+            <div class="help-modal-content rounded-xl w-full max-w-2xl mx-auto p-6 shadow-glassy overflow-y-auto max-h-[90vh] animate-scaleIn">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-xl font-display font-bold text-miku-300">ネットワーク歌詞シミュレーションの使い方</h2>
                     <button id="close-help" class="text-miku-300 hover:text-miku-400 focus:outline-none rounded-full p-1 hover:bg-space-800 transition-colors">
@@ -1175,6 +1175,21 @@
                 });
                 
                 observer.observe(document.getElementById('network'), { childList: true, subtree: true });
+            });
+
+            // ヘルプモーダルの背景クリック対応をすべてのブラウザで動作するよう修正
+            document.addEventListener('DOMContentLoaded', function () {
+                const helpModal = document.getElementById('help-modal');
+                const closeHelp = document.getElementById('close-help');
+                const closeHelpBtn = document.getElementById('close-help-btn');
+
+                if (helpModal) {
+                    helpModal.addEventListener('click', function (e) {
+                        if (e.target === helpModal || e.target === closeHelp || e.target === closeHelpBtn) {
+                            helpModal.classList.add('hidden');
+                        }
+                    });
+                }
             });
         </script>
         <script src="script.js"></script>

@@ -569,7 +569,7 @@ class LyricsNetworkSimulation {
                 });
             });
         });
-        
+
         // モバイルタブ
         const mobileTabButtons = document.querySelectorAll('.mobile-tab-button');
         mobileTabButtons.forEach(button => {
@@ -591,33 +591,6 @@ class LyricsNetworkSimulation {
                 });
             });
         });
-        
-        // モバイルドロワー
-        const toggleDrawerBtn = document.getElementById('toggle-drawer');
-        const drawerEl = document.getElementById('sidebar-drawer');
-        const backdropEl = document.getElementById('drawer-backdrop');
-        
-        if (toggleDrawerBtn && drawerEl) {
-            toggleDrawerBtn.addEventListener('click', () => {
-                drawerEl.classList.toggle('open');
-                if (backdropEl) backdropEl.classList.toggle('open');
-            });
-        }
-        
-        if (backdropEl) {
-            backdropEl.addEventListener('click', () => {
-                if (drawerEl) drawerEl.classList.remove('open');
-                backdropEl.classList.remove('open');
-            });
-        }
-        
-        const drawerHandle = document.querySelector('.drawer-handle');
-        if (drawerHandle && drawerEl) {
-            drawerHandle.addEventListener('click', () => {
-                drawerEl.classList.toggle('open');
-                if (backdropEl) backdropEl.classList.toggle('open');
-            });
-        }
     }
 
     // UIコンポーネントの初期化
@@ -1107,7 +1080,7 @@ class LyricsNetworkSimulation {
         // 既存の要素をクリア
         networkEl.innerHTML = '';
         
-        // まず接続を作成（ノードの下に表示するため）
+        // まず接続を作成（ノードの下に表示するため）        
         for (const connection of this.connections) {
             const fromNode = this.nodes[connection.from];
             const toNode = this.nodes[connection.to];
