@@ -525,13 +525,14 @@
                 overflow: hidden;
             }
             
-            /* モバイル用タブコンテンツを追加 */
+            /* モバイル用タブコンテンツを追加 - 常に表示する */
             #mobile-tabs-container {
-                display: block;
+                display: block !important;
                 margin-top: 1rem;
+                width: 100%;
             }
             
-            /* サイドバードロワーを無効化 */
+            /* サイドバードロワーを完全に削除 */
             .sidebar-drawer {
                 display: none !important;
             }
@@ -543,6 +544,17 @@
             #toggle-drawer {
                 display: none !important;
             }
+            
+            /* デスクトップ用サイドバーを強制非表示 */
+            #sidebar {
+                display: none !important;
+            }
+            
+            /* メインコンテンツレイアウトを垂直に強制 */
+            .flex-col, .flex-row {
+                flex-direction: column !important;
+            }
+        }
             
             /* タブをより大きくする */
             .tab-button {
@@ -857,8 +869,8 @@
                         </div>
                     </div>
                     
-                    <!-- デスクトップ用サイドバー -->
-                    <div id="sidebar" class="w-80 lg:w-96 flex-shrink-0 hidden lg:block">
+                    <!-- デスクトップ用サイドバー (lg以上の画面サイズでのみ表示) -->
+                    <div id="sidebar" class="hidden lg:block w-80 lg:w-96 flex-shrink-0">
                         <div class="bg-space-900 bg-opacity-80 rounded-xl shadow-glassy-sm border border-miku-400 overflow-hidden h-full flex flex-col">
                             <!-- タブ切り替えボタン -->
                             <div class="flex border-b border-miku-400">
@@ -1091,8 +1103,8 @@
         </div>
 
         <!-- ショートカットガイド -->
-        <div class="fixed bottom-6 right-6">
-            <div class="fixed bottom-20 right-6 bg-space-800 rounded-lg p-3 border border-miku-400 shadow-lg text-white text-sm w-48 animate-fadeIn" id="shortcut-tooltip" style="display: none;">
+        <div class="fixed bottom-6 right-6 z-50">
+            <div class="fixed bottom-20 right-6 bg-space-800 rounded-lg p-3 border border-miku-400 shadow-lg text-white text-sm w-48 animate-fadeIn z-50" id="shortcut-tooltip" style="display: none;">
                 <p class="font-semibold mb-2 text-miku-300">ショートカット:</p>
                 <ul class="space-y-1">
                     <li><kbd class="px-1.5 py-0.5 bg-space-700 border border-miku-400 rounded text-xs mr-1">S</kbd> 再生/停止</li>
@@ -1101,7 +1113,7 @@
                 </ul>
             </div>
             
-            <button id="help-btn" class="flex items-center justify-center h-14 w-14 bg-gradient-to-r from-miku-400 to-miku-600 text-white rounded-full shadow-lg hover:from-miku-300 hover:to-miku-500 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-miku-200 transform hover:scale-110 miku-glow" title="ヘルプを表示">
+            <button id="help-btn" class="flex items-center justify-center h-14 w-14 bg-gradient-to-r from-miku-400 to-miku-600 text-white rounded-full shadow-lg hover:from-miku-300 hover:to-miku-500 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-miku-200 transform hover:scale-110 miku-glow z-50" title="ヘルプを表示">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 016 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9a1 1 0 00-1-1z" clip-rule="evenodd" />
                 </svg>
