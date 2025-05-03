@@ -95,6 +95,15 @@ class LyricsNetworkSimulation {
 
         // モバイルタブの初期化
         this.setupTabControls();
+
+        // 初期ヘルプを表示
+        setTimeout(() => {
+            const helpModal = document.getElementById('help-modal');
+            if (helpModal) {
+                helpModal.classList.remove('hidden');
+                helpModal.classList.add('animate-fadeIn');
+            }
+        }, 500); // 500ms後に表示（UIの初期化を待つため）
     }
     
     // ユーザー操作検出の設定
