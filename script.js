@@ -819,14 +819,14 @@ class LyricsNetworkSimulation {
         const baseScale = this.isMobile ? 1.0 : 1.2; 
         this.nodes = {
             // 端末ノード - 左側2台、右側2台の配置
-            A: { x: 100 * baseScale, y: 150 * baseScale, type: 'terminal', label: 'A' },
+            A: { x: 100 * baseScale, y: 100 * baseScale, type: 'terminal', label: 'A' },
             B: { x: 100 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'B' },
-            C: { x: 690 * baseScale, y: 150 * baseScale, type: 'terminal', label: 'C' },
+            C: { x: 690 * baseScale, y: 100 * baseScale, type: 'terminal', label: 'C' },
             D: { x: 690 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'D' },
             
             // ルータノード - 中央に2台配置
-            X: { x: 270 * baseScale, y: 300 * baseScale, type: 'router', label: 'ルータ X' },
-            Z: { x: 520 * baseScale, y: 300 * baseScale, type: 'router', label: 'ルータ Z' }
+            X: { x: 270 * baseScale, y: 275 * baseScale, type: 'router', label: 'ルータ X' },
+            Z: { x: 520 * baseScale, y: 275 * baseScale, type: 'router', label: 'ルータ Z' }
         };
 
         // 基準サイズも更新
