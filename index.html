@@ -834,6 +834,15 @@
                 <div class="flex h-full gap-2 sm:gap-4">
                     <!-- ネットワーク表示エリア -->
                     <div id="network-container" class="flex-1 bg-space-900 bg-opacity-80 rounded-xl shadow-glassy border border-miku-400 overflow-hidden flex flex-col relative">
+                        <!-- 歌詞表示トグルボタン -->
+                        <div class="lg:hidden absolute top-4 right-4 z-20">
+                            <button id="lyrics-toggle-btn" class="bg-space-800 bg-opacity-80 text-white rounded-full p-2 shadow-lg border border-miku-400 transition-all duration-200">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span class="sr-only">歌詞表示切替</span>
+                            </button>
+                        </div>
                         <div class="px-3 sm:px-5 py-2 sm:py-3 flex justify-between items-center border-b border-miku-400 bg-space-800 bg-opacity-80">
                             <h2 class="text-lg sm:text-xl font-display font-semibold text-white flex items-center">
                                 <svg class="h-5 w-5 sm:h-6 sm:w-6 mr-2 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -871,6 +880,21 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
                             </svg>
                         </button>
+                    </div>
+
+                    <!-- モバイル用歌詞表示エリア -->
+                    <div id="lyrics-display-area" class="fixed bottom-0 left-0 right-0 bg-space-900 bg-opacity-90 border-t border-miku-400 p-2 z-10 transform transition-transform duration-300 ease-in-out lg:hidden lyrics-display-area-hidden">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-miku-300 font-medium text-sm">現在の歌詞</h3>
+                            <button id="close-lyrics-btn" class="text-white p-1 rounded-full hover:bg-space-800 transition-colors duration-200">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="mobile-lyrics-container" class="h-24 overflow-y-auto text-white text-sm">
+                            <!-- 歌詞が動的に追加されます -->
+                        </div>
                     </div>
                     
                     <!-- デスクトップ用サイドバー -->

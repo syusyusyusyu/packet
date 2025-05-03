@@ -66,6 +66,10 @@ class LyricsNetworkSimulation {
             if (networkEl) networkEl.appendChild(this.viewerLyricsContainer);
         }
         
+        // 歌詞表示状態の初期化
+        this.isMobileLyricsVisible = localStorage.getItem('lyricsVisible') === 'true';
+        this.setupMobileLyricsControl();
+        
         // データ初期化
         this.initializeNodes();
         this.createConnections();
@@ -109,6 +113,52 @@ class LyricsNetworkSimulation {
                 helpModal.classList.add('animate-fadeIn');
             }
         }, 500); // 500ms後に表示（UIの初期化を待つため）
+    }
+    
+    // モバイル用歌詞表示制御の設定
+    setupMobileLyricsControl() {
+        const lyricsToggleBtn = document.getElementById('lyrics-toggle-btn');
+        const lyricsDisplayArea = document.getElementById('lyrics-display-area');
+        const closeLyricsBtn = document.getElementById('close-lyrics-btn');
+
+        if (lyricsToggleBtn && lyricsDisplayArea) {
+            // 初期状態を設定
+            this.updateMobileLyricsVisibility();
+
+            // トグルボタンのクリック処理
+            lyricsToggleBtn.addEventListener('click', () => {
+                this.isMobileLyricsVisible = !this.isMobileLyricsVisible;
+                this.updateMobileLyricsVisibility();
+                localStorage.setItem('lyricsVisible', this.isMobileLyricsVisible);
+            });
+
+            // 閉じるボタンのクリック処理
+            if (closeLyricsBtn) {
+                closeLyricsBtn.addEventListener('click', () => {
+                    this.isMobileLyricsVisible = false;
+                    this.updateMobileLyricsVisibility();
+                    localStorage.setItem('lyricsVisible', false);
+                });
+            }
+        }
+    }
+
+    // 歌詞表示状態の更新
+    updateMobileLyricsVisibility() {
+        const lyricsDisplayArea = document.getElementById('lyrics-display-area');
+        const lyricsToggleBtn = document.getElementById('lyrics-toggle-btn');
+
+        if (lyricsDisplayArea) {
+            if (this.isMobileLyricsVisible) {
+                lyricsDisplayArea.classList.remove('lyrics-display-area-hidden');
+                lyricsDisplayArea.classList.add('lyrics-display-area-visible');
+                if (lyricsToggleBtn) lyricsToggleBtn.classList.add('active');
+            } else {
+                lyricsDisplayArea.classList.add('lyrics-display-area-hidden');
+                lyricsDisplayArea.classList.remove('lyrics-display-area-visible');
+                if (lyricsToggleBtn) lyricsToggleBtn.classList.remove('active');
+            }
+        }
     }
     
     // モバイル用タッチイベント設定
