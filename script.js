@@ -1961,6 +1961,12 @@ class LyricsNetworkSimulation {
         const viewerChar = document.createElement('span');
         viewerChar.className = 'viewer-lyric-char';
         viewerChar.textContent = text;
+        
+        // コンテナが空でない場合は1文字分のスペースを追加
+        if (this.viewerLyricsContainer.children.length > 0) {
+            this.viewerLyricsContainer.appendChild(document.createTextNode(' '));
+        }
+        
         this.viewerLyricsContainer.appendChild(viewerChar);
 
         // タイプライター効果のためのディレイ
@@ -1978,7 +1984,12 @@ class LyricsNetworkSimulation {
             viewerChar.classList.add('fade-out');
             setTimeout(() => {
                 if (viewerChar.parentNode) {
-                    viewerChar.parentNode.removeChild(viewerChar);
+                    // 直前のスペースがあれば削除
+                    const prev = viewerChar.previousSibling;
+                    if (prev && prev.nodeType === Node.TEXT_NODE) {
+                        prev.remove();
+                    }
+                    viewerChar.remove();
                 }
                 this.displayedViewerLyrics.delete(text);
             }, 500);
