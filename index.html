@@ -773,26 +773,13 @@
                             <!-- 歌詞ログのタブコンテンツ -->
                             <div id="log-tab" class="tab-content active flex-1 overflow-hidden">
                                 <div class="p-3 border-b border-miku-400 bg-space-800 bg-opacity-80">
-                                    <div class="flex items-center justify-between gap-2">
+                                    <div class="flex items-center">
                                         <h2 class="text-lg font-display font-semibold text-white flex items-center">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2.5 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                             </svg>
                                             歌詞ログ
                                         </h2>
-                                        <div class="flex gap-2">
-                                            <input id="log-search" type="text" placeholder="検索" 
-                                                class="w-24 text-sm border border-miku-400 rounded px-2 py-1 bg-space-900 bg-opacity-80 text-white">
-                                            <select id="log-filter" class="text-sm border border-miku-400 rounded px-2 py-1 bg-space-900 bg-opacity-80 text-white">
-                                                <option value="all">全て</option>
-                                                <option value="info">情報</option>
-                                                <option value="success">成功</option>
-                                                <option value="error">エラー</option>
-                                            </select>
-                                            <button id="clear-log" class="text-sm bg-space-800 bg-opacity-90 border border-miku-400 rounded px-3 py-1 text-white hover:bg-space-700 transition-colors">
-                                                クリア
-                                            </button>
-                                        </div>
                                     </div>
                                 </div>
                                 <div id="log-container" class="flex-1 overflow-y-auto bg-space-900 bg-opacity-70">
@@ -857,24 +844,13 @@
                 <!-- 歌詞ログのタブコンテンツ -->
                 <div id="mobile-log-tab" class="tab-content flex-1 overflow-hidden">
                     <div class="p-3 border-b border-miku-400 bg-space-800 bg-opacity-80">
-                        <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center">
                             <h2 class="text-lg font-display font-semibold text-white flex items-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                                 歌詞ログ
                             </h2>
-                            <div class="flex gap-2">
-                                <select id="mobile-log-filter" class="text-sm border border-miku-400 rounded px-2 py-1 bg-space-900 bg-opacity-80 text-white">
-                                    <option value="all">全て</option>
-                                    <option value="info">情報</option>
-                                    <option value="success">成功</option>
-                                    <option value="error">エラー</option>
-                                </select>
-                                <button id="mobile-clear-log" class="text-sm bg-space-800 bg-opacity-90 border border-miku-400 rounded px-3 py-1 text-white hover:bg-space-700 transition-colors">
-                                    クリア
-                                </button>
-                            </div>
                         </div>
                     </div>
                     <div id="mobile-log-container" class="flex-1 overflow-y-auto bg-space-900 bg-opacity-70">
@@ -1084,10 +1060,7 @@
                 }
                 
                 // ログ同期（通常とモバイル両方に反映させる）
-                const syncElements = [
-                    { desktop: 'log-filter', mobile: 'mobile-log-filter' },
-                    { desktop: 'clear-log', mobile: 'mobile-clear-log' }
-                ];
+                const syncElements = [];
                 
                 syncElements.forEach(pair => {
                     const desktopEl = document.getElementById(pair.desktop);

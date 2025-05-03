@@ -2014,59 +2014,31 @@ class LogManager {
     }
 
     setupEventListeners() {
-        // フィルターコントロールのイベントリスナー
-        const filterSelect = document.getElementById('log-filter');
-        const mobileFilterSelect = document.getElementById('mobile-log-filter');
-        
-        if (filterSelect) {
-            filterSelect.addEventListener('change', () => this.applyFilter(filterSelect.value));
-        }
-        
-        if (mobileFilterSelect) {
-            mobileFilterSelect.addEventListener('change', () => this.applyFilter(mobileFilterSelect.value));
-        }
-
-        // クリアボタンのイベントリスナー
-        const clearBtn = document.getElementById('clear-log');
-        const mobileClearBtn = document.getElementById('mobile-clear-log');
-        
-        if (clearBtn) {
-            clearBtn.addEventListener('click', () => this.clearLogs());
-        }
-        
-        if (mobileClearBtn) {
-            mobileClearBtn.addEventListener('click', () => this.clearLogs());
-        }
-
-        // 定期的なログ更新
+        // 定期的なログ更新のみ残す
         this.updateInterval = setInterval(() => this.flushEntries(), 250);
     }
 
-    // ログを追加
     addEntry(message, type = 'info') {
         this.pendingEntries.push({ message, type, timestamp: new Date() });
     }
 
-    // 保留中のエントリーをDOMに反映
     flushEntries() {
         if (!this.pendingEntries.length) return;
         if (!this.container && !this.mobileContainer) return;
 
         const fragment = document.createDocumentFragment();
         const mobileFragment = document.createDocumentFragment();
-        const currentFilter = document.getElementById('log-filter')?.value || 'all';
-        const mobileFilter = document.getElementById('mobile-log-filter')?.value || 'all';
 
         this.pendingEntries.forEach(entry => {
             // デスクトップ用ログエントリー
             if (this.container) {
-                const logEntry = this.createLogEntryElement(entry, currentFilter);
+                const logEntry = this.createLogEntryElement(entry);
                 fragment.appendChild(logEntry);
             }
             
             // モバイル用ログエントリー
             if (this.mobileContainer) {
-                const mobileLogEntry = this.createLogEntryElement(entry, mobileFilter);
+                const mobileLogEntry = this.createLogEntryElement(entry);
                 mobileFragment.appendChild(mobileLogEntry);
             }
         });
@@ -2087,18 +2059,11 @@ class LogManager {
 
         this.pendingEntries = [];
     }
-    
-    // ログエントリーの要素を作成
-    createLogEntryElement(entry, currentFilter) {
+
+    createLogEntryElement(entry) {
         const logEntry = document.createElement('div');
         logEntry.className = `log-entry ${entry.type} flex items-start`;
-        
-        // フィルター適用
-        if (currentFilter !== 'all' && entry.type !== currentFilter) {
-            logEntry.classList.add('log-filtered');
-        }
 
-        // アイコンとメッセージを含む内部要素
         const iconSpan = document.createElement('span');
         iconSpan.className = `log-icon ${this.getIconClass(entry.type)}`;
         iconSpan.textContent = this.getIcon(entry.type);
@@ -2120,14 +2085,12 @@ class LogManager {
         return logEntry;
     }
 
-    // ログエントリーの数を制限
     limitLogEntries(container) {
         while (container.children.length > this.maxEntries) {
             container.removeChild(container.firstChild);
         }
     }
 
-    // 一番下にスクロール
     scrollToBottom(container) {
         const logContainer = container.parentElement;
         if (logContainer) {
@@ -2135,55 +2098,6 @@ class LogManager {
         }
     }
 
-    // フィルターを適用
-    applyFilter(filterType) {
-        // デスクトップログにフィルター適用
-        if (this.container) {
-            const entries = this.container.querySelectorAll('.log-entry');
-            this.applyFilterToEntries(entries, filterType);
-        }
-        
-        // モバイルログにもフィルター適用
-        if (this.mobileContainer) {
-            const mobileEntries = this.mobileContainer.querySelectorAll('.log-entry');
-            this.applyFilterToEntries(mobileEntries, filterType);
-        }
-    }
-    
-    // エントリー集合にフィルターを適用
-    applyFilterToEntries(entries, filterType) {
-        entries.forEach(entry => {
-            if (filterType === 'all') {
-                entry.classList.remove('log-filtered');
-            } else {
-                entry.classList.toggle('log-filtered', !entry.classList.contains(filterType));
-            }
-        });
-    }
-
-    // ログをクリア
-    clearLogs() {
-        // デスクトップログクリア
-        if (this.container) {
-            this.clearLogContainer(this.container);
-        }
-        
-        // モバイルログクリア
-        if (this.mobileContainer) {
-            this.clearLogContainer(this.mobileContainer);
-        }
-    }
-    
-    // コンテナのログをクリア
-    clearLogContainer(container) {
-        const defaultMessage = document.createElement('div');
-        defaultMessage.className = 'text-gray-400 italic p-2';
-        defaultMessage.textContent = 'ログがクリアされました...';
-        container.innerHTML = '';
-        container.appendChild(defaultMessage);
-    }
-
-    // タイプに基づくアイコンを取得
     getIcon(type) {
         switch (type) {
             case 'error': return '✖';
@@ -2193,7 +2107,6 @@ class LogManager {
         }
     }
 
-    // タイプに基づくアイコンクラスを取得
     getIconClass(type) {
         switch (type) {
             case 'error': return 'bg-red-100 text-red-500';
@@ -2203,7 +2116,6 @@ class LogManager {
         }
     }
 
-    // リソース解放
     dispose() {
         if (this.updateInterval) {
             clearInterval(this.updateInterval);
