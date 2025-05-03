@@ -2,6 +2,7 @@
  * ミク☆スターネットワーク歌詞シミュレーター
  * 歌詞ネットワークシミュレーション - TextAlive API統合版
  * 初音ミクの曲の歌詞がネットワーク上を流れる様子を表示する
+ * モバイル対応強化版
  */
 
 // TextAliveネットワークシミュレーション - 歌詞流れ可視化
@@ -29,6 +30,7 @@ class LyricsNetworkSimulation {
             lyricsDelivered: 0,
             totalHops: 0
         };
+        this.isMobile = window.innerWidth <= 768; // モバイル判定
         
         // TextAlive API関連
         this.player = null;              // TextAlive Player
@@ -95,6 +97,9 @@ class LyricsNetworkSimulation {
 
         // モバイルタブの初期化
         this.setupTabControls();
+        
+        // モバイル用タッチイベント設定
+        this.setupMobileInteraction();
 
         // 初期ヘルプを表示
         setTimeout(() => {
@@ -104,6 +109,79 @@ class LyricsNetworkSimulation {
                 helpModal.classList.add('animate-fadeIn');
             }
         }, 500); // 500ms後に表示（UIの初期化を待つため）
+    }
+    
+    // モバイル用タッチイベント設定
+    setupMobileInteraction() {
+        if (this.isMobile) {
+            this.setupTouchTargets();
+        }
+    }
+    
+    // モバイル用タッチ操作領域設定
+    setupTouchTargets() {
+        // 端末アイコンにタッチ領域を追加
+        document.querySelectorAll('.terminal').forEach(terminal => {
+            const touchArea = document.createElement('div');
+            touchArea.className = 'mobile-touch-area';
+            touchArea.style.left = terminal.style.left;
+            touchArea.style.top = terminal.style.top;
+            touchArea.dataset.target = terminal.dataset.id;
+            
+            // タッチアイコンのイベント伝播
+            touchArea.addEventListener('click', () => {
+                this.handleTerminalClick(touchArea.dataset.target);
+            });
+            
+            const network = document.getElementById('network');
+            if (network) {
+                network.appendChild(touchArea);
+            }
+        });
+        
+        // スワイプでドロワーを開閉
+        const drawer = document.getElementById('sidebar-drawer');
+        const backdrop = document.getElementById('drawer-backdrop');
+        const network = document.getElementById('network');
+        
+        if (drawer && network) {
+            let startY = 0;
+            let startTime = 0;
+            
+            network.addEventListener('touchstart', (e) => {
+                startY = e.touches[0].clientY;
+                startTime = Date.now();
+            });
+            
+            network.addEventListener('touchend', (e) => {
+                const endY = e.changedTouches[0].clientY;
+                const deltaY = startY - endY;
+                const deltaTime = Date.now() - startTime;
+                
+                // 下から上へのスワイプでドロワーを開く
+                if (deltaY > 50 && deltaTime < 300) {
+                    drawer.classList.add('open');
+                    backdrop.classList.add('open');
+                }
+            });
+            
+            drawer.addEventListener('touchstart', (e) => {
+                startY = e.touches[0].clientY;
+                startTime = Date.now();
+            });
+            
+            drawer.addEventListener('touchend', (e) => {
+                const endY = e.changedTouches[0].clientY;
+                const deltaY = endY - startY;
+                const deltaTime = Date.now() - startTime;
+                
+                // 上から下へのスワイプでドロワーを閉じる
+                if (deltaY > 50 && deltaTime < 300) {
+                    drawer.classList.remove('open');
+                    backdrop.classList.remove('open');
+                }
+            });
+        }
     }
     
     // ユーザー操作検出の設定
@@ -551,8 +629,14 @@ class LyricsNetworkSimulation {
     
     // ウィンドウサイズ変更ハンドラー
     handleResize() {
+        this.isMobile = window.innerWidth <= 768;
         this.calculateScaleFactor();
         this.renderNetwork();
+        
+        // モバイル/デスクトップ切り替え時にDOMを再構築
+        if (this.isMobile) {
+            this.setupTouchTargets();
+        }
     }
 
     // タブコントロールのセットアップ
@@ -617,6 +701,42 @@ class LyricsNetworkSimulation {
         
         // 曲選択ドロップダウンを設定
         this.updateSongSelectionDropdown();
+        
+        // モバイルズームボタンのイベント設定
+        this.setupMobileZoomButtons();
+    }
+    
+    // モバイルズームボタンの設定
+    setupMobileZoomButtons() {
+        const zoomInBtn = document.getElementById('zoom-in-btn');
+        const zoomOutBtn = document.getElementById('zoom-out-btn');
+        const network = document.getElementById('network');
+        
+        if (!zoomInBtn || !zoomOutBtn || !network) return;
+        
+        let scale = 1;
+        let translateX = 0;
+        let translateY = 0;
+        
+        // ズームイン
+        zoomInBtn.addEventListener('click', () => {
+            scale = Math.min(scale * 1.2, 3);
+            applyTransform();
+        });
+        
+        // ズームアウト
+        zoomOutBtn.addEventListener('click', () => {
+            scale = Math.max(scale / 1.2, 0.5);
+            translateX = scale === 0.5 ? 0 : translateX;
+            translateY = scale === 0.5 ? 0 : translateY;
+            applyTransform();
+        });
+        
+        // 変換適用
+        function applyTransform() {
+            const transformValue = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            network.style.transform = transformValue;
+        }
     }
     
     // 曲選択ドロップダウンの更新
@@ -636,11 +756,17 @@ class LyricsNetworkSimulation {
         
         // 初期選択値を設定
         songSelect.value = this.selectedSongIndex;
+        
+        // モバイル用にフォントサイズ調整
+        if (this.isMobile) {
+            songSelect.classList.add('text-sm');
+        }
     }
     
     // ノード位置の初期化
     initializeNodes() {
-        const baseScale = 1.2; // スケールを20%増加
+        // モバイル用に基本サイズを調整
+        const baseScale = this.isMobile ? 1.0 : 1.2; 
         this.nodes = {
             // 端末ノード
             A: { x: 80 * baseScale, y: 150 * baseScale, type: 'terminal', label: 'A' },
@@ -713,6 +839,13 @@ class LyricsNetworkSimulation {
         
         // 背景クリックで閉じる
         helpModal.addEventListener('click', (e) => {
+            if (e.target === helpModal) {
+                this.closeHelpModal(helpModal);
+            }
+        });
+        
+        // タッチイベント用
+        helpModal.addEventListener('touchend', (e) => {
             if (e.target === helpModal) {
                 this.closeHelpModal(helpModal);
             }
@@ -1068,6 +1201,11 @@ class LyricsNetworkSimulation {
         
         this.scaleFactor = Math.min(scaleX, scaleY, 1);
         
+        // モバイルの場合は追加の縮小
+        if (this.isMobile) {
+            this.scaleFactor = Math.min(this.scaleFactor * 0.9, 0.8);
+        }
+        
         // ネットワークを中央に配置
         this.offsetX = (containerWidth - (this.baseWidth * this.scaleFactor)) / 2;
         this.offsetY = (containerHeight - (this.baseHeight * this.scaleFactor)) / 2;
@@ -1086,8 +1224,16 @@ class LyricsNetworkSimulation {
         const networkEl = document.getElementById('network');
         if (!networkEl) return;
         
-        // 既存の要素をクリア
+        // 既存の要素をクリア（ピンチズームコンテナは維持）
+        const zoomArea = networkEl.querySelector('.zoom-area');
+        const zoomIndicator = networkEl.querySelector('.zoom-indicator');
         networkEl.innerHTML = '';
+        
+        // ズーム関連要素を復元
+        if (zoomArea && zoomIndicator) {
+            networkEl.appendChild(zoomArea);
+            networkEl.appendChild(zoomIndicator);
+        }
         
         // まず接続を作成（ノードの下に表示するため）        
         for (const connection of this.connections) {
@@ -1117,6 +1263,11 @@ class LyricsNetworkSimulation {
             connectionEl.style.transform = `rotate(${angle}rad)`;
             connectionEl.title = `接続: ${connection.from} → ${connection.to}`;
             
+            // タッチエリアの拡大
+            if (this.isMobile) {
+                connectionEl.style.height = '6px';
+            }
+            
             networkEl.appendChild(connectionEl);
             
             // ポートラベルを表示
@@ -1136,6 +1287,12 @@ class LyricsNetworkSimulation {
                 portLabelEl.style.left = `${midX}px`;
                 portLabelEl.style.top = `${midY}px`;
                 portLabelEl.title = `ポート ${connection.portLabel}: ${connection.from} → ${connection.to}`;
+                
+                // モバイル用にタッチエリア拡大
+                if (this.isMobile) {
+                    portLabelEl.style.width = '32px';
+                    portLabelEl.style.height = '32px';
+                }
                 
                 networkEl.appendChild(portLabelEl);
             }
@@ -1187,12 +1344,21 @@ class LyricsNetworkSimulation {
             nodeEl.addEventListener('mouseenter', () => this.highlightConnections(id));
             nodeEl.addEventListener('mouseleave', () => this.unhighlightConnections(id));
             
+            // タッチデバイス用イベント
+            nodeEl.addEventListener('touchstart', () => this.highlightConnections(id));
+            nodeEl.addEventListener('touchend', () => this.unhighlightConnections(id));
+            
             networkEl.appendChild(nodeEl);
         }
         
         // 鑑賞用歌詞コンテナの再追加
         if (this.viewerLyricsContainer && !this.viewerLyricsContainer.parentNode) {
             networkEl.appendChild(this.viewerLyricsContainer);
+        }
+        
+        // モバイル用にタッチターゲットのセットアップ
+        if (this.isMobile) {
+            this.setupTouchTargets();
         }
     }
     
@@ -1207,8 +1373,17 @@ class LyricsNetworkSimulation {
         if (window.event && window.event.shiftKey) {
             destSelect.value = id;
         } else {
-            // それ以外は送信元に設定
-            sourceSelect.value = id;
+            // Shiftダブルタップでも送信先に設定（モバイル用）
+            const now = new Date().getTime();
+            if (this.lastTerminalTap && this.lastTerminalTap.id === id && now - this.lastTerminalTap.time < 500) {
+                destSelect.value = id;
+            } else {
+                // それ以外は送信元に設定
+                sourceSelect.value = id;
+            }
+            
+            // タップ情報を保存
+            this.lastTerminalTap = { id, time: now };
         }
         
         this.updateActiveTerminals();
@@ -1331,6 +1506,17 @@ class LyricsNetworkSimulation {
             sendBtn.addEventListener('click', () => {
                 this.startPlayback();
             });
+            
+            // タッチ端末向け改善
+            if (this.isMobile) {
+                sendBtn.addEventListener('touchstart', () => {
+                    sendBtn.classList.add('scale-95', 'opacity-90');
+                });
+                
+                sendBtn.addEventListener('touchend', () => {
+                    sendBtn.classList.remove('scale-95', 'opacity-90');
+                });
+            }
         }
         
         if (stopBtn) {
@@ -1339,12 +1525,34 @@ class LyricsNetworkSimulation {
                     this.stopSimulation();
                 }
             });
+            
+            // タッチ端末向け改善
+            if (this.isMobile) {
+                stopBtn.addEventListener('touchstart', () => {
+                    stopBtn.classList.add('scale-95', 'opacity-90');
+                });
+                
+                stopBtn.addEventListener('touchend', () => {
+                    stopBtn.classList.remove('scale-95', 'opacity-90');
+                });
+            }
         }
         
         if (fullscreenBtn) {
             fullscreenBtn.addEventListener('click', () => {
                 this.toggleFullscreen();
             });
+            
+            // タッチ端末向け改善
+            if (this.isMobile) {
+                fullscreenBtn.addEventListener('touchstart', () => {
+                    fullscreenBtn.classList.add('scale-95', 'opacity-90');
+                });
+                
+                fullscreenBtn.addEventListener('touchend', () => {
+                    fullscreenBtn.classList.remove('scale-95', 'opacity-90');
+                });
+            }
         }
         
         if (songSelect) {
@@ -1657,6 +1865,13 @@ class LyricsNetworkSimulation {
             lyricEl.style.width = 'auto';
             lyricEl.style.minWidth = '36px';
             lyricEl.style.padding = '0 8px';
+        }
+        
+        // モバイル用に表示を最適化
+        if (this.isMobile && lyric.text.length > 3) {
+            lyricEl.style.fontSize = '9px';
+            lyricEl.style.height = '20px';
+            lyricEl.style.padding = '2px 6px';
         }
         
         const fromPos = this.scalePosition(fromNode.x, fromNode.y);
@@ -1988,6 +2203,11 @@ class LyricsNetworkSimulation {
             element: viewerChar
         });
 
+        // モバイル用にサイズ調整
+        if (this.isMobile) {
+            viewerChar.style.fontSize = '18px';
+        }
+
         // フェードアウト効果を適用して削除
         setTimeout(() => {
             viewerChar.classList.add('fade-out');
@@ -2073,21 +2293,16 @@ class LogManager {
         const logEntry = document.createElement('div');
         logEntry.className = `log-entry ${entry.type} flex items-start`;
 
-        const iconSpan = document.createElement('span');
-        iconSpan.className = `log-icon ${this.getIconClass(entry.type)}`;
-        iconSpan.textContent = this.getIcon(entry.type);
-
         const messageDiv = document.createElement('div');
         messageDiv.className = 'log-message';
         messageDiv.textContent = entry.message;
 
         const timeSpan = document.createElement('span');
-        timeSpan.className = 'log-timestamp';
+        timeSpan.className = 'log-timestamp text-xs whitespace-nowrap ml-2';
         timeSpan.textContent = entry.timestamp.toLocaleTimeString('ja-JP', { 
             hour: '2-digit', minute: '2-digit', second: '2-digit' 
         });
 
-        logEntry.appendChild(iconSpan);
         logEntry.appendChild(messageDiv);
         logEntry.appendChild(timeSpan);
         
@@ -2104,24 +2319,6 @@ class LogManager {
         const logContainer = container.parentElement;
         if (logContainer) {
             logContainer.scrollTop = logContainer.scrollHeight;
-        }
-    }
-
-    getIcon(type) {
-        switch (type) {
-            case 'error': return '✖';
-            case 'success': return '✓';
-            case 'system': return 'ℹ';
-            default: return '●';
-        }
-    }
-
-    getIconClass(type) {
-        switch (type) {
-            case 'error': return 'bg-red-100 text-red-500';
-            case 'success': return 'bg-accent-100 text-accent-500';
-            case 'system': return 'bg-gray-100 text-gray-500';
-            default: return 'bg-primary-100 text-primary-500';
         }
     }
 
@@ -2147,4 +2344,54 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) {
         console.error('シミュレーションの初期化エラー:', e);
     }
+
+    // サイドバー（ドロワー）閉じるボタンの設定
+const closeDrawerBtn = document.getElementById('close-drawer');
+const drawerEl = document.getElementById('sidebar-drawer');
+const backdropEl = document.getElementById('drawer-backdrop');
+const networkEl = document.getElementById('network');
+
+if (closeDrawerBtn && drawerEl && backdropEl) {
+    // 閉じるボタンクリックでドロワーを閉じる
+    closeDrawerBtn.addEventListener('click', () => {
+        drawerEl.classList.remove('open');
+        backdropEl.classList.remove('open');
+    });
+    
+    // メインコンテンツ領域のクリックでもドロワーを閉じる
+    if (networkEl) {
+        networkEl.addEventListener('click', (e) => {
+            // ピンチズームやパケットクリック処理の妨げにならないよう、
+            // ドロワーが開いている場合のみ処理
+            if (drawerEl.classList.contains('open')) {
+                drawerEl.classList.remove('open');
+                backdropEl.classList.remove('open');
+            }
+        });
+    }
+}
+
+// スワイプでドロワーを閉じる機能の強化
+if (drawerEl) {
+    let startY = 0;
+    let startTime = 0;
+    
+    drawerEl.addEventListener('touchstart', (e) => {
+        startY = e.touches[0].clientY;
+        startTime = Date.now();
+    });
+    
+    drawerEl.addEventListener('touchend', (e) => {
+        const endY = e.changedTouches[0].clientY;
+        const deltaY = endY - startY;
+        const deltaTime = Date.now() - startTime;
+        
+        // 短い時間での下方向のスワイプでドロワーを閉じる
+        // しきい値を小さくして操作性向上
+        if (deltaY > 30 && deltaTime < 300) {
+            drawerEl.classList.remove('open');
+            backdropEl.classList.remove('open');
+        }
+    });
+}
 });
