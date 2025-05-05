@@ -584,6 +584,13 @@ class LyricsNetworkSimulation {
         this.playRequestPending = false;
         this.clearLyrics();
         this.updateSimulationStatus();
+
+        // 送信開始ボタンを有効化
+        const sendBtn = document.getElementById('send-btn');
+        if (sendBtn) {
+            sendBtn.disabled = false;
+            sendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
     }
     
     // 曲変更処理
