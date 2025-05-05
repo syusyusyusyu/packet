@@ -819,10 +819,10 @@ class LyricsNetworkSimulation {
         const baseScale = this.isMobile ? 1.0 : 1.2; 
         this.nodes = {
             // 端末ノード - 左側2台、右側2台の配置
-            A: { x: 0 * baseScale, y: 50 * baseScale, type: 'terminal', label: 'A' },
-            B: { x: 0 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'B' },
-            C: { x: 790 * baseScale, y: 50 * baseScale, type: 'terminal', label: 'C' },
-            D: { x: 790 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'D' },
+            A: { x: 25 * baseScale, y: 50 * baseScale, type: 'terminal', label: 'A' },
+            B: { x: 25 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'B' },
+            C: { x: 765 * baseScale, y: 50 * baseScale, type: 'terminal', label: 'C' },
+            D: { x: 765 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'D' },
             
             // ルータノード - 中央に2台配置（ZをYに変更）
             X: { x: 250 * baseScale, y: 250 * baseScale, type: 'router', label: 'ルータ X' },
