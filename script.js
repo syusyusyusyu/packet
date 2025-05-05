@@ -824,9 +824,9 @@ class LyricsNetworkSimulation {
             C: { x: 690 * baseScale, y: 100 * baseScale, type: 'terminal', label: 'C' },
             D: { x: 690 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'D' },
             
-            // ルータノード - 中央に2台配置
+            // ルータノード - 中央に2台配置（ZをYに変更）
             X: { x: 270 * baseScale, y: 275 * baseScale, type: 'router', label: 'ルータ X' },
-            Z: { x: 520 * baseScale, y: 275 * baseScale, type: 'router', label: 'ルータ Z' }
+            Y: { x: 520 * baseScale, y: 275 * baseScale, type: 'router', label: 'ルータ Y' }  // ZをYに変更
         };
 
         // 基準サイズも更新
@@ -841,12 +841,12 @@ class LyricsNetworkSimulation {
             { from: 'A', to: 'X', fromPort: null, toPort: 1, portLabel: 1, id: 'A-X' },
             { from: 'B', to: 'X', fromPort: null, toPort: 2, portLabel: 2, id: 'B-X' },
             
-            // 端末C,DとルータZの接続
-            { from: 'C', to: 'Z', fromPort: null, toPort: 3, portLabel: 3, id: 'C-Z' },
-            { from: 'D', to: 'Z', fromPort: null, toPort: 4, portLabel: 4, id: 'D-Z' },
+            // 端末C,DとルータYの接続（ZをYに変更）
+            { from: 'C', to: 'Y', fromPort: null, toPort: 3, portLabel: 3, id: 'C-Y' },
+            { from: 'D', to: 'Y', fromPort: null, toPort: 4, portLabel: 4, id: 'D-Y' },
             
-            // ルータX-Z間の接続
-            { from: 'X', to: 'Z', fromPort: 5, toPort: 5, portLabel: 5, id: 'X-Z' }
+            // ルータX-Y間の接続（ZをYに変更）
+            { from: 'X', to: 'Y', fromPort: 5, toPort: 5, portLabel: 5, id: 'X-Y' }
         ];
     }
     
@@ -1474,7 +1474,7 @@ class LyricsNetworkSimulation {
                 { dest: '端末 B', port: '2' },
                 { dest: '端末 C,D', port: '5' }
             ]},
-            { title: 'ルータ Z', routes: [
+            { title: 'ルータ Y', routes: [  // ZをYに変更
                 { dest: '端末 C', port: '3' },
                 { dest: '端末 D', port: '4' },
                 { dest: '端末 A,B', port: '5' }
@@ -1527,18 +1527,18 @@ class LyricsNetworkSimulation {
     getNextHop(currentNode, destination) {
         // 端末からルータへの直接接続
         if (currentNode === 'A' || currentNode === 'B') return 'X';
-        if (currentNode === 'C' || currentNode === 'D') return 'Z';
+        if (currentNode === 'C' || currentNode === 'D') return 'Y';  // ZをYに変更
 
         // ルータXからの経路
         if (currentNode === 'X') {
             if (destination === 'A' || destination === 'B') return destination;
-            return 'Z'; // C,D宛て
+            return 'Y';  // ZをYに変更
         }
 
-        // ルータZからの経路
-        if (currentNode === 'Z') {
+        // ルータYからの経路（ZをYに変更）
+        if (currentNode === 'Y') {  // ZをYに変更
             if (destination === 'C' || destination === 'D') return destination;
-            return 'X'; // A,B宛て
+            return 'X';
         }
 
         return null;
@@ -1740,7 +1740,7 @@ class LyricsNetworkSimulation {
             document.msFullscreenElement) {
             // フルスクリーンモード
             fullscreenBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
                 全画面解除
@@ -1748,7 +1748,7 @@ class LyricsNetworkSimulation {
         } else {
             // 通常モード
             fullscreenBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 0h-4m4 0l-5-5" />
                 </svg>
                 全画面
@@ -2227,7 +2227,7 @@ class LyricsNetworkSimulation {
             viewerChar.style.fontSize = '18px';
         }
 
-        // フェードアウト効果を適用して削除
+        // フェードアウト効果を適用して削除（8秒から6秒に変更）
         setTimeout(() => {
             viewerChar.classList.add('fade-out');
             setTimeout(() => {
@@ -2241,7 +2241,7 @@ class LyricsNetworkSimulation {
                 }
                 this.displayedViewerLyrics.delete(text);
             }, 500);
-        }, 8000);
+        }, 6000); // 8000から6000に変更
     }
     
     // ログエントリーを追加
