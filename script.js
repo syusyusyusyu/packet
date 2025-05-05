@@ -831,7 +831,7 @@ class LyricsNetworkSimulation {
             C: { x: 765 * baseScale, y: 50 * baseScale, type: 'terminal', label: 'C' },
             D: { x: 765 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'D' },
             
-            // ルータノード - 中央に2台配置（ZをYに変更）
+            // ルータノード - 中央に2台配置
             X: { x: 250 * baseScale, y: 250 * baseScale, type: 'router', label: 'ルータX' },
             Y: { x: 540 * baseScale, y: 250 * baseScale, type: 'router', label: 'ルータY' }  
         };
