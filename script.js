@@ -2248,7 +2248,7 @@ class LyricsNetworkSimulation {
                 }
                 this.displayedViewerLyrics.delete(text);
             }, 500);
-        }, 5000); 
+        }, 5000); // 5000に変更
     }
     
     // ログエントリーを追加
