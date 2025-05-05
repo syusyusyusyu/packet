@@ -76,8 +76,8 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr 1fr;
-    width: 34px;
-    height: 34px;
+    width: 56px;
+    height: 56px;
     margin-bottom: 4px;
     border-radius: 6px;
     overflow: hidden;
@@ -147,8 +147,8 @@
 
 .port-label {
     position: absolute;
-    width: 24px;
-    height: 24px;
+    width: 42px;
+    height: 42px;
     background-color: #0b89ff;
     color: white;
     border-radius: 50%;
