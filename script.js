@@ -2282,35 +2282,23 @@ class LogManager {
         if (!this.container && !this.mobileContainer) return;
 
         const fragment = document.createDocumentFragment();
-        const mobileFragment = document.createDocumentFragment();
 
         this.pendingEntries.forEach(entry => {
-            // デスクトップ用ログエントリー
-            if (this.container) {
-                const logEntry = this.createLogEntryElement(entry);
-                fragment.appendChild(logEntry);
-            }
+            const logEntry = this.createLogEntryElement(entry);
             
-            // モバイル用ログエントリー
-            if (this.mobileContainer) {
-                const mobileLogEntry = this.createLogEntryElement(entry);
-                mobileFragment.appendChild(mobileLogEntry);
+            // デスクトップかモバイルのどちらかのコンテナにのみ追加
+            if (window.innerWidth > 1024 && this.container) {
+                // デスクトップ画面サイズではデスクトップ用コンテナにのみ追加
+                this.container.appendChild(logEntry.cloneNode(true));
+                this.limitLogEntries(this.container);
+                this.scrollToBottom(this.container);
+            } else if (this.mobileContainer) {
+                // モバイル画面サイズではモバイル用コンテナにのみ追加
+                this.mobileContainer.appendChild(logEntry.cloneNode(true));
+                this.limitLogEntries(this.mobileContainer);
+                this.scrollToBottom(this.mobileContainer);
             }
         });
-
-        // デスクトップログコンテナに追加
-        if (this.container) {
-            this.container.appendChild(fragment);
-            this.limitLogEntries(this.container);
-            this.scrollToBottom(this.container);
-        }
-        
-        // モバイルログコンテナに追加
-        if (this.mobileContainer) {
-            this.mobileContainer.appendChild(mobileFragment);
-            this.limitLogEntries(this.mobileContainer);
-            this.scrollToBottom(this.mobileContainer);
-        }
 
         this.pendingEntries = [];
     }
