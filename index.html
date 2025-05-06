@@ -134,12 +134,16 @@
                                 アクティブな歌詞: <span class="font-bold text-miku-300">0</span>
                             </div>
                         </div>
-                        <div id="network" class="flex-1 relative overflow-hidden starry-bg pinch-zoom-container">
-                            <!-- ネットワーク可視化はここに動的に表示されます -->
-                            <div class="zoom-area"></div>
-                            <div class="zoom-indicator"></div>
+                        <!-- クロスブラウザ対応のネットワークコンテナ -->
+                        <div class="relative w-full flex-1 min-h-[400px]">
+                            <div class="absolute inset-0 p-2">
+                                <div id="network" class="w-full h-full bg-space-900 bg-opacity-80 rounded-lg overflow-hidden starry-bg pinch-zoom-container">
+                                    <!-- ネットワーク可視化はここに動的に表示されます -->
+                                    <div class="zoom-area h-full flex items-center justify-center"></div>
+                                    <div class="zoom-indicator"></div>
+                                </div>
+                            </div>
                         </div>
-                        
                     </div>
                     
                     <!-- デスクトップ用サイドバー (lg以上の画面サイズでのみ表示) -->
@@ -155,7 +159,7 @@
                                 </button>
                                 <button class="tab-button flex-1 text-center text-white" data-tab="routing-tab">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1.5 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2-2 0 01-2-2z" />
                                     </svg>
                                     ルーティング
                                 </button>
@@ -313,7 +317,7 @@
                     <div>
                         <h3 class="font-medium text-miku-300 mb-2 flex items-center">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2.5 text-miku-300" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 016 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 016 0zm-7-4a1 1 0 11-2 0 1 1 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9a1 1 0 00-1-1z" clip-rule="evenodd" />
                             </svg>
                             表示の説明
                         </h3>
@@ -385,7 +389,7 @@
             
             <button id="help-btn" class="flex items-center justify-center h-14 w-14 bg-gradient-to-r from-miku-400 to-miku-600 text-white rounded-full shadow-lg hover:from-miku-300 hover:to-miku-500 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-miku-200 transform hover:scale-110 miku-glow z-50" title="ヘルプを表示">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 016 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 016 0zm-7-4a1 1 0 11-2 0 1 1 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9a1 1 0 00-1-1z" clip-rule="evenodd" />
                 </svg>
             </button>
         </div>
