@@ -1358,7 +1358,7 @@ class LyricsNetworkSimulation {
                 const pcIcon = document.createElement('img');
                 pcIcon.src = './images/54F75B51-169C-4AAC-B781-D459DFE38F65.png';
                 pcIcon.classList.add('pc-icon');
-                pcIcon.style.width = '70px';  // サイズを48pxに拡大
+                pcIcon.style.width = '70px';  
                 pcIcon.style.height = '70px';
                 // 向きを設定
                 if (node.direction === 'right') {
