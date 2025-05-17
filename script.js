@@ -826,10 +826,10 @@ class LyricsNetworkSimulation {
         const baseScale = this.isMobile ? 1.0 : 1.2; 
         this.nodes = {
             // 端末ノード - 左側2台、右側2台の配置
-            A: { x: 25 * baseScale, y: 50 * baseScale, type: 'terminal', label: 'A' },
-            B: { x: 25 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'B' },
-            C: { x: 765 * baseScale, y: 50 * baseScale, type: 'terminal', label: 'C' },
-            D: { x: 765 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'D' },
+            A: { x: 25 * baseScale, y: 50 * baseScale, type: 'terminal', label: 'A', direction: 'right' },
+            B: { x: 25 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'B', direction: 'right' },
+            C: { x: 765 * baseScale, y: 50 * baseScale, type: 'terminal', label: 'C', direction: 'left' },
+            D: { x: 765 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'D', direction: 'left' },
             
             // ルータノード - 中央に2台配置
             X: { x: 250 * baseScale, y: 250 * baseScale, type: 'router', label: 'ルータX' },
@@ -1354,7 +1354,28 @@ class LyricsNetworkSimulation {
             
             if (node.type === 'terminal') {
                 nodeEl.classList.add('terminal');
-                nodeEl.textContent = node.label;
+                // PC画像を使用
+                const pcIcon = document.createElement('img');
+                pcIcon.src = './images/54F75B51-169C-4AAC-B781-D459DFE38F65.png';
+                pcIcon.classList.add('pc-icon');
+                pcIcon.style.width = '76px';  // サイズを48pxに拡大
+                pcIcon.style.height = '76px';
+                // 向きを設定
+                if (node.direction === 'right') {
+                    pcIcon.style.transform = 'scaleX(-1)';
+                }
+                nodeEl.appendChild(pcIcon);
+                
+                const label = document.createElement('div');
+                label.textContent = node.label;
+                label.classList.add('terminal-label');
+                label.style.position = 'absolute';  // 絶対位置指定
+                label.style.left = '50%';          // 中央揃え
+                label.style.transform = 'translateX(-50%)';  // 中央揃えの調整
+                label.style.bottom = '-24px';      // PC画像の下に配置
+                label.style.fontSize = '16px';     // フォントサイズを大きく
+                label.style.fontWeight = 'bold';   // 太字に
+                nodeEl.appendChild(label);
                 
                 // 端末をクリック可能にして送信元/送信先を設定
                 nodeEl.addEventListener('click', () => this.handleTerminalClick(id));
@@ -1849,6 +1870,7 @@ class LyricsNetworkSimulation {
         // ホップ数を増やす
         lyric.hops++;
         
+        // ポート番号とコネクションIDを取得
         const portNumber = this.getPortNumber(lyric.currentNode, lyric.nextNode);
         const connectionId = this.getConnectionId(lyric.currentNode, lyric.nextNode);
         
