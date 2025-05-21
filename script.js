@@ -832,8 +832,8 @@ class LyricsNetworkSimulation {
             D: { x: 765 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'D', direction: 'left' },
             
             // ルータノード - 中央に2台配置
-            X: { x: 250 * baseScale, y: 250 * baseScale, type: 'router', label: 'ルータX' },
-            Y: { x: 540 * baseScale, y: 250 * baseScale, type: 'router', label: 'ルータY' }  
+            X: { x: 250 * baseScale, y: 250 * baseScale, type: 'router', label: 'X' },
+            Y: { x: 540 * baseScale, y: 250 * baseScale, type: 'router', label: 'Y' }  
         };
 
         // 基準サイズも更新
@@ -1367,14 +1367,15 @@ class LyricsNetworkSimulation {
                 nodeEl.appendChild(pcIcon);
                 
                 const label = document.createElement('div');
-                label.textContent = node.label;
+                label.textContent = `端末${node.label}`;
                 label.classList.add('terminal-label');
-                label.style.position = 'absolute';  // 絶対位置指定
-                label.style.left = '50%';          // 中央揃え
-                label.style.transform = 'translateX(-50%)';  // 中央揃えの調整
-                label.style.bottom = '-24px';      // PC画像の下に配置
-                label.style.fontSize = '16px';     // フォントサイズを大きく
-                label.style.fontWeight = 'bold';   // 太字に
+                label.style.position = 'absolute';
+                label.style.left = '50%';
+                label.style.transform = 'translateX(-50%)';
+                label.style.bottom = '-24px';
+                label.style.fontSize = '16px';
+                label.style.fontWeight = 'bold';
+                label.style.whiteSpace = 'nowrap';  // 改行を防止
                 nodeEl.appendChild(label);
                 
                 // 端末をクリック可能にして送信元/送信先を設定
@@ -1383,21 +1384,47 @@ class LyricsNetworkSimulation {
             } else if (node.type === 'router') {
                 nodeEl.classList.add('router');
                 
-                const iconEl = document.createElement('div');
-                iconEl.classList.add('router-icon');
+                // ルータアイコンのコンテナ（四角の枠）を作成
+                const iconContainer = document.createElement('div');
+                iconContainer.classList.add('router-icon-container');
+                iconContainer.style.width = '80px';
+                iconContainer.style.height = '80px';
+                iconContainer.style.border = '2px solid #4fd1c5';
+                iconContainer.style.borderRadius = '12px';
+                iconContainer.style.display = 'flex';
+                iconContainer.style.justifyContent = 'center';
+                iconContainer.style.alignItems = 'center';
                 
-                for (let i = 0; i < 4; i++) {
-                    const square = document.createElement('div');
-                    iconEl.appendChild(square);
-                }
+                // ルータ画像を作成
+                const routerIcon = document.createElement('img');
+                routerIcon.src = './images/E2F9A4A1-8021-4483-8B61-2FECD120E824.png';
+                routerIcon.classList.add('router-icon');
+                routerIcon.style.width = '80px';
+                routerIcon.style.height = '80px';
                 
+                // アイコンコンテナに画像を追加
+                iconContainer.appendChild(routerIcon);
+                
+                // ラベルを作成（下部に配置）
                 const labelEl = document.createElement('div');
-                labelEl.textContent = node.label;
-                labelEl.classList.add('text-sm');
+                labelEl.textContent = `ルータ${node.label}`; // ルータXまたはルータY
+                labelEl.classList.add('terminal-label');
+                labelEl.style.position = 'absolute';
+                labelEl.style.left = '50%';
+                labelEl.style.whiteSpace = 'nowrap';
+                labelEl.style.transform = 'translateX(-50%)';
+                labelEl.style.bottom = '-30px';
+                labelEl.style.fontSize = '16px';
+                labelEl.style.fontWeight = 'bold';
+                labelEl.style.color = 'white';
+                labelEl.style.zIndex = '1';
+                labelEl.style.textShadow = '1px 1px 2px rgba(0,0,0,0.5)';
                 
-                nodeEl.appendChild(iconEl);
+                // ノードに要素を追加
+                nodeEl.appendChild(iconContainer);
                 nodeEl.appendChild(labelEl);
-                nodeEl.title = `${node.label}`;
+                
+                nodeEl.title = `ルータ${node.label}`;
             }
             
             nodeEl.style.left = `${pos.x}px`;
@@ -1766,7 +1793,7 @@ class LyricsNetworkSimulation {
             document.mozFullScreenElement ||
             document.webkitFullscreenElement ||
             document.msFullscreenElement) {
-            // フルスクリーンモード
+            // フル画面モード
             fullscreenBtn.innerHTML = `
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
