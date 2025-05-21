@@ -1383,45 +1383,27 @@ class LyricsNetworkSimulation {
                 nodeEl.title = `端末 ${id}`;
             } else if (node.type === 'router') {
                 nodeEl.classList.add('router');
+                // ルータ画像を使用
+                const pcIcon = document.createElement('img');
+                pcIcon.src = './images/E2F9A4A1-8021-4483-8B61-2FECD120E824.png';
+                pcIcon.classList.add('pc-icon');
+                pcIcon.style.width = '70px';
+                pcIcon.style.height = '70px';
+                nodeEl.appendChild(pcIcon);
                 
-                // ルータアイコンのコンテナ（四角の枠）を作成
-                const iconContainer = document.createElement('div');
-                iconContainer.classList.add('router-icon-container');
-                iconContainer.style.width = '80px';
-                iconContainer.style.height = '80px';
-                iconContainer.style.border = '2px solid #4fd1c5';
-                iconContainer.style.borderRadius = '12px';
-                iconContainer.style.display = 'flex';
-                iconContainer.style.justifyContent = 'center';
-                iconContainer.style.alignItems = 'center';
-                
-                // ルータ画像を作成
-                const routerIcon = document.createElement('img');
-                routerIcon.src = './images/E2F9A4A1-8021-4483-8B61-2FECD120E824.png';
-                routerIcon.classList.add('router-icon');
-                routerIcon.style.width = '80px';
-                routerIcon.style.height = '80px';
-                
-                // アイコンコンテナに画像を追加
-                iconContainer.appendChild(routerIcon);
-                
-                // ラベルを作成（下部に配置）
-                const labelEl = document.createElement('div');
-                labelEl.textContent = `ルータ${node.label}`; // ルータXまたはルータY
-                labelEl.classList.add('terminal-label');
-                labelEl.style.position = 'absolute';
-                labelEl.style.left = '50%';
-                labelEl.style.whiteSpace = 'nowrap';
-                labelEl.style.transform = 'translateX(-50%)';
-                labelEl.style.bottom = '0px';
-                labelEl.style.fontSize = '16px';
-                labelEl.style.fontWeight = 'bold';
-                labelEl.style.color = 'white';
-                labelEl.style.zIndex = '100';
-                
-                // ノードに要素を追加
-                nodeEl.appendChild(iconContainer);
-                nodeEl.appendChild(labelEl);
+                // ラベルを作成（下部に配置）- 端末と同じスタイル
+                const label = document.createElement('div');
+                label.textContent = `ルータ${node.label}`;
+                label.classList.add('terminal-label');
+                label.style.position = 'absolute';
+                label.style.left = '50%';
+                label.style.transform = 'translateX(-50%)';
+                label.style.bottom = '0px';
+                label.style.fontSize = '16px';
+                label.style.fontWeight = 'bold';
+                label.style.color = 'white';
+                label.style.whiteSpace = 'nowrap';
+                nodeEl.appendChild(label);
                 
                 nodeEl.title = `ルータ${node.label}`;
             }
@@ -2246,7 +2228,7 @@ class LyricsNetworkSimulation {
         const counter = document.getElementById('packet-counter');
         if (counter) {
             const activeCount = this.lyrics.filter(p => !p.completed).length;
-            counter.innerHTML = `アクティブな歌詞: <span class="font-bold text-miku-300">${activeCount}</span>`;
+            counter.innerHTML = `アクティブな歌詞: <span class="font-bold text-miku-300">${activeCount}</span>`; 
         }
     }
     
