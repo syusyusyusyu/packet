@@ -1413,12 +1413,11 @@ class LyricsNetworkSimulation {
                 labelEl.style.left = '50%';
                 labelEl.style.whiteSpace = 'nowrap';
                 labelEl.style.transform = 'translateX(-50%)';
-                labelEl.style.bottom = '-30px';
+                labelEl.style.bottom = '-24px';
                 labelEl.style.fontSize = '16px';
                 labelEl.style.fontWeight = 'bold';
                 labelEl.style.color = 'white';
                 labelEl.style.zIndex = '1';
-                labelEl.style.textShadow = '1px 1px 2px rgba(0,0,0,0.5)';
                 
                 // ノードに要素を追加
                 nodeEl.appendChild(iconContainer);
