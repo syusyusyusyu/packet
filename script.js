@@ -576,8 +576,7 @@ class LyricsNetworkSimulation {
         this.playRequestPending = false;
         this.updateSimulationStatus();
     }
-    
-    // 停止ハンドラ
+      // 停止ハンドラ
     handleStop() {
         this.addLogEntry('再生停止', 'info');
         this.isRunning = false;
@@ -590,6 +589,21 @@ class LyricsNetworkSimulation {
         if (sendBtn) {
             sendBtn.disabled = false;
             sendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+        
+        // 再生が正常に終了した場合（ユーザーの手動停止でなく）、ページをリロード
+        if (this.player && !this.player.isPlaying && !this.isCleaningUp) {
+            // 現在の位置が曲の終わりに近い場合にリロード
+            const position = this.player.position || 0;
+            const duration = this.player.duration || 0;
+            
+            // 再生位置が曲の終わりの5秒以内の場合はリロード
+            if (duration > 0 && position > 0 && (duration - position) < 5000) {
+                this.addLogEntry('曲が終了しました。ページをリロードします...', 'system');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000); // 1秒後にリロード（ログメッセージを表示する時間を確保）
+            }
         }
     }
     
