@@ -1385,7 +1385,7 @@ class LyricsNetworkSimulation {
                 nodeEl.classList.add('router');
                 // ルータ画像を使用
                 const pcIcon = document.createElement('img');
-                pcIcon.src = './images/E2F9A4A1-8021-4483-8B61-2FECD120E824.png';
+                pcIcon.src = './images/B9CF8581-D931-4993-96B8-7E10B00DB6EA.png';
                 pcIcon.classList.add('pc-icon');
                 pcIcon.style.width = '70px';
                 pcIcon.style.height = '70px';
