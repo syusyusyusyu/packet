@@ -769,48 +769,10 @@ class LyricsNetworkSimulation {
         
         // シミュレーションの状態表示を更新
         this.updateSimulationStatus();
-        
-        // 曲選択ドロップダウンを設定
+          // 曲選択ドロップダウンを設定
         this.updateSongSelectionDropdown();
-        
-        // モバイルズームボタンのイベント設定
-        this.setupMobileZoomButtons();
     }
-    
-    // モバイルズームボタンの設定
-    setupMobileZoomButtons() {
-        const zoomInBtn = document.getElementById('zoom-in-btn');
-        const zoomOutBtn = document.getElementById('zoom-out-btn');
-        const network = document.getElementById('network');
-        
-        if (!zoomInBtn || !zoomOutBtn || !network) return;
-        
-        let scale = 1;
-        let translateX = 0;
-        let translateY = 0;
-        
-        // ズームイン
-        zoomInBtn.addEventListener('click', () => {
-            scale = Math.min(scale * 1.2, 3);
-            applyTransform();
-        });
-        
-        // ズームアウト
-        zoomOutBtn.addEventListener('click', () => {
-            scale = Math.max(scale / 1.2, 0.5);
-            translateX = scale === 0.5 ? 0 : translateX;
-            translateY = scale === 0.5 ? 0 : translateY;
-            applyTransform();
-        });
-        
-        // 変換適用
-        function applyTransform() {
-            const transformValue = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-            network.style.transform = transformValue;
-        }
-    }
-    
-    // 曲選択ドロップダウンの更新
+      // 曲選択ドロップダウンの更新
     updateSongSelectionDropdown() {
         const songSelect = document.getElementById('song-select');
         if (!songSelect) return;
