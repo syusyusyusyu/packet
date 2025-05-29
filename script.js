@@ -5,2311 +5,159 @@
  * モバイル対応強化版 - 2ルーター構成
  */
 
-// TextAliveネットワークシミュレーション - 歌詞流れ可視化
-class LyricsNetworkSimulation {
-    constructor() {
-        // 基本設定
-        this.nodes = {};                 // ノード情報を格納
-        this.connections = [];           // ノード間の接続情報
-        this.lyrics = [];                // 歌詞情報
-        this.lyricId = 0;                // 歌詞ID（自動増加）
-        this.isRunning = false;          // シミュレーション実行中かどうか
-        this.isCleaningUp = false;       // クリーンアップ処理中フラグ
-        this.sendInterval = null;        // 定期送信用インターバル
-        this.scaleFactor = 1;            // 表示スケール係数
-        this.offsetX = 0;                // X軸オフセット
-        this.offsetY = 0;                // Y軸オフセット
-        this.baseWidth = 800;            // 基準幅
-        this.baseHeight = 700;           // 基準高さ
-        this.activeElements = new Set(); // アクティブ要素を追跡
-        this.currentSource = null;       // 現在の送信元
-        this.currentDestination = null;  // 現在の送信先
-        this.animationFrames = new Map();// アニメーションフレームを追跡
-        this.stats = {                   // 統計情報
-            lyricsCreated: 0,
-            lyricsDelivered: 0,
-            totalHops: 0
-        };
-        this.isMobile = window.innerWidth <= 768; // モバイル判定
-        
-        // TextAlive API関連
-        this.player = null;              // TextAlive Player
-        this.app = null;                 // TextAlive App
-        this.isReady = false;            // 準備完了フラグ
-        this.selectedSongIndex = 0;      // 選択された曲のインデックス
-        this.isTextAliveLoaded = false;  // TextAlive API読み込み完了フラグ
-        this.userInteracted = false;     // ユーザー操作があったかフラグ
-        this.fallbackActive = false;     // フォールバックモード有効フラグ
-        this.playRequestPending = false; // 再生リクエスト中フラグ
-        
-        // ロード画面
-        this.loadingOverlay = document.createElement('div');
-        this.loadingOverlay.className = 'loading-overlay';
-        this.loadingOverlay.innerHTML = `
+// 曲のデータ
+const songsData = [
+    { id: 1, title: "ストリートライト", artist: "加賀(ネギシャワーP)", apiToken: "HmfsoBVch26BmLCm", songUrl: "https://piapro.jp/t/ULcJ/20250205120202" },
+    { id: 2, title: "アリフレーション", artist: "雨良 Amala", apiToken: "rdja5JxMEtcYmyKP", songUrl: "https://piapro.jp/t/SuQO/20250127235813" },
+    { id: 3, title: "インフォーマルダイブ", artist: "99piano", apiToken: "CqbpJNJHwoGvXhlD", songUrl: "https://piapro.jp/t/Ppc9/20241224135843" },
+    { id: 4, title: "ハローフェルミ。", artist: "ど～ぱみん", apiToken: "o1B1ZygOqyhK5B3D", songUrl: "https://piapro.jp/t/oTaJ/20250204234235" },
+    { id: 5, title: "パレードレコード", artist: "きさら", apiToken: "G8MU8Wf87RotH8OR", songUrl: "https://piapro.jp/t/GCgy/20250202202635" },
+    { id: 6, title: "ロンリーラン", artist: "海風太陽", apiToken: "fI0SyBEEBzlB2f5C", songUrl: "https://piapro.jp/t/CyPO/20250128183915" }
+];
+
+// ===== ユーティリティ関数 =====
+const Utils = {
+    isMobile: () => window.innerWidth <= 768,
+    isTablet: () => window.innerWidth > 768 && window.innerWidth <= 1024,
+    isSmartphone: () => window.innerWidth <= 640,
+    
+    getDeviceType: () => {
+        if (window.innerWidth <= 640) return 'smartphone';
+        if (window.innerWidth <= 768) return 'mobile';
+        if (window.innerWidth <= 1024) return 'tablet';
+        return 'desktop';
+    },
+    
+    createLoadingOverlay: () => {
+        const overlay = document.createElement('div');
+        overlay.className = 'loading-overlay';
+        overlay.innerHTML = `
             <div class="text-center">
                 <div class="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-miku-400 mb-4"></div>
                 <p class="text-white text-xl font-medium mb-2">TextAlive API を読み込み中...</p>
                 <p class="text-miku-300">ライセンス情報がコンソールに表示されるまでお待ちください</p>
             </div>
         `;
-        document.body.appendChild(this.loadingOverlay);
-        
-        // ログマネージャーの初期化（デスクトップとモバイル両方のコンテナを指定）
-        this.logManager = new LogManager('log-entries', 'mobile-log-entries');
-        
-        // 鑑賞用歌詞表示のための追加設定
-        this.displayedViewerLyrics = new Map(); // 表示済み鑑賞用歌詞を追跡
-        this.viewerLyricsContainer = document.getElementById('viewer-lyrics-container') || document.createElement('div');
-        if (!this.viewerLyricsContainer.parentNode) {
-            this.viewerLyricsContainer.className = 'viewer-lyrics-container absolute bottom-12 left-0 right-0 flex flex-wrap justify-center items-center gap-2 py-2 px-4 overflow-hidden z-10 pointer-events-none text-2xl font-bold';
-            const networkEl = document.getElementById('network');
-            if (networkEl) networkEl.appendChild(this.viewerLyricsContainer);
+        return overlay;
+    },
+    
+    removeElement: (element) => {
+        if (element && element.parentNode) {
+            element.parentNode.removeChild(element);
         }
-        
-        // 歌詞表示状態の初期化
-        this.isMobileLyricsVisible = localStorage.getItem('lyricsVisible') === 'true';
-        this.setupMobileLyricsControl();
-        
-        // データ初期化
-        this.initializeNodes();
-        this.createConnections();
-        
-        // UI初期化
-        this.initUI();
-        this.setupEventListeners();
-        this.renderNetwork();
-        this.renderRoutingTable();
-        this.updateLyricCounter();
-        this.updateActiveTerminals();
-        
-        // ユーザー操作の検出
-        this.setupUserInteractionDetection();
-        
-        // TextAlive APIスクリプトをロード
-        this.loadTextAliveAPI();
-        
-        // ウィンドウサイズ変更時の処理
-        this.resizeHandler = this.handleResize.bind(this);
-        window.addEventListener('resize', this.resizeHandler);
-        
-        // キーボードショートカット
-        this.keydownHandler = this.handleKeyboardShortcuts.bind(this);
-        document.addEventListener('keydown', this.keydownHandler);
-        
-        // ヘルプモーダル
-        this.setupHelpModal();
+    },
+    
+    fadeOutAndRemove: (element, duration = 300) => {
+        if (!element) return;
+        element.classList.add('animate-fadeOut');
+        setTimeout(() => Utils.removeElement(element), duration);
+    }
+};
 
-        // モバイルタブの初期化
-        this.setupTabControls();
-        
-        // モバイル用タッチイベント設定
-        this.setupMobileInteraction();
-
-        // 初期ヘルプを表示
-        setTimeout(() => {
-            const helpModal = document.getElementById('help-modal');
-            if (helpModal) {
-                helpModal.classList.remove('hidden');
-                helpModal.classList.add('animate-fadeIn');
-            }
-        }, 500); // 500ms後に表示（UIの初期化を待つため）
+// ===== ネットワークデータモデル =====
+class NetworkModel {
+    constructor() {
+        this._nodes = {};
+        this._connections = [];
+        this._initializeNetwork();
     }
     
-    // モバイル用歌詞表示制御の設定
-    setupMobileLyricsControl() {
-        const lyricsToggleBtn = document.getElementById('lyrics-toggle-btn');
-        const lyricsDisplayArea = document.getElementById('lyrics-display-area');
-        const closeLyricsBtn = document.getElementById('close-lyrics-btn');
-
-        if (lyricsToggleBtn && lyricsDisplayArea) {
-            // 初期状態を設定
-            this.updateMobileLyricsVisibility();
-
-            // トグルボタンのクリック処理
-            lyricsToggleBtn.addEventListener('click', () => {
-                this.isMobileLyricsVisible = !this.isMobileLyricsVisible;
-                this.updateMobileLyricsVisibility();
-                localStorage.setItem('lyricsVisible', this.isMobileLyricsVisible);
-            });
-
-            // 閉じるボタンのクリック処理
-            if (closeLyricsBtn) {
-                closeLyricsBtn.addEventListener('click', () => {
-                    this.isMobileLyricsVisible = false;
-                    this.updateMobileLyricsVisibility();
-                    localStorage.setItem('lyricsVisible', false);
-                });
-            }
-        }
-    }
-
-    // 歌詞表示状態の更新
-    updateMobileLyricsVisibility() {
-        const lyricsDisplayArea = document.getElementById('lyrics-display-area');
-        const lyricsToggleBtn = document.getElementById('lyrics-toggle-btn');
-
-        if (lyricsDisplayArea) {
-            if (this.isMobileLyricsVisible) {
-                lyricsDisplayArea.classList.remove('lyrics-display-area-hidden');
-                lyricsDisplayArea.classList.add('lyrics-display-area-visible');
-                if (lyricsToggleBtn) lyricsToggleBtn.classList.add('active');
-            } else {
-                lyricsDisplayArea.classList.add('lyrics-display-area-hidden');
-                lyricsDisplayArea.classList.remove('lyrics-display-area-visible');
-                if (lyricsToggleBtn) lyricsToggleBtn.classList.remove('active');
-            }
-        }
-    }
-    
-    // モバイル用タッチイベント設定
-    setupMobileInteraction() {
-        if (this.isMobile) {
-            this.setupTouchTargets();
-        }
-    }
-    
-    // モバイル用タッチ操作領域設定
-    setupTouchTargets() {
-        // 端末アイコンにタッチ領域を追加
-        document.querySelectorAll('.terminal').forEach(terminal => {
-            const touchArea = document.createElement('div');
-            touchArea.className = 'mobile-touch-area';
-            touchArea.style.left = terminal.style.left;
-            touchArea.style.top = terminal.style.top;
-            touchArea.dataset.target = terminal.dataset.id;
-            
-            // タッチアイコンのイベント伝播
-            touchArea.addEventListener('click', () => {
-                this.handleTerminalClick(touchArea.dataset.target);
-            });
-            
-            const network = document.getElementById('network');
-            if (network) {
-                network.appendChild(touchArea);
-            }
-        });
+    _initializeNetwork() {
+        const baseScale = Utils.isMobile() ? 1.0 : 1.2;
         
-        // スワイプでドロワーを開閉
-        const drawer = document.getElementById('sidebar-drawer');
-        const backdrop = document.getElementById('drawer-backdrop');
-        const network = document.getElementById('network');
-        
-        if (drawer && network) {
-            let startY = 0;
-            let startTime = 0;
-            
-            network.addEventListener('touchstart', (e) => {
-                startY = e.touches[0].clientY;
-                startTime = Date.now();
-            });
-            
-            network.addEventListener('touchend', (e) => {
-                const endY = e.changedTouches[0].clientY;
-                const deltaY = startY - endY;
-                const deltaTime = Date.now() - startTime;
-                
-                // 下から上へのスワイプでドロワーを開く
-                if (deltaY > 50 && deltaTime < 300) {
-                    drawer.classList.add('open');
-                    backdrop.classList.add('open');
-                }
-            });
-            
-            drawer.addEventListener('touchstart', (e) => {
-                startY = e.touches[0].clientY;
-                startTime = Date.now();
-            });
-            
-            drawer.addEventListener('touchend', (e) => {
-                const endY = e.changedTouches[0].clientY;
-                const deltaY = endY - startY;
-                const deltaTime = Date.now() - startTime;
-                
-                // 上から下へのスワイプでドロワーを閉じる
-                if (deltaY > 50 && deltaTime < 300) {
-                    drawer.classList.remove('open');
-                    backdrop.classList.remove('open');
-                }
-            });
-        }
-    }
-    
-    // ユーザー操作検出の設定
-    setupUserInteractionDetection() {
-        const interactionHandler = () => {
-            this.userInteracted = true;
-            
-            // 操作要求メッセージがあれば削除
-            const messageEl = document.getElementById('user-interaction-message');
-            if (messageEl && messageEl.parentNode) {
-                messageEl.parentNode.removeChild(messageEl);
-            }
-        };
-        
-        // さまざまなユーザー操作イベントを検出
-        document.addEventListener('click', interactionHandler, { once: true });
-        document.addEventListener('keydown', interactionHandler, { once: true });
-        document.addEventListener('touchstart', interactionHandler, { once: true });
-    }
-    
-    // TextAlive API読み込み
-    async loadTextAliveAPI() {
-        try {
-            // スクリプトをロード
-            this.addLogEntry('TextAlive APIスクリプトを読み込み中...', 'system');
-            
-            // すでにロード済みかどうかをチェック
-            if (typeof window.TextAliveApp === 'undefined') {
-                const existingScript = document.querySelector('script[src*="textalive-app-api"]');
-                if (!existingScript) {
-                    console.log('TextAlive APIスクリプトをロードしています...');
-                    const script = document.createElement('script');
-                    script.src = "https://unpkg.com/textalive-app-api/dist/index.js";
-                    script.async = true;
-                    
-                    // スクリプトロードを待つ
-                    await new Promise((resolve, reject) => {
-                        script.onload = () => {
-                            console.log('TextAlive APIスクリプトのロード完了');
-                            resolve();
-                        };
-                        script.onerror = (e) => {
-                            console.error('TextAlive APIスクリプトのロード失敗:', e);
-                            reject(new Error('TextAlive APIスクリプトのロードに失敗しました'));
-                        };
-                        // タイムアウト
-                        setTimeout(() => reject(new Error('TextAlive APIスクリプトのロードがタイムアウトしました')), 10000);
-                        document.head.appendChild(script);
-                    });
-                }
-                
-                // TextAliveAppが定義されるまで待機
-                for (let i = 0; i < 50; i++) {
-                    if (typeof window.TextAliveApp !== 'undefined') break;
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                }
-            }
-            
-            // TextAliveAppが定義されているかチェック
-            if (typeof window.TextAliveApp === 'undefined') {
-                console.error('TextAliveAppが見つかりません');
-                throw new Error('TextAliveAppが見つかりません。');
-            }
-            
-            console.log('TextAlive APIスクリプトのロードが完了しました');
-            this.isTextAliveLoaded = true;
-            
-            // 初期化処理
-            console.log('TextAlive API初期化開始');
-            this.addLogEntry('TextAlive API初期化中...', 'system');
-            
-            // 正しいPlayerコンストラクタ取得
-            const { Player } = window.TextAliveApp;
-            console.log('Playerコンストラクタ取得:', Player);
-            
-            // Playerインスタンス作成
-            this.player = new Player({
-                app: {
-                    token: "vP37NoaGGtVq40se",
-                    name: "ミク☆スターネットワーク歌詞シミュレーター"
-                },
-                player: {
-                    mediaElement: document.createElement("audio"),
-                    mediaBannerPosition: "bottom right",
-                    defaultFontSize: "25px"
-                }
-            });
-            
-            // APIの参照を保存
-            this.app = { player: this.player };
-            
-            // イベントリスナー設定
-            this.player.addListener({
-                onAppReady: this.handleAppReady.bind(this),
-                onVideoReady: this.handleVideoReady.bind(this),
-                onTimeUpdate: this.handleTimeUpdate.bind(this),
-                onPlay: this.handlePlay.bind(this),
-                onPause: this.handlePause.bind(this),
-                onStop: this.handleStop.bind(this)
-            });
-            
-            // 初期曲の設定
-            const initialSong = songsData[this.selectedSongIndex];
-            this.addLogEntry(`曲「${initialSong.title}」を読み込み中...`, 'system');
-            
-            await this.player.createFromSongUrl(initialSong.songUrl, {
-                video: {
-                    apiKey: initialSong.apiToken
-                }
-            });
-            
-            console.log('TextAlive API初期化成功');
-        
-        } catch (error) {
-            console.error('TextAlive API初期化エラー:', error);
-            this.addLogEntry(`TextAlive API初期化エラー: ${error.message}`, 'error');
-            this.removeLoadingOverlay();
-            
-            // フォールバックモードをセットアップ
-            this.setupFallbackMode();
-        }
-    }
-    
-    // フォールバックモードのセットアップ
-    setupFallbackMode() {
-        this.fallbackActive = true;
-        this.addLogEntry("TextAlive API接続に失敗しました。フォールバックモードで実行します。", "error");
-        this.addLogEntry("このモードでは、歌詞の正確なタイミングは提供されません。", "system");
-        
-        // フォールバック用の簡易的な歌詞データ
-        this.fallbackLyrics = [
-            { text: "マジカル", time: 1000 },
-            { text: "ミライ", time: 3000 },
-            { text: "初音", time: 5000 },
-            { text: "ミク", time: 6000 },
-            { text: "歌詞が", time: 8000 },
-            { text: "流れて", time: 9500 },
-            { text: "いく", time: 11000 }
-        ];
-        
-        // フォールバックモード用タイマー
-        this.fallbackLyricsIndex = 0;
-        
-        // APIフラグを有効化して送信ボタンを使えるようにする
-        this.isReady = true;
-        this.apiLoaded = true;
-        
-        // 選択された曲情報を表示
-        const selectedSong = songsData[this.selectedSongIndex];
-        this.addLogEntry(`フォールバックモード: ${selectedSong.title} - ${selectedSong.artist}`, 'info');
-    }
-    
-    // TextAlive App準備完了ハンドラ
-    handleAppReady(app) {
-        console.log('TextAlive App準備完了:', app);
-        this.addLogEntry('TextAlive App準備完了', 'system');
-    }
-    
-    // TextAlive Video準備完了ハンドラ
-    handleVideoReady(v) {
-        console.log('楽曲準備完了:', v);
-        if (this.player.data && this.player.data.song) {
-            console.log('ライセンス情報:', this.player.data.song.license);
-        }
-        
-        // プレーヤーとビデオの準備状態をログ
-        console.log('Player状態:', this.player);
-        
-        // video と phrases の存在確認（APIによって異なる場合がある）
-        if (this.player.video) {
-            console.log('Video状態:', this.player.video);
-            if (this.player.video.phrases) {
-                console.log('Phrases状態:', this.player.video.phrases.length);
-            } else {
-                console.log('Phrasesが見つかりません（API構造を確認）');
-            }
-        } else if (this.player.data && this.player.data.video) {
-            console.log('Data.video状態:', this.player.data.video);
-        }
-        
-        // APIの主要な状態と使用可能なメソッドをログ出力（デバッグ用）
-        console.log('利用可能なメソッド:');
-        if (this.player.video) {
-            console.log('- player.video.findPhrase:', typeof this.player.video.findPhrase === 'function');
-            console.log('- player.video.findWord:', typeof this.player.video.findWord === 'function');
-        }
-        console.log('- player.findPhrase:', typeof this.player.findPhrase === 'function');
-        
-        // データ構造と利用可能なメソッドをさらに詳しくチェック
-        if (this.player.data) {
-            console.log('- player.data.findPhrase:', typeof this.player.data.findPhrase === 'function');
-            if (this.player.data.song) {
-                console.log('曲名:', this.player.data.song.name);
-            }
-        }
-        
-        this.isReady = true;
-        if (this.player.data && this.player.data.song) {
-            this.addLogEntry(`曲「${this.player.data.song.name}」の準備完了`, 'success');
-        } else {
-            this.addLogEntry('楽曲データの準備完了', 'success');
-        }
-        this.updateLyricCounter();
-        
-        // ロード画面を削除
-        this.removeLoadingOverlay();
-        
-        // 歌詞データを取得
-        let phrasesFound = false;
-        if (this.player.video && this.player.video.phrases) {
-            phrasesFound = true;
-            this.addLogEntry(`歌詞データを読み込みました: ${this.player.video.phrases.length}フレーズ`, 'info');
-        } else if (this.player.data && this.player.data.phrases) {
-            phrasesFound = true;
-            this.addLogEntry(`歌詞データを読み込みました: ${this.player.data.phrases.length}フレーズ`, 'info');
-        }
-        
-        if (!phrasesFound) {
-            this.addLogEntry('歌詞データが見つかりません。フォールバックモードを使用します。', 'warning');
-            this.setupFallbackMode();
-        }
-    }
-    
-    // ロード画面を削除
-    removeLoadingOverlay() {
-        if (this.loadingOverlay && this.loadingOverlay.parentNode) {
-            this.loadingOverlay.parentNode.removeChild(this.loadingOverlay);
-        }
-    }
-    
-    // 時間更新ハンドラ
-    handleTimeUpdate(position) {
-        // 現在の時間位置で表示すべき歌詞を取得
-        if (!this.player) return;
-        
-        try {
-            // APIの構造に応じて適切なメソッドを呼び出す
-            let phrase = null;
-            let word = null;
-            
-            // player.findPhrase が有効な場合
-            if (typeof this.player.findPhrase === 'function') {
-                phrase = this.player.findPhrase(position);
-                
-                // phraseが見つかり、player.video.findWord が有効な場合
-                if (phrase && this.player.video && typeof this.player.video.findWord === 'function') {
-                    word = this.player.video.findWord(position);
-                }
-                // phraseが自身でfindWordを持っている場合
-                else if (phrase && typeof phrase.findWord === 'function') {
-                    word = phrase.findWord(position);
-                }
-            } 
-            // 代替の構造: player.video.findPhrase
-            else if (this.player.video && typeof this.player.video.findPhrase === 'function') {
-                phrase = this.player.video.findPhrase(position);
-                
-                if (phrase && typeof this.player.video.findWord === 'function') {
-                    word = this.player.video.findWord(position);
-                }
-            }
-            // 代替の構造: player.data.findPhrase
-            else if (this.player.data && typeof this.player.data.findPhrase === 'function') {
-                phrase = this.player.data.findPhrase(position);
-                
-                if (phrase && this.player.data && typeof this.player.data.findWord === 'function') {
-                    word = this.player.data.findWord(position);
-                }
-            }
-            
-            if (!phrase) return;
-            
-            // 単語単位で歌詞を流す
-            if (word && this.isRunning && word.startTime <= position && !word.processed) {
-                // この単語をまだ処理していない場合、ネットワークに流す
-                this.sendLyricWord(word);
-                word.processed = true;
-            }
-        } catch (e) {
-            console.error('時間更新ハンドラエラー:', e);
-            
-            // フォールバックモードに切り替え
-            if (!this.fallbackActive) {
-                this.addLogEntry('歌詞読み込みに問題が発生しました。フォールバックモードに切り替えます。', 'error');
-                this.setupFallbackMode();
-                
-                // 既に再生中なら、フォールバックモードで再生を継続
-                if (this.isRunning) {
-                    this.initiateFallbackPlayback();
-                }
-            }
-        }
-    }
-    
-    // 再生開始ハンドラ
-    handlePlay() {
-        this.addLogEntry('再生開始', 'success');
-        this.isRunning = true;
-        this.updateSimulationStatus();
-        this.playRequestPending = false;
-        
-        // 歌詞処理状態をリセット（API構造に応じた分岐処理）
-        try {
-            console.log('歌詞データリセット');
-            
-            // player.video.phrases が存在する場合
-            if (this.player && this.player.video && this.player.video.phrases) {
-                this.player.video.phrases.forEach(phrase => {
-                    if (phrase && phrase.words) {
-                        phrase.words.forEach(word => {
-                            if (word) word.processed = false;
-                        });
-                    }
-                });
-            }
-            // player.data.phrases が存在する場合
-            else if (this.player && this.player.data && this.player.data.phrases) {
-                this.player.data.phrases.forEach(phrase => {
-                    if (phrase && phrase.words) {
-                        phrase.words.forEach(word => {
-                            if (word) word.processed = false;
-                        });
-                    }
-                });
-            }
-        } catch (e) {
-            console.error('歌詞データ処理エラー:', e);
-            this.addLogEntry('歌詞データの処理中にエラーが発生しました', 'error');
-            
-            // フォールバックモードに切り替え
-            if (!this.fallbackActive) {
-                this.setupFallbackMode();
-                this.initiateFallbackPlayback();
-            }
-        }
-    }
-    
-    // 一時停止ハンドラ
-    handlePause() {
-        this.addLogEntry('再生一時停止', 'info');
-        this.isRunning = false;
-        this.playRequestPending = false;
-        this.updateSimulationStatus();
-    }
-      // 停止ハンドラ
-    handleStop() {
-        this.addLogEntry('再生停止', 'info');
-        this.isRunning = false;
-        this.playRequestPending = false;
-        this.clearLyrics();
-        this.updateSimulationStatus();
-
-        // 送信開始ボタンを有効化
-        const sendBtn = document.getElementById('send-btn');
-        if (sendBtn) {
-            sendBtn.disabled = false;
-            sendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-        }
-        
-        // 再生が正常に終了した場合（ユーザーの手動停止でなく）、ページをリロード
-        if (this.player && !this.player.isPlaying && !this.isCleaningUp) {
-            // 現在の位置が曲の終わりに近い場合にリロード
-            const position = this.player.position || 0;
-            const duration = this.player.duration || 0;
-            
-            // 再生位置が曲の終わりの5秒以内の場合はリロード
-            if (duration > 0 && position > 0 && (duration - position) < 5000) {
-                this.addLogEntry('曲が終了しました。ページをリロードします...', 'system');
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000); // 1秒後にリロード（ログメッセージを表示する時間を確保）
-            }
-        }
-    }
-    
-    // 曲変更処理
-    async changeSong(songIndex) {
-        if (songIndex === this.selectedSongIndex || !this.player) return;
-        
-        // 現在の再生を停止
-        this.stopSimulation();
-        
-        // すべてのリクエストが完了するのを待つ
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        // ロード画面を表示
-        document.body.appendChild(this.loadingOverlay);
-        this.isReady = false;
-        
-        try {
-            // 新しい曲を読み込む
-            const selectedSong = songsData[songIndex];
-            this.selectedSongIndex = songIndex;
-            
-            this.addLogEntry(`曲「${selectedSong.title}」を読み込み中...`, 'system');
-            
-            await this.player.createFromSongUrl(selectedSong.songUrl, {
-                video: {
-                    apiKey: selectedSong.apiToken
-                }
-            });
-            
-        } catch (error) {
-            console.error('曲変更エラー:', error);
-            this.addLogEntry(`曲変更エラー: ${error.message}`, 'error');
-            this.removeLoadingOverlay();
-        }
-    }
-    
-    // リソース解放
-    dispose() {
-        window.removeEventListener('resize', this.resizeHandler);
-        document.removeEventListener('keydown', this.keydownHandler);
-        
-        this.stopContinuousSending();
-        
-        // アニメーションフレームのキャンセル
-        for (const [id, frameId] of this.animationFrames.entries()) {
-            cancelAnimationFrame(frameId);
-        }
-        this.animationFrames.clear();
-        
-        // TextAlive Player解放
-        if (this.player) {
-            this.player.dispose();
-        }
-        
-        // ログマネージャーの解放
-        this.logManager.dispose();
-        
-        // UIクリア
-        this.clearLyrics();
-        
-        // メモリリークを防ぐためにDOM参照をクリア
-        this.nodes = {};
-        this.connections = [];
-        this.lyrics = [];
-        this.activeElements.clear();
-        
-        // 鑑賞用歌詞のクリーンアップ
-        if (this.viewerLyricsContainer) {
-            this.viewerLyricsContainer.innerHTML = '';
-        }
-        this.displayedViewerLyrics.clear();
-    }
-    
-    // 連続送信の停止
-    stopContinuousSending() {
-        this.isRunning = false;
-        
-        if (this.sendInterval) {
-            clearInterval(this.sendInterval);
-            this.sendInterval = null;
-        }
-        
-        if (this.cleanupInterval) {
-            clearInterval(this.cleanupInterval);
-            this.cleanupInterval = null;
-        }
-        
-        if (this.fallbackTimer) {
-            clearInterval(this.fallbackTimer);
-            this.fallbackTimer = null;
-        }
-    }
-    
-    // ウィンドウサイズ変更ハンドラー
-    handleResize() {
-        this.isMobile = window.innerWidth <= 768;
-        this.calculateScaleFactor();
-        this.renderNetwork();
-        
-        // モバイル/デスクトップ切り替え時にDOMを再構築
-        if (this.isMobile) {
-            this.setupTouchTargets();
-        }
-    }
-
-    // タブコントロールのセットアップ
-    setupTabControls() {
-        // デスクトップタブ
-        const tabButtons = document.querySelectorAll('.tab-button');
-        tabButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const targetId = button.getAttribute('data-tab');
-                
-                // タブボタンの状態更新
-                tabButtons.forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-                
-                // タブ内容表示切替
-                const tabContents = document.querySelectorAll('.tab-content');
-                tabContents.forEach(content => {
-                    if (content.id === targetId) {
-                        content.classList.add('active');
-                    } else {
-                        content.classList.remove('active');
-                    }
-                });
-            });
-        });
-
-        // モバイルタブ
-        const mobileTabButtons = document.querySelectorAll('.mobile-tab-button');
-        mobileTabButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const targetId = button.getAttribute('data-tab');
-                
-                // タブボタンの状態更新
-                mobileTabButtons.forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-                
-                // タブ内容表示切替
-                const tabContents = document.querySelectorAll('#mobile-tabs-container .tab-content');
-                tabContents.forEach(content => {
-                    if (content.id === targetId) {
-                        content.classList.add('active');
-                    } else {
-                        content.classList.remove('active');
-                    }
-                });
-            });
-        });
-    }
-
-    // UIコンポーネントの初期化
-    initUI() {
-        this.calculateScaleFactor();
-        
-        // ログの初期メッセージ
-        this.addLogEntry('ミク☆スターネットワーク歌詞シミュレーションを初期化しました。', 'system');
-        this.addLogEntry('TextAlive APIを読み込み中です。', 'system');
-        this.addLogEntry('「送信開始」ボタンをクリックして再生を開始します。', 'system');
-        this.addLogEntry('「H」キーを押すとヘルプが表示されます。', 'system');
-        
-        // シミュレーションの状態表示を更新
-        this.updateSimulationStatus();
-          // 曲選択ドロップダウンを設定
-        this.updateSongSelectionDropdown();
-    }
-      // 曲選択ドロップダウンの更新
-    updateSongSelectionDropdown() {
-        const songSelect = document.getElementById('song-select');
-        if (!songSelect) return;
-        
-        songSelect.innerHTML = '';
-        
-        // 曲データからオプションを生成
-        songsData.forEach((song, index) => {
-            const option = document.createElement('option');
-            option.value = index;
-            option.textContent = `${song.title} - ${song.artist}`;
-            songSelect.appendChild(option);
-        });
-        
-        // 初期選択値を設定
-        songSelect.value = this.selectedSongIndex;
-        
-        // モバイル用にフォントサイズ調整
-        if (this.isMobile) {
-            songSelect.classList.add('text-sm');
-        }
-    }
-    
-    // ノード位置の初期化 - 4端末・2ルーター構成
-    initializeNodes() {
-        // モバイル用に基本サイズを調整
-        const baseScale = this.isMobile ? 1.0 : 1.2; 
-        this.nodes = {
-            // 端末ノード - 左側2台、右側2台の配置
+        this._nodes = {
             A: { x: 25 * baseScale, y: 50 * baseScale, type: 'terminal', label: 'A', direction: 'right' },
             B: { x: 25 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'B', direction: 'right' },
             C: { x: 765 * baseScale, y: 50 * baseScale, type: 'terminal', label: 'C', direction: 'left' },
             D: { x: 765 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'D', direction: 'left' },
-            
-            // ルータノード - 中央に2台配置
             X: { x: 250 * baseScale, y: 250 * baseScale, type: 'router', label: 'X' },
-            Y: { x: 540 * baseScale, y: 250 * baseScale, type: 'router', label: 'Y' }  
+            Y: { x: 540 * baseScale, y: 250 * baseScale, type: 'router', label: 'Y' }
         };
-
-        // 基準サイズも更新
-        this.baseWidth = 800 * baseScale;
-        this.baseHeight = 600 * baseScale;
-    }
-    
-    // ノード間の接続を作成 - 4端末・2ルーター構成
-    createConnections() {
-        this.connections = [
-            // 端末A,BとルータXの接続
+        
+        this._connections = [
             { from: 'A', to: 'X', fromPort: null, toPort: 1, portLabel: 1, id: 'A-X' },
             { from: 'B', to: 'X', fromPort: null, toPort: 2, portLabel: 2, id: 'B-X' },
-            
-            // 端末C,DとルータYの接続（ZをYに変更）
             { from: 'C', to: 'Y', fromPort: null, toPort: 3, portLabel: 3, id: 'C-Y' },
             { from: 'D', to: 'Y', fromPort: null, toPort: 4, portLabel: 4, id: 'D-Y' },
-            
-            // ルータX-Y間の接続（ZをYに変更）
             { from: 'X', to: 'Y', fromPort: 5, toPort: 5, portLabel: 5, id: 'X-Y' }
         ];
     }
     
-    // ヘルプモーダルの設定
-    setupHelpModal() {
-        const helpModal = document.getElementById('help-modal');
-        const helpBtn = document.getElementById('help-btn');
-        const closeHelp = document.getElementById('close-help');
-        const closeHelpBtn = document.getElementById('close-help-btn');
-        
-        if (helpBtn) {
-            helpBtn.addEventListener('click', () => {
-                helpModal.classList.remove('hidden');
-                helpModal.classList.add('animate-fadeIn');
-            });
-        }
-        
-        if (closeHelp) {
-            closeHelp.addEventListener('click', () => this.closeHelpModal(helpModal));
-        }
-        
-        if (closeHelpBtn) {
-            closeHelpBtn.addEventListener('click', () => this.closeHelpModal(helpModal));
-        }
-        
-        // 背景クリックで閉じる
-        helpModal.addEventListener('click', (e) => {
-            if (e.target === helpModal) {
-                this.closeHelpModal(helpModal);
-            }
-        });
-        
-        // タッチイベント用
-        helpModal.addEventListener('touchend', (e) => {
-            if (e.target === helpModal) {
-                this.closeHelpModal(helpModal);
-            }
-        });
+    getNodes() {
+        return this._nodes;
     }
     
-    // ヘルプモーダルを閉じる
-    closeHelpModal(modal) {
-        modal.classList.add('animate-fadeOut');
-        setTimeout(() => {
-            modal.classList.add('hidden');
-            modal.classList.remove('animate-fadeOut');
-        }, 300);
+    getConnections() {
+        return this._connections;
     }
     
-    // キーボードショートカットの処理
-    handleKeyboardShortcuts(e) {
-        // Escキー
-        if (e.key === 'Escape') {
-            // モーダルが表示されている場合は閉じる
-            const helpModal = document.getElementById('help-modal');
-            if (helpModal && !helpModal.classList.contains('hidden')) {
-                this.closeHelpModal(helpModal);
-                return;
-            }
-            
-            // モバイルドロワーが開いていれば閉じる
-            const drawerEl = document.getElementById('sidebar-drawer');
-            const backdropEl = document.getElementById('drawer-backdrop');
-            if (drawerEl && drawerEl.classList.contains('open')) {
-                drawerEl.classList.remove('open');
-                if (backdropEl) backdropEl.classList.remove('open');
-                return;
-            }
-            
-            // シミュレーションが実行中なら停止
-            if (this.isRunning) {
-                this.stopSimulation();
-            }
-        }
-        
-        // Hキー: ヘルプ表示
-        if (e.key === 'h' || e.key === 'H') {
-            const helpModal = document.getElementById('help-modal');
-            if (helpModal.classList.contains('hidden')) {
-                helpModal.classList.remove('hidden');
-                helpModal.classList.add('animate-fadeIn');
-            } else {
-                this.closeHelpModal(helpModal);
-            }
-        }
-        
-        // Sキー: シミュレーション開始/停止
-        if (e.key === 's' || e.key === 'S') {
-            if (this.isRunning) {
-                this.stopSimulation();
-            } else {
-                this.startPlayback();
-            }
-        }
-        
-        // Fキー: 全画面表示
-        if (e.key === 'f' || e.key === 'F') {
-            this.toggleFullscreen();
-        }
+    getTerminalNodes() {
+        return Object.entries(this._nodes)
+            .filter(([_, node]) => node.type === 'terminal')
+            .map(([id, _]) => id);
     }
     
-    // シミュレーション停止処理
-    async stopSimulation() {
-        if (this.isCleaningUp) return;
-        
-        this.isCleaningUp = true;
-        
-        // TextAlive Player一時停止
-        if (this.player && !this.fallbackActive) {
-            try {
-                console.log('再生停止リクエスト送信');
-                
-                // 再生リクエスト中に停止しないように状態チェック
-                if (this.playRequestPending) {
-                    await new Promise(resolve => setTimeout(resolve, 300));
-                }
-                
-                this.player.requestPause();
-                
-                // 確実に停止するためのフォールバック
-                setTimeout(() => {
-                    if (this.player && this.player.isPlaying) {
-                        console.log('遅延停止リクエスト送信');
-                        this.player.requestStop();
-                    }
-                }, 500);
-            } catch (e) {
-                console.error('TextAlive Player一時停止エラー:', e);
-            }
-        }
-        
-        // フォールバック機能停止
-        if (this.fallbackTimer) {
-            clearInterval(this.fallbackTimer);
-            this.fallbackTimer = null;
-        }
-        
-        this.isRunning = false;
-        this.playRequestPending = false;
-        this.clearLyrics();
-        this.activeElements.clear();
-        this.renderNetwork();
-        this.addLogEntry('再生を停止しました。', 'info');
-        
-        const sendBtn = document.getElementById('send-btn');
-        if (sendBtn) {
-            sendBtn.disabled = false;
-            sendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-        }
-        
-        this.updateSimulationStatus();
-        
-        this.isCleaningUp = false;
-    }
-    
-    // 再生開始処理
-    startPlayback() {
-        if (!this.isReady) {
-            this.addLogEntry('曲の準備ができていません。しばらくお待ちください。', 'error');
-            return;
-        }
-        
-        if (this.isRunning) {
-            this.stopSimulation();
-            return;
-        }
-        
-        // ユーザー操作があったかチェック、なければ要求
-        if (!this.userInteracted) {
-            // まだユーザー操作メッセージが表示されていない場合
-            if (!document.getElementById('user-interaction-message')) {
-                const messageEl = document.createElement('div');
-                messageEl.id = 'user-interaction-message';
-                messageEl.className = 'fixed top-0 left-0 right-0 bg-pink-500 text-white p-2 text-center z-50';
-                messageEl.innerHTML = 'ページ上のどこかをクリックして再生を開始してください';
-                
-                document.body.appendChild(messageEl);
-                
-                // 一度だけ実行のために一時的なイベントリスナーを追加
-                const handleInteraction = () => {
-                    this.userInteracted = true;
-                    if (messageEl.parentNode) {
-                        messageEl.parentNode.removeChild(messageEl);
-                    }
-                    
-                    document.removeEventListener('click', handleInteraction);
-                    document.removeEventListener('keydown', handleInteraction);
-                    document.removeEventListener('touchstart', handleInteraction);
-                    
-                    // 少し遅延させてから再生開始
-                    setTimeout(() => {
-                        this.actuallyStartPlayback();
-                    }, 100);
-                };
-                
-                document.addEventListener('click', handleInteraction);
-                document.addEventListener('keydown', handleInteraction);
-                document.addEventListener('touchstart', handleInteraction);
-                
-                this.addLogEntry('再生を開始するには、ページ上で操作してください。', 'info');
-                return;
-            }
-            return;
-        }
-        
-        this.actuallyStartPlayback();
-    }
-    
-    // 実際に再生を開始するメソッド
-    async actuallyStartPlayback() {
-        console.log('再生を開始します...');
-        
-        if (this.player && !this.fallbackActive) {
-            try {
-                // 再生開始中フラグを立てる
-                this.playRequestPending = true;
-                
-                // デバッグ情報
-                console.log("再生開始前の状態:");
-                console.log("- userInteracted:", this.userInteracted);
-                console.log("- player:", this.player);
-                console.log("- isReady:", this.isReady);
-                
-                if (this.player.video) {
-                    console.log("- video.phrases:", this.player.video.phrases ? this.player.video.phrases.length : "なし");
-                }
-                
-                // 再生前に確実に停止状態にする
-                if (this.player.isPlaying) {
-                    await this.player.requestPause();
-                    // 少し待機して状態が更新されるのを確認
-                    await new Promise(resolve => setTimeout(resolve, 300));
-                }
-                
-                // 再生開始
-                await this.player.requestPlay();
-                
-                // 再生状態のフィードバック
-                setTimeout(() => {
-                    console.log("再生開始後のプレイヤー状態:", this.player.isPlaying);
-                    
-                    // 再生が開始されていない場合はフォールバックモードを検討
-                    if (!this.player.isPlaying && !this.isRunning && !this.fallbackActive) {
-                        console.log("TextAlive Playerでの再生に失敗しました。フォールバックモードへ切り替えます。");
-                        this.setupFallbackMode();
-                        this.initiateFallbackPlayback();
-                    }
-                }, 1000);
-                
-            } catch (error) {
-                console.error('TextAlive Player再生エラー:', error);
-                this.addLogEntry(`再生エラー: ${error.message}`, 'error');
-                this.playRequestPending = false;
-                
-                // フォールバックモードに切り替え
-                if (!this.fallbackActive) {
-                    this.setupFallbackMode();
-                    this.initiateFallbackPlayback();
-                }
-                return;
-            }
-        } else {
-            // フォールバックモードでの再生
-            this.initiateFallbackPlayback();
-        }
-        
-        const sendBtn = document.getElementById('send-btn');
-        if (sendBtn) {
-            sendBtn.disabled = true;
-            sendBtn.classList.add('opacity-50', 'cursor-not-allowed');
-        }
-    }
-    
-    // フォールバックモードでの再生開始
-    initiateFallbackPlayback() {
-        console.log('フォールバックモードで再生を開始');
-        this.isRunning = true;
-        this.updateSimulationStatus();
-        
-        // 歌詞送信タイマーを開始
-        this.fallbackLyricsIndex = 0;
-        this.fallbackStartTime = Date.now();
-        
-        // 歌詞タイマーをクリア
-        if (this.fallbackTimer) clearInterval(this.fallbackTimer);
-        
-        // 定期的に歌詞をチェックして送信
-        this.fallbackTimer = setInterval(() => {
-            if (!this.isRunning) return;
-            
-            const elapsed = Date.now() - this.fallbackStartTime;
-            
-            // 未送信の歌詞があればチェック
-            while (this.fallbackLyricsIndex < this.fallbackLyrics.length) {
-                const lyric = this.fallbackLyrics[this.fallbackLyricsIndex];
-                
-                if (lyric.time <= elapsed) {
-                    // 歌詞を送信
-                    this.sendFallbackLyric(lyric.text);
-                    this.fallbackLyricsIndex++;
-                } else {
-                    break; // まだ時間が来ていない歌詞
-                }
-            }
-            
-            // すべての歌詞を送信し終えたら停止
-            if (this.fallbackLyricsIndex >= this.fallbackLyrics.length) {
-                // ループするために初期化
-                this.fallbackLyricsIndex = 0;
-                this.fallbackStartTime = Date.now();
-            }
-        }, 100);
-    }
-    
-    // フォールバックモード用の歌詞送信
-    sendFallbackLyric(text) {
-        // 通常の歌詞送信と同じような処理
-        this.lyricId++;
-        const id = this.lyricId;
-        
-        // 送信元と送信先を取得
-        const sourceSelect = document.getElementById('source');
-        const destSelect = document.getElementById('destination');
-        
-        if (!sourceSelect || !destSelect) return;
-        
-        const source = sourceSelect.value;
-        const destination = destSelect.value;
-        
-        const lyric = {
-            id,
-            source,
-            destination,
-            text: text,
-            currentNode: source,
-            nextNode: this.getNextHop(source, destination),
-            status: 'created',
-            createdAt: Date.now(),
-            completed: false,
-            hops: 0
-        };
-        
-        // 次のホップが無効な場合はエラーを記録して送信しない
-        if (!lyric.nextNode) {
-            this.addLogEntry(`歌詞 #${id}: 無効なルート設定です。`, 'error');
-            return;
-        }
-        
-        this.lyrics.push(lyric);
-        this.stats.lyricsCreated++;
-        this.addLogEntry(`歌詞 #${id}: 「${lyric.text}」を 端末 ${source} から 端末 ${destination} へ送信します。`, 'info');
-        this.updateLyricCounter();
-        
-        // 歌詞の移動を開始
-        this.moveLyric(lyric);
-        
-        // 鑑賞用歌詞も表示
-        this.displayViewerLyric(lyric.text);
-    }
-    
-    // シミュレーション状態表示の更新
-    updateSimulationStatus() {
-        const statusEl = document.getElementById('simulation-status');
-        if (!statusEl) return;
-        
-        if (this.isRunning) {
-            statusEl.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-miku-500 bg-opacity-20 text-miku-300 shadow-sm transition-all duration-300';
-            statusEl.innerHTML = '<span class="h-2.5 w-2.5 mr-1.5 rounded-full bg-miku-400 animate-pulse"></span>再生中';
-        } else {
-            statusEl.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-pink-500 bg-opacity-20 text-pink-300 shadow-sm transition-all duration-300';
-            statusEl.innerHTML = '<span class="h-2.5 w-2.5 mr-1.5 rounded-full bg-pink-400"></span>停止中';
-        }
-    }
-    
-    // スケール係数の計算
-    calculateScaleFactor() {
-        const networkEl = document.getElementById('network');
-        if (!networkEl) return;
-        
-        const containerWidth = networkEl.clientWidth;
-        const containerHeight = networkEl.clientHeight;
-        
-        if (containerWidth === 0 || containerHeight === 0) return;
-        
-        const scaleX = containerWidth / this.baseWidth;
-        const scaleY = containerHeight / this.baseHeight;
-        
-        this.scaleFactor = Math.min(scaleX, scaleY, 1);
-        
-        // モバイルの場合は追加の縮小
-        if (this.isMobile) {
-            this.scaleFactor = Math.min(this.scaleFactor * 0.9, 0.8);
-        }
-        
-        // ネットワークを中央に配置
-        this.offsetX = (containerWidth - (this.baseWidth * this.scaleFactor)) / 2;
-        this.offsetY = (containerHeight - (this.baseHeight * this.scaleFactor)) / 2;
-    }
-    
-    // 位置のスケーリング
-    scalePosition(x, y) {
-        return {
-            x: (x * this.scaleFactor) + this.offsetX,
-            y: (y * this.scaleFactor) + this.offsetY
-        };
-    }
-    
-    // ネットワークの描画
-    renderNetwork() {
-        const networkEl = document.getElementById('network');
-        if (!networkEl) return;
-        
-        // 既存の要素をクリア（ピンチズームコンテナは維持）
-        const zoomArea = networkEl.querySelector('.zoom-area');
-        const zoomIndicator = networkEl.querySelector('.zoom-indicator');
-        networkEl.innerHTML = '';
-        
-        // ズーム関連要素を復元
-        if (zoomArea && zoomIndicator) {
-            networkEl.appendChild(zoomArea);
-            networkEl.appendChild(zoomIndicator);
-        }
-        
-        // まず接続を作成（ノードの下に表示するため）        
-        for (const connection of this.connections) {
-            const fromNode = this.nodes[connection.from];
-            const toNode = this.nodes[connection.to];
-            
-            if (!fromNode || !toNode) continue;
-            
-            const fromPos = this.scalePosition(fromNode.x, fromNode.y);
-            const toPos = this.scalePosition(toNode.x, toNode.y);
-            
-            const dx = toPos.x - fromPos.x;
-            const dy = toPos.y - fromPos.y;
-            const length = Math.sqrt(dx * dx + dy * dy);
-            const angle = Math.atan2(dy, dx);
-            
-            const connectionEl = document.createElement('div');
-            connectionEl.classList.add('connection');
-            connectionEl.dataset.id = connection.id;
-            if (this.activeElements.has(connection.id)) {
-                connectionEl.classList.add('active');
-            }
-            
-            connectionEl.style.left = `${fromPos.x}px`;
-            connectionEl.style.top = `${fromPos.y}px`;
-            connectionEl.style.width = `${length}px`;
-            connectionEl.style.transform = `rotate(${angle}rad)`;
-            connectionEl.title = `接続: ${connection.from} → ${connection.to}`;
-            
-            // タッチエリアの拡大
-            if (this.isMobile) {
-                connectionEl.style.height = '6px';
-            }
-            
-            networkEl.appendChild(connectionEl);
-            
-            // ポートラベルを表示
-            if (connection.portLabel) {
-                const midX = fromPos.x + dx / 2;
-                const midY = fromPos.y + dy / 2;
-                
-                const portLabelEl = document.createElement('div');
-                portLabelEl.classList.add('port-label');
-                portLabelEl.dataset.id = `port-${connection.id}`;
-                portLabelEl.dataset.port = connection.portLabel;
-                if (this.activeElements.has(`port-${connection.id}`)) {
-                    portLabelEl.classList.add('active');
-                }
-                
-                portLabelEl.textContent = connection.portLabel;
-                portLabelEl.style.left = `${midX}px`;
-                portLabelEl.style.top = `${midY}px`;
-                portLabelEl.title = `ポート ${connection.portLabel}: ${connection.from} → ${connection.to}`;
-                
-                // モバイル用にタッチエリア拡大
-                if (this.isMobile) {
-                    portLabelEl.style.width = '32px';
-                    portLabelEl.style.height = '32px';
-                }
-                
-                networkEl.appendChild(portLabelEl);
-            }
-        }
-        
-        // ノードを作成
-        for (const [id, node] of Object.entries(this.nodes)) {
-            const pos = this.scalePosition(node.x, node.y);
-            
-            const nodeEl = document.createElement('div');
-            nodeEl.classList.add('node');
-            nodeEl.dataset.id = id;
-            
-            if (this.activeElements.has(id)) {
-                nodeEl.classList.add('active');
-            }
-            
-            if (node.type === 'terminal') {
-                nodeEl.classList.add('terminal');
-                // PC画像を使用
-                const pcIcon = document.createElement('img');
-                pcIcon.src = './images/54F75B51-169C-4AAC-B781-D459DFE38F65.png';
-                pcIcon.classList.add('pc-icon');
-                pcIcon.style.width = '70px';  
-                pcIcon.style.height = '70px';
-                // 向きを設定
-                if (node.direction === 'right') {
-                    pcIcon.style.transform = 'scaleX(-1)';
-                }
-                nodeEl.appendChild(pcIcon);
-                
-                const label = document.createElement('div');
-                label.textContent = `端末${node.label}`;
-                label.classList.add('terminal-label');
-                label.style.position = 'absolute';
-                label.style.left = '50%';
-                label.style.transform = 'translateX(-50%)';
-                label.style.bottom = '-24px';
-                label.style.fontSize = '16px';
-                label.style.fontWeight = 'bold';
-                label.style.whiteSpace = 'nowrap';  // 改行を防止
-                nodeEl.appendChild(label);
-                
-                // 端末をクリック可能にして送信元/送信先を設定
-                nodeEl.addEventListener('click', () => this.handleTerminalClick(id));
-                nodeEl.title = `端末 ${id}`;
-            } else if (node.type === 'router') {
-                nodeEl.classList.add('router');
-                // ルータ画像を使用
-                const pcIcon = document.createElement('img');
-                pcIcon.src = './images/B9CF8581-D931-4993-96B8-7E10B00DB6EA.png';
-                pcIcon.classList.add('pc-icon');
-                pcIcon.style.width = '70px';
-                pcIcon.style.height = '70px';
-                nodeEl.appendChild(pcIcon);
-                
-                // ラベルを作成（下部に配置）- 端末と同じスタイル
-                const label = document.createElement('div');
-                label.textContent = `ルータ${node.label}`;
-                label.classList.add('terminal-label');
-                label.style.position = 'absolute';
-                label.style.left = '50%';
-                label.style.transform = 'translateX(-50%)';
-                label.style.bottom = '0px';
-                label.style.fontSize = '16px';
-                label.style.fontWeight = 'bold';
-                label.style.color = 'white';
-                label.style.whiteSpace = 'nowrap';
-                nodeEl.appendChild(label);
-                
-                nodeEl.title = `ルータ${node.label}`;
-            }
-            
-            nodeEl.style.left = `${pos.x}px`;
-            nodeEl.style.top = `${pos.y}px`;
-            
-            // ノードのホバー時の接続ハイライト
-            nodeEl.addEventListener('mouseenter', () => this.highlightConnections(id));
-            nodeEl.addEventListener('mouseleave', () => this.unhighlightConnections(id));
-            
-            // タッチデバイス用イベント
-            nodeEl.addEventListener('touchstart', () => this.highlightConnections(id));
-            nodeEl.addEventListener('touchend', () => this.unhighlightConnections(id));
-            
-            networkEl.appendChild(nodeEl);
-        }
-        
-        // 鑑賞用歌詞コンテナの再追加
-        if (this.viewerLyricsContainer && !this.viewerLyricsContainer.parentNode) {
-            networkEl.appendChild(this.viewerLyricsContainer);
-        }
-        
-        // モバイル用にタッチターゲットのセットアップ
-        if (this.isMobile) {
-            this.setupTouchTargets();
-        }
-    }
-    
-    // 端末クリック時の処理
-    handleTerminalClick(id) {
-        const sourceSelect = document.getElementById('source');
-        const destSelect = document.getElementById('destination');
-        
-        if (!sourceSelect || !destSelect) return;
-        
-        // Shiftキーが押されていれば送信先に設定
-        if (window.event && window.event.shiftKey) {
-            destSelect.value = id;
-        } else {
-            // Shiftダブルタップでも送信先に設定（モバイル用）
-            const now = new Date().getTime();
-            if (this.lastTerminalTap && this.lastTerminalTap.id === id && now - this.lastTerminalTap.time < 500) {
-                destSelect.value = id;
-            } else {
-                // それ以外は送信元に設定
-                sourceSelect.value = id;
-            }
-            
-            // タップ情報を保存
-            this.lastTerminalTap = { id, time: now };
-        }
-        
-        this.updateActiveTerminals();
-    }
-    
-    // 接続のハイライト表示
-    highlightConnections(nodeId) {
-        for (const conn of this.connections) {
-            if (conn.from === nodeId || conn.to === nodeId) {
-                const connEl = document.querySelector(`.connection[data-id="${conn.id}"]`);
-                if (connEl) connEl.classList.add('active');
-                
-                const portEl = document.querySelector(`.port-label[data-id="port-${conn.id}"]`);
-                if (portEl) portEl.classList.add('active');
-            }
-        }
-    }
-    
-    // 接続のハイライト解除
-    unhighlightConnections(nodeId) {
-        for (const conn of this.connections) {
-            if ((conn.from === nodeId || conn.to === nodeId) && !this.activeElements.has(conn.id)) {
-                const connEl = document.querySelector(`.connection[data-id="${conn.id}"]`);
-                if (connEl) connEl.classList.remove('active');
-                
-                const portEl = document.querySelector(`.port-label[data-id="port-${conn.id}"]`);
-                if (portEl && !this.activeElements.has(`port-${conn.id}`)) {
-                    portEl.classList.remove('active');
-                }
-            }
-        }
-    }
-    
-    // ルーティングテーブルの描画 - 4端末構成に更新
-    renderRoutingTable() {
-        // デスクトップルーティングテーブルを更新
-        this.updateRoutingTable('routing-table');
-        
-        // モバイルルーティングテーブルも更新
-        this.updateRoutingTable('mobile-routing-table');
-    }
-    
-    // ルーティングテーブルを更新 - 4端末構成
-    updateRoutingTable(tableId) {
-        const tableBody = document.querySelector(`#${tableId} tbody`);
-        if (!tableBody) return;
-        
-        tableBody.innerHTML = '';
-        
-        const sections = [
-            { title: 'ルータ X', routes: [
-                { dest: '端末 A', port: '1' },
-                { dest: '端末 B', port: '2' },
-                { dest: '端末 C,D', port: '5' }
-            ]},
-            { title: 'ルータ Y', routes: [  // ZをYに変更
-                { dest: '端末 C', port: '3' },
-                { dest: '端末 D', port: '4' },
-                { dest: '端末 A,B', port: '5' }
-            ]}
-        ];
-        
-        sections.forEach(section => {
-            this.addRoutingTableSection(tableBody, section.title);
-            section.routes.forEach(route => {
-                this.addRoutingTableRow(tableBody, route.dest, route.port);
-            });
-        });
-    }
-    
-    // ルーティングテーブルのセクション追加 
-    addRoutingTableSection(tableBody, title) {
-        if (!tableBody) return;
-        
-        const row = document.createElement('tr');
-        row.classList.add('bg-space-800', 'bg-opacity-80');
-        const cell = document.createElement('td');
-        cell.setAttribute('colspan', '2');
-        cell.classList.add('px-4', 'py-2.5', 'font-medium', 'text-miku-300', 'text-center', 'border-t', 'border-b', 'border-miku-800');
-        cell.textContent = title;
-        row.appendChild(cell);
-        tableBody.appendChild(row);
-    }
-    
-    // ルーティングテーブルの行追加
-    addRoutingTableRow(tableBody, destination, port) {
-        if (!tableBody) return;
-        
-        const row = document.createElement('tr');
-        row.classList.add('hover:bg-space-800', 'hover:bg-opacity-50', 'transition-colors');
-        
-        const destCell = document.createElement('td');
-        destCell.classList.add('px-4', 'py-2.5', 'border-b', 'border-miku-800', 'text-sm', 'text-white');
-        destCell.textContent = destination;
-        
-        const portCell = document.createElement('td');
-        portCell.classList.add('px-4', 'py-2.5', 'border-b', 'border-miku-800', 'text-sm', 'font-medium', 'text-miku-300');
-        portCell.textContent = port;
-        
-        row.appendChild(destCell);
-        row.appendChild(portCell);
-        tableBody.appendChild(row);
-    }
-    
-    // 次のホップを取得 - 4端末構成
     getNextHop(currentNode, destination) {
-        // 端末からルータへの直接接続
         if (currentNode === 'A' || currentNode === 'B') return 'X';
-        if (currentNode === 'C' || currentNode === 'D') return 'Y';  // ZをYに変更
-
-        // ルータXからの経路
+        if (currentNode === 'C' || currentNode === 'D') return 'Y';
         if (currentNode === 'X') {
             if (destination === 'A' || destination === 'B') return destination;
-            return 'Y';  // ZをYに変更
+            return 'Y';
         }
-
-        // ルータYからの経路（ZをYに変更）
-        if (currentNode === 'Y') {  // ZをYに変更
+        if (currentNode === 'Y') {
             if (destination === 'C' || destination === 'D') return destination;
             return 'X';
         }
-
         return null;
     }
     
-    // イベントリスナーの設定
-    setupEventListeners() {
-        const sendBtn = document.getElementById('send-btn');
-        const stopBtn = document.getElementById('stop-btn');
-        const fullscreenBtn = document.getElementById('fullscreen-btn');
-        const songSelect = document.getElementById('song-select');
-        
-        if (sendBtn) {
-            sendBtn.addEventListener('click', () => {
-                this.startPlayback();
-            });
-            
-            // タッチ端末向け改善
-            if (this.isMobile) {
-                sendBtn.addEventListener('touchstart', () => {
-                    sendBtn.classList.add('scale-95', 'opacity-90');
-                });
-                
-                sendBtn.addEventListener('touchend', () => {
-                    sendBtn.classList.remove('scale-95', 'opacity-90');
-                });
-            }
-        }
-        
-        if (stopBtn) {
-            stopBtn.addEventListener('click', () => {
-                if (this.isRunning) {
-                    this.stopSimulation();
-                }
-            });
-            
-            // タッチ端末向け改善
-            if (this.isMobile) {
-                stopBtn.addEventListener('touchstart', () => {
-                    stopBtn.classList.add('scale-95', 'opacity-90');
-                });
-                
-                stopBtn.addEventListener('touchend', () => {
-                    stopBtn.classList.remove('scale-95', 'opacity-90');
-                });
-            }
-        }
-        
-        if (fullscreenBtn) {
-            fullscreenBtn.addEventListener('click', () => {
-                this.toggleFullscreen();
-            });
-            
-            // タッチ端末向け改善
-            if (this.isMobile) {
-                fullscreenBtn.addEventListener('touchstart', () => {
-                    fullscreenBtn.classList.add('scale-95', 'opacity-90');
-                });
-                
-                fullscreenBtn.addEventListener('touchend', () => {
-                    fullscreenBtn.classList.remove('scale-95', 'opacity-90');
-                });
-            }
-        }
-        
-        if (songSelect) {
-            songSelect.addEventListener('change', () => {
-                const selectedIndex = parseInt(songSelect.value);
-                this.changeSong(selectedIndex);
-            });
-        }
-        
-        // 送信元と送信先の選択変更を処理
-        const sourceSelect = document.getElementById('source');
-        const destSelect = document.getElementById('destination');
-        
-        if (sourceSelect && destSelect) {
-            // 選択肢を更新
-            this.updateTerminalOptions(sourceSelect);
-            this.updateTerminalOptions(destSelect);
-            
-            sourceSelect.addEventListener('change', () => {
-                this.updateActiveTerminals();
-            });
-            
-            destSelect.addEventListener('change', () => {
-                this.updateActiveTerminals();
-            });
-        }
-        
-        // フルスクリーン変更イベントを処理
-        document.addEventListener('fullscreenchange', () => {
-            this.calculateScaleFactor();
-            this.renderNetwork();
-            this.updateFullscreenButton();
-        });
-        
-        document.addEventListener('webkitfullscreenchange', () => {
-            this.calculateScaleFactor();
-            this.renderNetwork();
-            this.updateFullscreenButton();
-        });
-    }
-    
-    // ドロップダウンの選択肢を更新
-    updateTerminalOptions(selectElement) {
-        if (!selectElement) return;
-        
-        // 既存の選択肢をクリア
-        selectElement.innerHTML = '';
-        
-        // 端末ノードを選択肢として追加
-        const terminalNodes = Object.entries(this.nodes)
-            .filter(([_, node]) => node.type === 'terminal')
-            .map(([id, _]) => id);
-            
-        terminalNodes.forEach(id => {
-            const option = document.createElement('option');
-            option.value = id;
-            option.textContent = `端末 ${id}`;
-            selectElement.appendChild(option);
-        });
-        
-        // 初期選択値を設定
-        if (terminalNodes.length > 0) {
-            if (selectElement.id === 'source') {
-                selectElement.value = terminalNodes[0]; // 最初の端末を送信元に
-            } else if (selectElement.id === 'destination') {
-                selectElement.value = terminalNodes.length > 1 ? terminalNodes[1] : terminalNodes[0]; // 2番目の端末を送信先に
-            }
-        }
-    }
-    
-    // 選択された端末のハイライト更新
-    updateActiveTerminals() {
-        const sourceSelect = document.getElementById('source');
-        const destSelect = document.getElementById('destination');
-        
-        if (!sourceSelect || !destSelect) return;
-        
-        const source = sourceSelect.value;
-        const destination = destSelect.value;
-        
-        // ターミナルのハイライトをリセット
-        document.querySelectorAll('.terminal').forEach(el => {
-            el.classList.remove('active');
-        });
-        
-        // 選択されたターミナルをハイライト
-        const sourceEl = document.querySelector(`.terminal[data-id="${source}"]`);
-        const destEl = document.querySelector(`.terminal[data-id="${destination}"]`);
-        
-        if (sourceEl) sourceEl.classList.add('active');
-        if (destEl) destEl.classList.add('active');
-    }
-    
-    // フルスクリーン表示の切り替え
-    toggleFullscreen() {
-        const appContainer = document.getElementById('app-container');
-        if (!appContainer) return;
-        
-        if (!document.fullscreenElement &&
-            !document.mozFullScreenElement &&
-            !document.webkitFullscreenElement &&
-            !document.msFullscreenElement) {
-            // フルスクリーンに入る
-            if (appContainer.requestFullscreen) {
-                appContainer.requestFullscreen();
-            } else if (appContainer.mozRequestFullScreen) {
-                appContainer.mozRequestFullScreen();
-            } else if (appContainer.webkitRequestFullscreen) {
-                appContainer.webkitRequestFullscreen();
-            } else if (appContainer.msRequestFullscreen) {
-                appContainer.msRequestFullscreen();
-            }
-        } else {
-            // フルスクリーンを終了
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-            } else if (document.mozCancelFullScreen) {
-                document.mozCancelFullScreen();
-            } else if (document.webkitExitFullscreen) {
-                document.webkitExitFullscreen();
-            } else if (document.msExitFullscreen) {
-                document.msExitFullscreen();
-            }
-        }
-    }
-    
-    // フルスクリーンボタンの更新
-    updateFullscreenButton() {
-        const fullscreenBtn = document.getElementById('fullscreen-btn');
-        
-        if (!fullscreenBtn) return;
-        
-        if (document.fullscreenElement ||
-            document.mozFullScreenElement ||
-            document.webkitFullscreenElement ||
-            document.msFullscreenElement) {
-            // フル画面モード
-            fullscreenBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                全画面解除
-            `;
-        } else {
-            // 通常モード
-            fullscreenBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 0h-4m4 0l-5-5" />
-                </svg>
-                全画面
-            `;
-        }
-    }
-    
-    // 歌詞送信処理
-    sendLyricWord(word) {
-        if (!this.isRunning || !word) return;
-        
-        this.lyricId++;
-        const id = this.lyricId;
-        
-        // 送信元と送信先を取得
-        const sourceSelect = document.getElementById('source');
-        const destSelect = document.getElementById('destination');
-        
-        if (!sourceSelect || !destSelect) return;
-        
-        const source = sourceSelect.value;
-        const destination = destSelect.value;
-        
-        const lyric = {
-            id,
-            source,
-            destination,
-            text: word.text,
-            currentNode: source,
-            nextNode: this.getNextHop(source, destination),
-            status: 'created',
-            createdAt: Date.now(),
-            completed: false,
-            hops: 0
-        };
-        
-        // 次のホップが無効な場合はエラーを記録して送信しない
-        if (!lyric.nextNode) {
-            this.addLogEntry(`歌詞 #${id}: 無効なルート設定です。`, 'error');
-            return;
-        }
-        
-        this.lyrics.push(lyric);
-        this.stats.lyricsCreated++;
-        this.addLogEntry(`歌詞 #${id}: 「${lyric.text}」を 端末 ${source} から 端末 ${destination} へ送信します。`, 'info');
-        this.updateLyricCounter();
-        
-        // 歌詞の移動を開始
-        this.moveLyric(lyric);
-        
-        // 鑑賞用歌詞も表示
-        this.displayViewerLyric(lyric.text);
-    }
-    
-    // ポート番号を取得
-    getPortNumber(fromNode, toNode) {
-        // 接続を検索
-        for (const conn of this.connections) {
-            if (conn.from === fromNode && conn.to === toNode) {
-                return conn.fromPort;
-            }
-        }
-        return null;
-    }
-    
-    // 接続IDを取得
     getConnectionId(fromNode, toNode) {
-        // 接続IDを検索
-        for (const conn of this.connections) {
-            if (conn.from === fromNode && conn.to === toNode) {
-                return conn.id;
-            }
-        }
-        return null;
+        const conn = this._connections.find(c => c.from === fromNode && c.to === toNode);
+        return conn ? conn.id : null;
     }
     
-    // 歌詞の移動
-    moveLyric(lyric) {
-        if (!this.isRunning || lyric.completed) return;
-        
-        const fromNode = this.nodes[lyric.currentNode];
-        const toNode = this.nodes[lyric.nextNode];
-        
-        if (!fromNode || !toNode) {
-            this.addLogEntry(`歌詞 #${lyric.id}: 無効なルートです (${lyric.currentNode} -> ${lyric.nextNode})。`, 'error');
-            lyric.completed = true;
-            this.updateLyricCounter();
-            return;
-        }
-        
-        // ホップ数を増やす
-        lyric.hops++;
-        
-        // ポート番号とコネクションIDを取得
-        const portNumber = this.getPortNumber(lyric.currentNode, lyric.nextNode);
-        const connectionId = this.getConnectionId(lyric.currentNode, lyric.nextNode);
-        
-        // アクティブな要素をハイライト表示に追加
-        this.activeElements.add(lyric.currentNode);
-        this.activeElements.add(lyric.nextNode);
-        if (connectionId) {
-            this.activeElements.add(connectionId);
-            this.activeElements.add(`port-${connectionId}`);
-        }
-        
-        // ネットワーク全体を再描画せずに接続を更新
-        this.updateActiveConnections();
-        
-        if (lyric.currentNode !== lyric.source) {
-            if (portNumber) {
-                this.addLogEntry(`歌詞 #${lyric.id}: ルータ ${lyric.currentNode} が「${lyric.text}」を受信し、ポート ${portNumber} から転送します。`, 'info');
-            } else {
-                this.addLogEntry(`歌詞 #${lyric.id}: ルータ ${lyric.currentNode} が「${lyric.text}」を転送します。`, 'info');
-            }
-        }
-        
-        // ネットワーク要素の取得
-        const networkEl = document.getElementById('network');
-        if (!networkEl) {
-            lyric.completed = true;
-            return;
-        }
-        
-        // 歌詞を視覚的に表示
-        const lyricEl = document.createElement('div');
-        lyricEl.classList.add('packet'); // パケットと同じスタイルを使用
-        lyricEl.textContent = lyric.text;
-        lyricEl.dataset.id = `lyric-${lyric.id}`;
-        lyricEl.title = `歌詞 #${lyric.id}: 「${lyric.text}」 ${lyric.source} → ${lyric.destination}`;
-        
-        // 日本語の場合、スタイルを調整
-        if (lyric.text.length > 5) {
-            lyricEl.style.fontSize = '10px';
-            lyricEl.style.width = 'auto';
-            lyricEl.style.minWidth = '36px';
-            lyricEl.style.padding = '0 8px';
-        }
-        
-        // モバイル用に表示を最適化
-        if (this.isMobile && lyric.text.length > 3) {
-            lyricEl.style.fontSize = '9px';
-            lyricEl.style.height = '20px';
-            lyricEl.style.padding = '2px 6px';
-        }
-        
-        const fromPos = this.scalePosition(fromNode.x, fromNode.y);
-        lyricEl.style.left = `${fromPos.x}px`;
-        lyricEl.style.top = `${fromPos.y}px`;
-        
-        networkEl.appendChild(lyricEl);
-        
-        // 歌詞移動アニメーションを開始
-        this.animateLyric(lyric, lyricEl, fromNode, toNode);
-    }
-    
-    // 歌詞のアニメーション
-    animateLyric(lyric, lyricEl, fromNode, toNode) {
-        if (!this.isRunning || lyric.completed) {
-            try {
-                if (lyricEl.parentNode) {
-                    lyricEl.parentNode.removeChild(lyricEl);
-                }
-            } catch (e) {
-                console.error('歌詞要素削除エラー:', e);
-            }
-            return;
-        }
-        
-        const startTime = performance.now();
-        const duration = 1000; // 1秒
-        
-        const animate = (currentTime) => {
-            // シミュレーションが停止している場合はアニメーションを中止
-            if (!this.isRunning || lyric.completed) {
-                try {
-                    if (lyricEl.parentNode) {
-                        lyricEl.parentNode.removeChild(lyricEl);
-                    }
-                } catch (e) {
-                    console.error('歌詞要素削除エラー:', e);
-                }
-                // アニメーション追跡から削除
-                this.animationFrames.delete(lyric.id);
-                return;
-            }
-            
-            const elapsed = currentTime - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            
-            const fromPos = this.scalePosition(fromNode.x, fromNode.y);
-            const toPos = this.scalePosition(toNode.x, toNode.y);
-            
-            const x = fromPos.x + (toPos.x - fromPos.x) * progress;
-            const y = fromPos.y + (toPos.y - fromPos.y) * progress;
-            
-            try {
-                lyricEl.style.left = `${x}px`;
-                lyricEl.style.top = `${y}px`;
-            } catch (e) {
-                console.error('歌詞位置設定エラー:', e);
-                this.animationFrames.delete(lyric.id);
-                return;
-            }
-            
-            if (progress < 1) {
-                // アニメーション継続
-                const frameId = requestAnimationFrame(animate);
-                this.animationFrames.set(lyric.id, frameId);
-            } else {
-                // 歌詞が目標に到達
-                try {
-                    lyricEl.classList.add('animate-fadeOut');
-                    setTimeout(() => {
-                        try {
-                            if (lyricEl.parentNode) {
-                                lyricEl.parentNode.removeChild(lyricEl);
-                            }
-                        } catch (e) {
-                            console.error('歌詞要素削除エラー:', e);
-                        }
-                    }, 300);
-                } catch (e) {
-                    console.error('歌詞アニメーション終了エラー:', e);
-                }
-                
-                // アニメーション追跡から削除
-                this.animationFrames.delete(lyric.id);
-                
-                // 歌詞処理を続行
-                this.processLyricNextHop(lyric);
-            }
-        };
-        
-        // 初回アニメーションフレームを開始し追跡する
-        const frameId = requestAnimationFrame(animate);
-        this.animationFrames.set(lyric.id, frameId);
-    }
-    
-    // 歌詞の次ホップへの処理
-    processLyricNextHop(lyric) {
-        if (!this.isRunning || lyric.completed) return;
-        
-        // 歌詞の状態を更新
-        lyric.currentNode = lyric.nextNode;
-        
-        if (lyric.currentNode === lyric.destination) {
-            // 歌詞が最終目的地に到達
-            this.stats.lyricsDelivered++;
-            this.stats.totalHops += lyric.hops;
-            
-            // 平均ホップ数の計算
-            const avgHops = this.stats.totalHops / this.stats.lyricsDelivered;
-            
-            this.addLogEntry(`歌詞 #${lyric.id}: 「${lyric.text}」が端末 ${lyric.destination} に到達しました。 (${lyric.hops}ホップ)`, 'success');
-            lyric.completed = true;
-            this.updateLyricCounter();
-            
-            // このパケットのアクティブ要素を削除（他のパケットが使用していない場合のみ）
-            this.cleanupActiveConnections();
-        } else {
-            // 次のホップに進む
-            const oldNext = lyric.nextNode;
-            lyric.nextNode = this.getNextHop(lyric.currentNode, lyric.destination);
-            
-            // 次のホップが無効な場合は歌詞を完了としてマーク
-            if (!lyric.nextNode) {
-                this.addLogEntry(`歌詞 #${lyric.id}: 次ホップが見つかりません。歌詞は破棄されます。`, 'error');
-                lyric.completed = true;
-                this.updateLyricCounter();
-                return;
-            }
-            
-            // 他のパケットが使用していない場合、古い接続からアクティブ要素を削除
-            const oldConnectionId = this.getConnectionId(lyric.currentNode, oldNext);
-            if (oldConnectionId) {
-                this.cleanupActiveElement(oldConnectionId);
-                this.cleanupActiveElement(`port-${oldConnectionId}`);
-            }
-            
-            // ネットワーク全体を再描画せずに接続を更新
-            this.updateActiveConnections();
-            
-            // メインスレッドのブロックを防ぐためにsetTimeoutを使用して次のホップに進む
-            setTimeout(() => {
-                if (this.isRunning && !lyric.completed) {
-                    this.moveLyric(lyric);
-                }
-            }, 100);
-        }
-    }
-    
-    // アクティブな接続の更新
-    updateActiveConnections() {
-        // ネットワーク全体を再描画せずに接続を更新
-        for (const connection of this.connections) {
-            const connEl = document.querySelector(`.connection[data-id="${connection.id}"]`);
-            const portEl = document.querySelector(`.port-label[data-id="port-${connection.id}"]`);
-            
-            if (connEl) {
-                if (this.activeElements.has(connection.id)) {
-                    connEl.classList.add('active');
-                } else {
-                    connEl.classList.remove('active');
-                }
-            }
-            
-            if (portEl) {
-                if (this.activeElements.has(`port-${connection.id}`)) {
-                    portEl.classList.add('active');
-                } else {
-                    portEl.classList.remove('active');
-                }
-            }
-        }
-        
-        // ノードの状態を更新
-        for (const [id, node] of Object.entries(this.nodes)) {
-            const nodeEl = document.querySelector(`.node[data-id="${id}"]`);
-            if (nodeEl) {
-                if (this.activeElements.has(id)) {
-                    nodeEl.classList.add('active');
-                } else {
-                    nodeEl.classList.remove('active');
-                }
-            }
-        }
-    }
-    
-    // アクティブ接続のクリーンアップ
-    cleanupActiveConnections() {
-        // 要素IDごとの参照カウントを保持
-        const referenceCount = new Map();
-        
-        // 全アクティブ要素の初期参照カウントを0に設定
-        for (const element of this.activeElements) {
-            referenceCount.set(element, 0);
-        }
-        
-        // 各歌詞がどの要素を使用しているかカウント
-        for (const lyric of this.lyrics) {
-            if (!lyric.completed) {
-                // 現在のノードと歌詞が使用する接続を追跡
-                const currentConnectionId = this.getConnectionId(lyric.currentNode, lyric.nextNode);
-                
-                if (currentConnectionId) {
-                    // 接続と関連要素の参照カウントを増やす
-                    this.incrementReferenceCount(referenceCount, lyric.currentNode);
-                    this.incrementReferenceCount(referenceCount, lyric.nextNode);
-                    this.incrementReferenceCount(referenceCount, currentConnectionId);
-                    this.incrementReferenceCount(referenceCount, `port-${currentConnectionId}`);
-                }
-            }
-        }
-        
-        // 参照カウントが0の要素を削除
-        for (const [element, count] of referenceCount.entries()) {
-            if (count === 0) {
-                this.activeElements.delete(element);
-            }
-        }
-        
-        // ネットワーク全体を再描画せずに接続を更新
-        this.updateActiveConnections();
-    }
-    
-    // 参照カウント増加ヘルパーメソッド
-    incrementReferenceCount(countMap, key) {
-        if (countMap.has(key)) {
-            countMap.set(key, countMap.get(key) + 1);
-        } else {
-            countMap.set(key, 1);
-        }
-    }
-    
-    // 個別のアクティブ要素のクリーンアップ
-    cleanupActiveElement(element) {
-        let stillActive = false;
-        
-        // 歌詞がまだこの接続を使用しているか確認
-        for (const lyric of this.lyrics) {
-            if (!lyric.completed) {
-                const currentConnectionId = this.getConnectionId(lyric.currentNode, lyric.nextNode);
-                if (currentConnectionId === element || `port-${currentConnectionId}` === element) {
-                    stillActive = true;
-                    break;
-                }
-            }
-        }
-        
-        if (!stillActive) {
-            this.activeElements.delete(element);
-        }
-    }
-    
-    // すべての歌詞をクリア
-    clearLyrics() {
-        // アニメーションフレームをすべてキャンセル
-        for (const [id, frameId] of this.animationFrames.entries()) {
-            cancelAnimationFrame(frameId);
-        }
-        this.animationFrames.clear();
-        
-        this.lyrics = [];
-        this.updateLyricCounter();
-        
-        // アクティブな要素をクリア
-        this.activeElements.clear();
-        this.updateActiveConnections();
-        
-        // すべての歌詞要素を削除
-        const networkEl = document.getElementById('network');
-        if (!networkEl) return;
-        
-        const lyricEls = networkEl.querySelectorAll('.packet');
-        lyricEls.forEach(el => {
-            try {
-                el.classList.add('animate-fadeOut');
-                setTimeout(() => {
-                    try {
-                        if (el.parentNode) {
-                            el.parentNode.removeChild(el);
-                        }
-                    } catch (e) {
-                        console.error('歌詞要素削除エラー:', e);
-                    }
-                }, 300);
-            } catch (e) {
-                console.error('歌詞削除アニメーションエラー:', e);
-            }
-        });
-        
-        // 鑑賞用歌詞もクリア
-        if (this.viewerLyricsContainer) {
-            this.viewerLyricsContainer.innerHTML = '';
-        }
-        this.displayedViewerLyrics.clear();
-    }
-    
-    // 歌詞カウンターの更新
-    updateLyricCounter() {
-        const counter = document.getElementById('packet-counter');
-        if (counter) {
-            const activeCount = this.lyrics.filter(p => !p.completed).length;
-            counter.innerHTML = `アクティブな歌詞: <span class="font-bold text-miku-300">${activeCount}</span>`; 
-        }
-    }
-    
-    // 鑑賞用歌詞を表示
-    displayViewerLyric(text) {
-        // 既に表示されている場合は何もしない
-        if (this.displayedViewerLyrics.has(text)) return;
-        if (!this.viewerLyricsContainer) return;
-
-        const viewerChar = document.createElement('span');
-        viewerChar.className = 'viewer-lyric-char';
-        viewerChar.textContent = text;
-        
-        // コンテナが空でない場合は1文字分のスペースを追加
-        if (this.viewerLyricsContainer.children.length > 0) {
-            this.viewerLyricsContainer.appendChild(document.createTextNode(' '));
-        }
-        
-        this.viewerLyricsContainer.appendChild(viewerChar);
-
-        // タイプライター効果のためのディレイ
-        requestAnimationFrame(() => {
-            viewerChar.classList.add('active');
-        });
-
-        // 歌詞要素を追跡
-        this.displayedViewerLyrics.set(text, {
-            element: viewerChar
-        });
-
-        // モバイル用にサイズ調整
-        if (this.isMobile) {
-            viewerChar.style.fontSize = '18px';
-        }
-
-        // フェードアウト効果を適用して削除（8秒から6秒に変更）
-        setTimeout(() => {
-            viewerChar.classList.add('fade-out');
-            setTimeout(() => {
-                if (viewerChar.parentNode) {
-                    // 直前のスペースがあれば削除
-                    const prev = viewerChar.previousSibling;
-                    if (prev && prev.nodeType === Node.TEXT_NODE) {
-                        prev.remove();
-                    }
-                    viewerChar.remove();
-                }
-                this.displayedViewerLyrics.delete(text);
-            }, 500);
-        }, 5000); // 5000に変更
-    }
-    
-    // ログエントリーを追加
-    addLogEntry(message, type = 'info') {
-        // ログマネージャーに転送
-        this.logManager.addEntry(message, type);
+    getPortNumber(fromNode, toNode) {
+        const conn = this._connections.find(c => c.from === fromNode && c.to === toNode);
+        return conn ? conn.fromPort : null;
     }
 }
 
-// ログマネージャークラス - モバイル対応拡張
+// ===== ログマネージャー =====
 class LogManager {
     constructor(containerId = 'log-entries', mobileContainerId = 'mobile-log-entries') {
-        this.container = document.getElementById(containerId);
-        this.mobileContainer = document.getElementById(mobileContainerId);
-        this.pendingEntries = [];
-        this.maxEntries = 100;
-        this.setupEventListeners();
-    }
-
-    setupEventListeners() {
-        // 定期的なログ更新のみ残す
-        this.updateInterval = setInterval(() => this.flushEntries(), 250);
+        this._container = document.getElementById(containerId);
+        this._mobileContainer = document.getElementById(mobileContainerId);
+        this._pendingEntries = [];
+        this._maxEntries = 100;
+        this._updateInterval = setInterval(() => this._flushEntries(), 250);
     }
 
     addEntry(message, type = 'info') {
-        this.pendingEntries.push({ message, type, timestamp: new Date() });
+        this._pendingEntries.push({ message, type, timestamp: new Date() });
     }
 
-    flushEntries() {
-        if (!this.pendingEntries.length) return;
-        if (!this.container && !this.mobileContainer) return;
+    _flushEntries() {
+        if (!this._pendingEntries.length) return;
+        if (!this._container && !this._mobileContainer) return;
 
-        const fragment = document.createDocumentFragment();
-
-        this.pendingEntries.forEach(entry => {
-            const logEntry = this.createLogEntryElement(entry);
+        this._pendingEntries.forEach(entry => {
+            const logEntry = this._createLogEntryElement(entry);
             
-            // デスクトップかモバイルのどちらかのコンテナにのみ追加
-            if (window.innerWidth > 1024 && this.container) {
-                // デスクトップ画面サイズではデスクトップ用コンテナにのみ追加
-                this.container.appendChild(logEntry.cloneNode(true));
-                this.limitLogEntries(this.container);
-                this.scrollToBottom(this.container);
-            } else if (this.mobileContainer) {
-                // モバイル画面サイズではモバイル用コンテナにのみ追加
-                this.mobileContainer.appendChild(logEntry.cloneNode(true));
-                this.limitLogEntries(this.mobileContainer);
-                this.scrollToBottom(this.mobileContainer);
+            if (window.innerWidth > 1024 && this._container) {
+                this._container.appendChild(logEntry.cloneNode(true));
+                this._limitLogEntries(this._container);
+                this._scrollToBottom(this._container);
+            } else if (this._mobileContainer) {
+                this._mobileContainer.appendChild(logEntry.cloneNode(true));
+                this._limitLogEntries(this._mobileContainer);
+                this._scrollToBottom(this._mobileContainer);
             }
         });
 
-        this.pendingEntries = [];
+        this._pendingEntries = [];
     }
 
-    createLogEntryElement(entry) {
+    _createLogEntryElement(entry) {
         const logEntry = document.createElement('div');
         logEntry.className = `log-entry ${entry.type} flex items-start`;
 
@@ -2329,13 +177,13 @@ class LogManager {
         return logEntry;
     }
 
-    limitLogEntries(container) {
-        while (container.children.length > this.maxEntries) {
+    _limitLogEntries(container) {
+        while (container.children.length > this._maxEntries) {
             container.removeChild(container.firstChild);
         }
     }
 
-    scrollToBottom(container) {
+    _scrollToBottom(container) {
         const logContainer = container.parentElement;
         if (logContainer) {
             logContainer.scrollTop = logContainer.scrollHeight;
@@ -2343,24 +191,1977 @@ class LogManager {
     }
 
     dispose() {
-        if (this.updateInterval) {
-            clearInterval(this.updateInterval);
-            this.updateInterval = null;
+        if (this._updateInterval) {
+            clearInterval(this._updateInterval);
+            this._updateInterval = null;
         }
     }
 }
 
-// DOMが完全に読み込まれたときにシミュレーションを初期化
+// ===== TextAlive API管理 =====
+class TextAliveManager {
+    constructor(onReady, onTimeUpdate, onPlay, onPause, onStop) {
+        this._player = null;
+        this._isReady = false;
+        this._isTextAliveLoaded = false;
+        this._selectedSongIndex = 0;
+        this._fallbackActive = false;
+        this._playRequestPending = false;
+        
+        this._onReady = onReady;
+        this._onTimeUpdate = onTimeUpdate;
+        this._onPlay = onPlay;
+        this._onPause = onPause;
+        this._onStop = onStop;
+    }
+    
+    async initialize() {
+        try {
+            await this._loadTextAliveScript();
+            await this._initializePlayer();
+            return true;
+        } catch (error) {
+            console.error('TextAlive API初期化エラー:', error);
+            this._setupFallbackMode();
+            return false;
+        }
+    }
+    
+    async _loadTextAliveScript() {
+        if (typeof window.TextAliveApp === 'undefined') {
+            const existingScript = document.querySelector('script[src*="textalive-app-api"]');
+            if (!existingScript) {
+                const script = document.createElement('script');
+                script.src = "https://unpkg.com/textalive-app-api/dist/index.js";
+                script.async = true;
+                
+                await new Promise((resolve, reject) => {
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    setTimeout(() => reject(new Error('TextAlive APIスクリプトのロードがタイムアウトしました')), 10000);
+                    document.head.appendChild(script);
+                });
+            }
+            
+            for (let i = 0; i < 50; i++) {
+                if (typeof window.TextAliveApp !== 'undefined') break;
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+        
+        if (typeof window.TextAliveApp === 'undefined') {
+            throw new Error('TextAliveAppが見つかりません。');
+        }
+        
+        this._isTextAliveLoaded = true;
+    }
+    
+    async _initializePlayer() {
+        const { Player } = window.TextAliveApp;
+        
+        this._player = new Player({
+            app: {
+                token: "vP37NoaGGtVq40se",
+                name: "ミク☆スターネットワーク歌詞シミュレーター"
+            },
+            player: {
+                mediaElement: document.createElement("audio"),
+                mediaBannerPosition: "bottom right",
+                defaultFontSize: "25px"
+            }
+        });
+        
+        this._player.addListener({
+            onAppReady: (app) => console.log('TextAlive App準備完了:', app),
+            onVideoReady: (v) => this._handleVideoReady(v),
+            onTimeUpdate: (position) => this._onTimeUpdate(position),
+            onPlay: () => this._handlePlay(),
+            onPause: () => this._handlePause(),
+            onStop: () => this._handleStop()
+        });
+        
+        const initialSong = songsData[this._selectedSongIndex];
+        await this._player.createFromSongUrl(initialSong.songUrl, {
+            video: { apiKey: initialSong.apiToken }
+        });
+    }
+    
+    _handleVideoReady(v) {
+        console.log('楽曲準備完了:', v);
+        this._isReady = true;
+        this._onReady();
+    }
+    
+    _handlePlay() {
+        this._playRequestPending = false;
+        this._resetLyricProcessedState();
+        this._onPlay();
+    }
+    
+    _handlePause() {
+        this._playRequestPending = false;
+        this._onPause();
+    }
+    
+    _handleStop() {
+        this._playRequestPending = false;
+        this._onStop();
+    }
+    
+    _resetLyricProcessedState() {
+        try {
+            if (this._player && this._player.video && this._player.video.phrases) {
+                this._player.video.phrases.forEach(phrase => {
+                    if (phrase && phrase.words) {
+                        phrase.words.forEach(word => {
+                            if (word) word.processed = false;
+                        });
+                    }
+                });
+            } else if (this._player && this._player.data && this._player.data.phrases) {
+                this._player.data.phrases.forEach(phrase => {
+                    if (phrase && phrase.words) {
+                        phrase.words.forEach(word => {
+                            if (word) word.processed = false;
+                        });
+                    }
+                });
+            }
+        } catch (e) {
+            console.error('歌詞データ処理エラー:', e);
+        }
+    }
+    
+    _setupFallbackMode() {
+        this._fallbackActive = true;
+        this._isReady = true;
+    }
+    
+    async changeSong(songIndex) {
+        if (songIndex === this._selectedSongIndex || !this._player) return;
+        
+        this._isReady = false;
+        this._selectedSongIndex = songIndex;
+        
+        const selectedSong = songsData[songIndex];
+        await this._player.createFromSongUrl(selectedSong.songUrl, {
+            video: { apiKey: selectedSong.apiToken }
+        });
+    }
+    
+    async requestPlay() {
+        if (!this._isReady) return false;
+        
+        if (this._player && !this._fallbackActive) {
+            try {
+                this._playRequestPending = true;
+                
+                if (this._player.isPlaying) {
+                    await this._player.requestPause();
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                }
+                
+                await this._player.requestPlay();
+                return true;
+            } catch (error) {
+                console.error('TextAlive Player再生エラー:', error);
+                this._setupFallbackMode();
+                return false;
+            }
+        }
+        return false;
+    }
+    
+    async requestPause() {
+        if (this._player && !this._fallbackActive) {
+            try {
+                if (this._playRequestPending) {
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                }
+                
+                this._player.requestPause();
+                
+                setTimeout(() => {
+                    if (this._player && this._player.isPlaying) {
+                        this._player.requestStop();
+                    }
+                }, 500);
+            } catch (e) {
+                console.error('TextAlive Player一時停止エラー:', e);
+            }
+        }
+    }
+    
+    getCurrentSongInfo() {
+        if (this._player && this._player.data && this._player.data.song) {
+            return {
+                name: this._player.data.song.name,
+                license: this._player.data.song.license
+            };
+        }
+        return null;
+    }
+    
+    findCurrentLyric(position) {
+        if (!this._player || this._fallbackActive) return null;
+        
+        try {
+            let phrase = null;
+            let word = null;
+            
+            if (typeof this._player.findPhrase === 'function') {
+                phrase = this._player.findPhrase(position);
+                
+                if (phrase && this._player.video && typeof this._player.video.findWord === 'function') {
+                    word = this._player.video.findWord(position);
+                } else if (phrase && typeof phrase.findWord === 'function') {
+                    word = phrase.findWord(position);
+                }
+            } else if (this._player.video && typeof this._player.video.findPhrase === 'function') {
+                phrase = this._player.video.findPhrase(position);
+                
+                if (phrase && typeof this._player.video.findWord === 'function') {
+                    word = this._player.video.findWord(position);
+                }
+            } else if (this._player.data && typeof this._player.data.findPhrase === 'function') {
+                phrase = this._player.data.findPhrase(position);
+                
+                if (phrase && this._player.data && typeof this._player.data.findWord === 'function') {
+                    word = this._player.data.findWord(position);
+                }
+            }
+            
+            return word;
+        } catch (e) {
+            console.error('歌詞取得エラー:', e);
+            return null;
+        }
+    }
+    
+    isReady() {
+        return this._isReady;
+    }
+    
+    isFallbackMode() {
+        return this._fallbackActive;
+    }
+    
+    isPlaying() {
+        return this._player && this._player.isPlaying;
+    }
+    
+    getSelectedSongIndex() {
+        return this._selectedSongIndex;
+    }
+    
+    dispose() {
+        if (this._player) {
+            this._player.dispose();
+        }
+    }
+}
+
+// ===== ネットワークレンダラー =====
+class NetworkRenderer {
+    constructor(networkModel, onTerminalClick) {
+        this._model = networkModel;
+        this._onTerminalClick = onTerminalClick;
+        this._scaleFactor = 1;
+        this._offsetX = 0;
+        this._offsetY = 0;
+        this._baseWidth = 800;
+        this._baseHeight = 700;
+        this._activeElements = new Set();
+        this._viewerLyricsContainer = null;
+        this._displayedViewerLyrics = new Map();
+        
+        this._initializeViewerLyricsContainer();
+    }
+    
+    _initializeViewerLyricsContainer() {
+        this._viewerLyricsContainer = document.getElementById('viewer-lyrics-container') || document.createElement('div');
+        if (!this._viewerLyricsContainer.parentNode) {
+            this._viewerLyricsContainer.className = 'viewer-lyrics-container absolute bottom-12 left-0 right-0 flex flex-wrap justify-center items-center gap-2 py-2 px-4 overflow-hidden z-10 pointer-events-none text-2xl font-bold';
+            const networkEl = document.getElementById('network');
+            if (networkEl) networkEl.appendChild(this._viewerLyricsContainer);
+        }
+    }
+      calculateScaleFactor() {
+        const networkEl = document.getElementById('network');
+        if (!networkEl) return;
+        
+        const containerWidth = networkEl.clientWidth;
+        const containerHeight = networkEl.clientHeight;
+        
+        if (containerWidth === 0 || containerHeight === 0) return;
+        
+        const scaleX = containerWidth / this._baseWidth;
+        const scaleY = containerHeight / this._baseHeight;
+        
+        this._scaleFactor = Math.min(scaleX, scaleY, 1);
+        
+        // デバイスタイプに応じたスケーリング調整
+        const deviceType = Utils.getDeviceType();
+        
+        switch (deviceType) {
+            case 'smartphone':
+                // スマートフォンはより小さくして、全体が見えるように
+                this._scaleFactor = Math.min(this._scaleFactor * 0.75, 0.6);
+                break;
+            case 'mobile':
+                // 768px以下のモバイルデバイス
+                this._scaleFactor = Math.min(this._scaleFactor * 0.8, 0.7);
+                break;
+            case 'tablet':
+                // タブレットは少し小さめだが見やすく
+                this._scaleFactor = Math.min(this._scaleFactor * 0.9, 0.85);
+                break;
+            default:
+                // デスクトップはそのまま
+                break;
+        }
+        
+        // オフセット計算（中央配置）
+        this._offsetX = (containerWidth - (this._baseWidth * this._scaleFactor)) / 2;
+        this._offsetY = (containerHeight - (this._baseHeight * this._scaleFactor)) / 2;
+        
+        // モバイルデバイスの場合、少し上に配置して操作しやすくする
+        if (Utils.isMobile()) {
+            this._offsetY = Math.max(this._offsetY - 20, 10);
+        }
+    }
+    
+    scalePosition(x, y) {
+        return {
+            x: (x * this._scaleFactor) + this._offsetX,
+            y: (y * this._scaleFactor) + this._offsetY
+        };
+    }
+    
+    render() {
+        const networkEl = document.getElementById('network');
+        if (!networkEl) return;
+        
+        const zoomArea = networkEl.querySelector('.zoom-area');
+        const zoomIndicator = networkEl.querySelector('.zoom-indicator');
+        networkEl.innerHTML = '';
+        
+        if (zoomArea && zoomIndicator) {
+            networkEl.appendChild(zoomArea);
+            networkEl.appendChild(zoomIndicator);
+        }
+        
+        this._renderConnections(networkEl);
+        this._renderNodes(networkEl);
+        
+        if (this._viewerLyricsContainer && !this._viewerLyricsContainer.parentNode) {
+            networkEl.appendChild(this._viewerLyricsContainer);
+        }
+        
+        if (Utils.isMobile()) {
+            this._setupTouchTargets(networkEl);
+        }
+    }
+    
+    _renderConnections(networkEl) {
+        const nodes = this._model.getNodes();
+        const connections = this._model.getConnections();
+        
+        for (const connection of connections) {
+            const fromNode = nodes[connection.from];
+            const toNode = nodes[connection.to];
+            
+            if (!fromNode || !toNode) continue;
+            
+            const fromPos = this.scalePosition(fromNode.x, fromNode.y);
+            const toPos = this.scalePosition(toNode.x, toNode.y);
+            
+            const dx = toPos.x - fromPos.x;
+            const dy = toPos.y - fromPos.y;
+            const length = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx);
+            
+            const connectionEl = document.createElement('div');
+            connectionEl.classList.add('connection');
+            connectionEl.dataset.id = connection.id;
+            if (this._activeElements.has(connection.id)) {
+                connectionEl.classList.add('active');
+            }
+              connectionEl.style.left = `${fromPos.x}px`;
+            connectionEl.style.top = `${fromPos.y}px`;
+            connectionEl.style.width = `${length}px`;
+            connectionEl.style.transform = `rotate(${angle}rad)`;
+            connectionEl.title = `接続: ${connection.from} → ${connection.to}`;
+            
+            // デバイスタイプに応じた接続線の太さ調整
+            const deviceType = Utils.getDeviceType();
+            let connectionHeight = '3px';
+            
+            switch (deviceType) {
+                case 'smartphone':
+                    connectionHeight = '4px';
+                    break;
+                case 'mobile':
+                    connectionHeight = '5px';
+                    break;
+                case 'tablet':
+                    connectionHeight = '4px';
+                    break;
+                default:
+                    connectionHeight = '3px';
+                    break;
+            }
+            
+            connectionEl.style.height = connectionHeight;
+            
+            networkEl.appendChild(connectionEl);
+              if (connection.portLabel) {
+                const midX = fromPos.x + dx / 2;
+                const midY = fromPos.y + dy / 2;
+                
+                const portLabelEl = document.createElement('div');
+                portLabelEl.classList.add('port-label');
+                portLabelEl.dataset.id = `port-${connection.id}`;
+                portLabelEl.dataset.port = connection.portLabel;
+                if (this._activeElements.has(`port-${connection.id}`)) {
+                    portLabelEl.classList.add('active');
+                }
+                
+                portLabelEl.textContent = connection.portLabel;
+                portLabelEl.style.left = `${midX}px`;
+                portLabelEl.style.top = `${midY}px`;
+                portLabelEl.title = `ポート ${connection.portLabel}: ${connection.from} → ${connection.to}`;
+                
+                // デバイスタイプに応じたポートラベルサイズ調整
+                const deviceType = Utils.getDeviceType();
+                let portSize = '40px';
+                let fontSize = '16px';
+                
+                switch (deviceType) {
+                    case 'smartphone':
+                        portSize = '24px';
+                        fontSize = '10px';
+                        break;
+                    case 'mobile':
+                        portSize = '28px';
+                        fontSize = '12px';
+                        break;
+                    case 'tablet':
+                        portSize = '32px';
+                        fontSize = '14px';
+                        break;
+                    default:
+                        portSize = '40px';
+                        fontSize = '16px';
+                        break;
+                }
+                
+                portLabelEl.style.width = portSize;
+                portLabelEl.style.height = portSize;
+                portLabelEl.style.fontSize = fontSize;
+                
+                networkEl.appendChild(portLabelEl);
+            }
+        }
+    }
+    
+    _renderNodes(networkEl) {
+        const nodes = this._model.getNodes();
+        
+        for (const [id, node] of Object.entries(nodes)) {
+            const pos = this.scalePosition(node.x, node.y);
+            
+            const nodeEl = document.createElement('div');
+            nodeEl.classList.add('node');
+            nodeEl.dataset.id = id;
+            
+            if (this._activeElements.has(id)) {
+                nodeEl.classList.add('active');
+            }
+              if (node.type === 'terminal') {
+                nodeEl.classList.add('terminal');
+                const pcIcon = document.createElement('img');
+                pcIcon.src = './images/54F75B51-169C-4AAC-B781-D459DFE38F65.png';
+                pcIcon.classList.add('pc-icon');
+                
+                // デバイスタイプに応じたアイコンサイズ調整
+                const deviceType = Utils.getDeviceType();
+                let iconSize = '70px';
+                let labelSize = '16px';
+                
+                switch (deviceType) {
+                    case 'smartphone':
+                        iconSize = '45px';
+                        labelSize = '12px';
+                        break;
+                    case 'mobile':
+                        iconSize = '55px';
+                        labelSize = '14px';
+                        break;
+                    case 'tablet':
+                        iconSize = '60px';
+                        labelSize = '15px';
+                        break;
+                    default:
+                        iconSize = '70px';
+                        labelSize = '16px';
+                        break;
+                }
+                
+                pcIcon.style.width = iconSize;
+                pcIcon.style.height = iconSize;
+                if (node.direction === 'right') {
+                    pcIcon.style.transform = 'scaleX(-1)';
+                }
+                nodeEl.appendChild(pcIcon);
+                
+                const label = document.createElement('div');
+                label.textContent = `端末${node.label}`;
+                label.classList.add('terminal-label');
+                label.style.position = 'absolute';
+                label.style.left = '50%';
+                label.style.transform = 'translateX(-50%)';
+                label.style.bottom = '-24px';
+                label.style.fontSize = labelSize;
+                label.style.fontWeight = 'bold';
+                label.style.whiteSpace = 'nowrap';
+                nodeEl.appendChild(label);
+                
+                nodeEl.addEventListener('click', () => this._onTerminalClick(id));
+                nodeEl.title = `端末 ${id}`;
+            } else if (node.type === 'router') {
+                nodeEl.classList.add('router');
+                const pcIcon = document.createElement('img');
+                pcIcon.src = './images/B9CF8581-D931-4993-96B8-7E10B00DB6EA.png';
+                pcIcon.classList.add('pc-icon');
+                
+                // デバイスタイプに応じたアイコンサイズ調整
+                const deviceType = Utils.getDeviceType();
+                let iconSize = '70px';
+                let labelSize = '16px';
+                
+                switch (deviceType) {
+                    case 'smartphone':
+                        iconSize = '45px';
+                        labelSize = '12px';
+                        break;
+                    case 'mobile':
+                        iconSize = '55px';
+                        labelSize = '14px';
+                        break;
+                    case 'tablet':
+                        iconSize = '60px';
+                        labelSize = '15px';
+                        break;
+                    default:
+                        iconSize = '70px';
+                        labelSize = '16px';
+                        break;
+                }
+                
+                pcIcon.style.width = iconSize;
+                pcIcon.style.height = iconSize;
+                nodeEl.appendChild(pcIcon);
+                
+                const label = document.createElement('div');
+                label.textContent = `ルータ${node.label}`;
+                label.classList.add('terminal-label');
+                label.style.position = 'absolute';
+                label.style.left = '50%';
+                label.style.transform = 'translateX(-50%)';
+                label.style.bottom = '0px';
+                label.style.fontSize = labelSize;
+                label.style.fontWeight = 'bold';
+                label.style.color = 'white';
+                label.style.whiteSpace = 'nowrap';
+                nodeEl.appendChild(label);
+                
+                nodeEl.title = `ルータ${node.label}`;
+            }
+            
+            nodeEl.style.left = `${pos.x}px`;
+            nodeEl.style.top = `${pos.y}px`;
+            
+            nodeEl.addEventListener('mouseenter', () => this._highlightConnections(id));
+            nodeEl.addEventListener('mouseleave', () => this._unhighlightConnections(id));
+            nodeEl.addEventListener('touchstart', () => this._highlightConnections(id));
+            nodeEl.addEventListener('touchend', () => this._unhighlightConnections(id));
+            
+            networkEl.appendChild(nodeEl);
+        }
+    }
+    
+    _highlightConnections(nodeId) {
+        const connections = this._model.getConnections();
+        for (const conn of connections) {
+            if (conn.from === nodeId || conn.to === nodeId) {
+                const connEl = document.querySelector(`.connection[data-id="${conn.id}"]`);
+                if (connEl) connEl.classList.add('active');
+                
+                const portEl = document.querySelector(`.port-label[data-id="port-${conn.id}"]`);
+                if (portEl) portEl.classList.add('active');
+            }
+        }
+    }
+    
+    _unhighlightConnections(nodeId) {
+        const connections = this._model.getConnections();
+        for (const conn of connections) {
+            if ((conn.from === nodeId || conn.to === nodeId) && !this._activeElements.has(conn.id)) {
+                const connEl = document.querySelector(`.connection[data-id="${conn.id}"]`);
+                if (connEl) connEl.classList.remove('active');
+                
+                const portEl = document.querySelector(`.port-label[data-id="port-${conn.id}"]`);
+                if (portEl && !this._activeElements.has(`port-${conn.id}`)) {
+                    portEl.classList.remove('active');
+                }
+            }
+        }
+    }
+      _setupTouchTargets(networkEl) {
+        document.querySelectorAll('.terminal').forEach(terminal => {
+            const touchArea = document.createElement('div');
+            touchArea.className = 'mobile-touch-area';
+            
+            // デバイスタイプに応じたタッチターゲットサイズ調整
+            const deviceType = Utils.getDeviceType();
+            let touchSize = '44px';
+            
+            switch (deviceType) {
+                case 'smartphone':
+                    touchSize = '48px';
+                    break;
+                case 'mobile':
+                    touchSize = '46px';
+                    break;
+                case 'tablet':
+                    touchSize = '44px';
+                    break;
+                default:
+                    touchSize = '44px';
+                    break;
+            }
+            
+            touchArea.style.width = touchSize;
+            touchArea.style.height = touchSize;
+            touchArea.style.left = terminal.style.left;
+            touchArea.style.top = terminal.style.top;
+            touchArea.dataset.target = terminal.dataset.id;
+            
+            touchArea.addEventListener('click', () => {
+                this._onTerminalClick(touchArea.dataset.target);
+            });
+            
+            networkEl.appendChild(touchArea);
+        });
+    }
+    
+    setActiveElements(elements) {
+        this._activeElements = new Set(elements);
+    }
+    
+    updateActiveConnections() {
+        const connections = this._model.getConnections();
+        const nodes = this._model.getNodes();
+        
+        for (const connection of connections) {
+            const connEl = document.querySelector(`.connection[data-id="${connection.id}"]`);
+            const portEl = document.querySelector(`.port-label[data-id="port-${connection.id}"]`);
+            
+            if (connEl) {
+                if (this._activeElements.has(connection.id)) {
+                    connEl.classList.add('active');
+                } else {
+                    connEl.classList.remove('active');
+                }
+            }
+            
+            if (portEl) {
+                if (this._activeElements.has(`port-${connection.id}`)) {
+                    portEl.classList.add('active');
+                } else {
+                    portEl.classList.remove('active');
+                }
+            }
+        }
+        
+        for (const [id, node] of Object.entries(nodes)) {
+            const nodeEl = document.querySelector(`.node[data-id="${id}"]`);
+            if (nodeEl) {
+                if (this._activeElements.has(id)) {
+                    nodeEl.classList.add('active');
+                } else {
+                    nodeEl.classList.remove('active');
+                }
+            }
+        }
+    }
+      displayViewerLyric(text) {
+        if (this._displayedViewerLyrics.has(text)) return;
+        if (!this._viewerLyricsContainer) return;
+
+        const viewerChar = document.createElement('span');
+        viewerChar.className = 'viewer-lyric-char';
+        viewerChar.textContent = text;
+        
+        // デバイスタイプに応じたフォントサイズ調整
+        const deviceType = Utils.getDeviceType();
+        let fontSize = '24px';
+        
+        switch (deviceType) {
+            case 'smartphone':
+                fontSize = '18px';
+                break;
+            case 'mobile':
+                fontSize = '20px';
+                break;
+            case 'tablet':
+                fontSize = '22px';
+                break;
+            default:
+                fontSize = '24px';
+                break;
+        }
+        
+        viewerChar.style.fontSize = fontSize;
+        
+        if (this._viewerLyricsContainer.children.length > 0) {
+            this._viewerLyricsContainer.appendChild(document.createTextNode(' '));
+        }
+        
+        this._viewerLyricsContainer.appendChild(viewerChar);
+
+        requestAnimationFrame(() => {
+            viewerChar.classList.add('active');
+        });
+
+        this._displayedViewerLyrics.set(text, {
+            element: viewerChar
+        });
+
+        setTimeout(() => {
+            viewerChar.classList.add('fade-out');
+            setTimeout(() => {
+                if (viewerChar.parentNode) {
+                    const prev = viewerChar.previousSibling;
+                    if (prev && prev.nodeType === Node.TEXT_NODE) {
+                        prev.remove();
+                    }
+                    viewerChar.remove();
+                }
+                this._displayedViewerLyrics.delete(text);
+            }, 500);
+        }, 5000);
+    }
+    
+    clearViewerLyrics() {
+        if (this._viewerLyricsContainer) {
+            this._viewerLyricsContainer.innerHTML = '';
+        }
+        this._displayedViewerLyrics.clear();
+    }
+}
+
+// ===== 歌詞アニメーションマネージャー =====
+class LyricAnimationManager {
+    constructor(networkModel, renderer) {
+        this._model = networkModel;
+        this._renderer = renderer;
+        this._animationFrames = new Map();
+        this._activeElements = new Set();
+    }
+    
+    animateLyric(lyric, onComplete) {
+        const nodes = this._model.getNodes();
+        const fromNode = nodes[lyric.currentNode];
+        const toNode = nodes[lyric.nextNode];
+        
+        if (!fromNode || !toNode) {
+            onComplete(lyric);
+            return;
+        }
+        
+        const connectionId = this._model.getConnectionId(lyric.currentNode, lyric.nextNode);
+        
+        this._activeElements.add(lyric.currentNode);
+        this._activeElements.add(lyric.nextNode);
+        if (connectionId) {
+            this._activeElements.add(connectionId);
+            this._activeElements.add(`port-${connectionId}`);
+        }
+        
+        this._renderer.setActiveElements(this._activeElements);
+        this._renderer.updateActiveConnections();
+        
+        const networkEl = document.getElementById('network');
+        if (!networkEl) {
+            onComplete(lyric);
+            return;
+        }
+        
+        const lyricEl = this._createLyricElement(lyric);
+        const fromPos = this._renderer.scalePosition(fromNode.x, fromNode.y);
+        lyricEl.style.left = `${fromPos.x}px`;
+        lyricEl.style.top = `${fromPos.y}px`;
+        
+        networkEl.appendChild(lyricEl);
+        
+        this._startAnimation(lyric, lyricEl, fromNode, toNode, () => {
+            this._removeElement(lyricEl);
+            this._cleanupActiveElements(lyric);
+            this._renderer.setActiveElements(this._activeElements);
+            this._renderer.updateActiveConnections();
+            onComplete(lyric);
+        });
+    }
+      _createLyricElement(lyric) {
+        const lyricEl = document.createElement('div');
+        lyricEl.classList.add('packet');
+        lyricEl.textContent = lyric.text;
+        lyricEl.dataset.id = `lyric-${lyric.id}`;
+        lyricEl.title = `歌詞 #${lyric.id}: 「${lyric.text}」 ${lyric.source} → ${lyric.destination}`;
+        
+        // デバイスタイプに応じたパケットサイズ調整
+        const deviceType = Utils.getDeviceType();
+        let fontSize = '12px';
+        let height = '24px';
+        let padding = '2px 6px';
+        
+        switch (deviceType) {
+            case 'smartphone':
+                fontSize = '9px';
+                height = '18px';
+                padding = '1px 4px';
+                break;
+            case 'mobile':
+                fontSize = '10px';
+                height = '20px';
+                padding = '2px 5px';
+                break;
+            case 'tablet':
+                fontSize = '11px';
+                height = '22px';
+                padding = '2px 6px';
+                break;
+            default:
+                fontSize = '12px';
+                height = '24px';
+                padding = '2px 6px';
+                break;
+        }
+        
+        if (lyric.text.length > 5) {
+            lyricEl.style.fontSize = fontSize;
+            lyricEl.style.width = 'auto';
+            lyricEl.style.minWidth = deviceType === 'smartphone' ? '28px' : '36px';
+            lyricEl.style.padding = '0 8px';
+        }
+        
+        if (lyric.text.length > 3) {
+            lyricEl.style.fontSize = fontSize;
+            lyricEl.style.height = height;
+            lyricEl.style.padding = padding;
+        }
+        
+        return lyricEl;
+    }
+    
+    _startAnimation(lyric, lyricEl, fromNode, toNode, onComplete) {
+        const startTime = performance.now();
+        const duration = 1000;
+        
+        const animate = (currentTime) => {
+            if (lyric.completed) {
+                this._animationFrames.delete(lyric.id);
+                onComplete();
+                return;
+            }
+            
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            const fromPos = this._renderer.scalePosition(fromNode.x, fromNode.y);
+            const toPos = this._renderer.scalePosition(toNode.x, toNode.y);
+            
+            const x = fromPos.x + (toPos.x - fromPos.x) * progress;
+            const y = fromPos.y + (toPos.y - fromPos.y) * progress;
+            
+            try {
+                lyricEl.style.left = `${x}px`;
+                lyricEl.style.top = `${y}px`;
+            } catch (e) {
+                console.error('歌詞位置設定エラー:', e);
+                this._animationFrames.delete(lyric.id);
+                onComplete();
+                return;
+            }
+            
+            if (progress < 1) {
+                const frameId = requestAnimationFrame(animate);
+                this._animationFrames.set(lyric.id, frameId);
+            } else {
+                this._animationFrames.delete(lyric.id);
+                onComplete();
+            }
+        };
+        
+        const frameId = requestAnimationFrame(animate);
+        this._animationFrames.set(lyric.id, frameId);
+    }
+    
+    _removeElement(element) {
+        try {
+            element.classList.add('animate-fadeOut');
+            setTimeout(() => {
+                try {
+                    if (element.parentNode) {
+                        element.parentNode.removeChild(element);
+                    }
+                } catch (e) {
+                    console.error('歌詞要素削除エラー:', e);
+                }
+            }, 300);
+        } catch (e) {
+            console.error('歌詞アニメーション終了エラー:', e);
+        }
+    }
+    
+    _cleanupActiveElements(lyric) {
+        const oldConnectionId = this._model.getConnectionId(lyric.currentNode, lyric.nextNode);
+        if (oldConnectionId) {
+            let stillActive = false;
+            
+            for (const frameId of this._animationFrames.keys()) {
+                if (frameId !== lyric.id) {
+                    stillActive = true;
+                    break;
+                }
+            }
+            
+            if (!stillActive) {
+                this._activeElements.delete(oldConnectionId);
+                this._activeElements.delete(`port-${oldConnectionId}`);
+            }
+        }
+    }
+    
+    clearAll() {
+        for (const [id, frameId] of this._animationFrames.entries()) {
+            cancelAnimationFrame(frameId);
+        }
+        this._animationFrames.clear();
+        this._activeElements.clear();
+        
+        const networkEl = document.getElementById('network');
+        if (!networkEl) return;
+        
+        const lyricEls = networkEl.querySelectorAll('.packet');
+        lyricEls.forEach(el => {
+            Utils.fadeOutAndRemove(el);
+        });
+    }
+    
+    dispose() {
+        this.clearAll();
+    }
+}
+
+// ===== 歌詞フローマネージャー =====
+class LyricFlowManager {
+    constructor(networkModel, renderer, animationManager, logManager) {
+        this._model = networkModel;
+        this._renderer = renderer;
+        this._animationManager = animationManager;
+        this._logManager = logManager;
+        this._lyrics = [];
+        this._lyricId = 0;
+        this._stats = {
+            lyricsCreated: 0,
+            lyricsDelivered: 0,
+            totalHops: 0
+        };
+    }
+    
+    sendLyric(text, source, destination) {
+        this._lyricId++;
+        const id = this._lyricId;
+        
+        const lyric = {
+            id,
+            source,
+            destination,
+            text: text,
+            currentNode: source,
+            nextNode: this._model.getNextHop(source, destination),
+            status: 'created',
+            createdAt: Date.now(),
+            completed: false,
+            hops: 0
+        };
+        
+        if (!lyric.nextNode) {
+            this._logManager.addEntry(`歌詞 #${id}: 無効なルート設定です。`, 'error');
+            return;
+        }
+        
+        this._lyrics.push(lyric);
+        this._stats.lyricsCreated++;
+        this._logManager.addEntry(`歌詞 #${id}: 「${lyric.text}」を 端末 ${source} から 端末 ${destination} へ送信します。`, 'info');
+        this._updateLyricCounter();
+        
+        this._moveLyric(lyric);
+        this._renderer.displayViewerLyric(lyric.text);
+    }
+    
+    _moveLyric(lyric) {
+        if (lyric.completed) return;
+        
+        lyric.hops++;
+        
+        const portNumber = this._model.getPortNumber(lyric.currentNode, lyric.nextNode);
+        
+        if (lyric.currentNode !== lyric.source) {
+            if (portNumber) {
+                this._logManager.addEntry(`歌詞 #${lyric.id}: ルータ ${lyric.currentNode} が「${lyric.text}」を受信し、ポート ${portNumber} から転送します。`, 'info');
+            } else {
+                this._logManager.addEntry(`歌詞 #${lyric.id}: ルータ ${lyric.currentNode} が「${lyric.text}」を転送します。`, 'info');
+            }
+        }
+        
+        this._animationManager.animateLyric(lyric, (completedLyric) => {
+            this._processNextHop(completedLyric);
+        });
+    }
+    
+    _processNextHop(lyric) {
+        if (lyric.completed) return;
+        
+        lyric.currentNode = lyric.nextNode;
+        
+        if (lyric.currentNode === lyric.destination) {
+            this._stats.lyricsDelivered++;
+            this._stats.totalHops += lyric.hops;
+            
+            this._logManager.addEntry(`歌詞 #${lyric.id}: 「${lyric.text}」が端末 ${lyric.destination} に到達しました。 (${lyric.hops}ホップ)`, 'success');
+            lyric.completed = true;
+            this._updateLyricCounter();
+        } else {
+            lyric.nextNode = this._model.getNextHop(lyric.currentNode, lyric.destination);
+            
+            if (!lyric.nextNode) {
+                this._logManager.addEntry(`歌詞 #${lyric.id}: 次ホップが見つかりません。歌詞は破棄されます。`, 'error');
+                lyric.completed = true;
+                this._updateLyricCounter();
+                return;
+            }
+            
+            setTimeout(() => {
+                if (!lyric.completed) {
+                    this._moveLyric(lyric);
+                }
+            }, 100);
+        }
+    }
+    
+    _updateLyricCounter() {
+        const counter = document.getElementById('packet-counter');
+        if (counter) {
+            const activeCount = this._lyrics.filter(p => !p.completed).length;
+            counter.innerHTML = `アクティブな歌詞: <span class="font-bold text-miku-300">${activeCount}</span>`;
+        }
+    }
+    
+    clearAll() {
+        this._lyrics = [];
+        this._updateLyricCounter();
+        this._animationManager.clearAll();
+        this._renderer.clearViewerLyrics();
+    }
+    
+    getStats() {
+        return this._stats;
+    }
+}
+
+// ===== UIコントローラー =====
+class UIController {
+    constructor(simulation) {
+        this._simulation = simulation;
+        this._lastTerminalTap = null;
+        this._isMobileLyricsVisible = localStorage.getItem('lyricsVisible') === 'true';
+        
+        this._setupEventListeners();
+        this._setupMobileLyricsControl();
+        this._setupHelpModal();
+        this._setupTabControls();
+        this._setupMobileInteraction();
+        this._setupKeyboardShortcuts();
+    }
+    
+    _setupEventListeners() {
+        const sendBtn = document.getElementById('send-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const songSelect = document.getElementById('song-select');
+        const sourceSelect = document.getElementById('source');
+        const destSelect = document.getElementById('destination');
+        
+        if (sendBtn) {
+            sendBtn.addEventListener('click', () => this._simulation.startPlayback());
+            this._addTouchFeedback(sendBtn);
+        }
+        
+        if (stopBtn) {
+            stopBtn.addEventListener('click', () => this._simulation.stopSimulation());
+            this._addTouchFeedback(stopBtn);
+        }
+        
+        if (fullscreenBtn) {
+            fullscreenBtn.addEventListener('click', () => this._toggleFullscreen());
+            this._addTouchFeedback(fullscreenBtn);
+        }
+        
+        if (songSelect) {
+            songSelect.addEventListener('change', () => {
+                const selectedIndex = parseInt(songSelect.value);
+                this._simulation.changeSong(selectedIndex);
+            });
+        }
+        
+        if (sourceSelect && destSelect) {
+            this._updateTerminalOptions(sourceSelect);
+            this._updateTerminalOptions(destSelect);
+            
+            sourceSelect.addEventListener('change', () => this._updateActiveTerminals());
+            destSelect.addEventListener('change', () => this._updateActiveTerminals());
+        }
+        
+        document.addEventListener('fullscreenchange', () => this._handleFullscreenChange());
+        document.addEventListener('webkitfullscreenchange', () => this._handleFullscreenChange());
+    }
+    
+    _addTouchFeedback(element) {
+        if (Utils.isMobile()) {
+            element.addEventListener('touchstart', () => {
+                element.classList.add('scale-95', 'opacity-90');
+            });
+            
+            element.addEventListener('touchend', () => {
+                element.classList.remove('scale-95', 'opacity-90');
+            });
+        }
+    }
+    
+    _setupMobileLyricsControl() {
+        const lyricsToggleBtn = document.getElementById('lyrics-toggle-btn');
+        const lyricsDisplayArea = document.getElementById('lyrics-display-area');
+        const closeLyricsBtn = document.getElementById('close-lyrics-btn');
+
+        if (lyricsToggleBtn && lyricsDisplayArea) {
+            this._updateMobileLyricsVisibility();
+
+            lyricsToggleBtn.addEventListener('click', () => {
+                this._isMobileLyricsVisible = !this._isMobileLyricsVisible;
+                this._updateMobileLyricsVisibility();
+                localStorage.setItem('lyricsVisible', this._isMobileLyricsVisible);
+            });
+
+            if (closeLyricsBtn) {
+                closeLyricsBtn.addEventListener('click', () => {
+                    this._isMobileLyricsVisible = false;
+                    this._updateMobileLyricsVisibility();
+                    localStorage.setItem('lyricsVisible', 'false');
+                });
+            }
+        }
+    }
+    
+    _updateMobileLyricsVisibility() {
+        const lyricsDisplayArea = document.getElementById('lyrics-display-area');
+        const lyricsToggleBtn = document.getElementById('lyrics-toggle-btn');
+
+        if (lyricsDisplayArea) {
+            if (this._isMobileLyricsVisible) {
+                lyricsDisplayArea.classList.remove('lyrics-display-area-hidden');
+                lyricsDisplayArea.classList.add('lyrics-display-area-visible');
+                if (lyricsToggleBtn) lyricsToggleBtn.classList.add('active');
+            } else {
+                lyricsDisplayArea.classList.add('lyrics-display-area-hidden');
+                lyricsDisplayArea.classList.remove('lyrics-display-area-visible');
+                if (lyricsToggleBtn) lyricsToggleBtn.classList.remove('active');
+            }
+        }
+    }
+    
+    _setupHelpModal() {
+        const helpModal = document.getElementById('help-modal');
+        const helpBtn = document.getElementById('help-btn');
+        const closeHelp = document.getElementById('close-help');
+        const closeHelpBtn = document.getElementById('close-help-btn');
+        
+        if (helpBtn) {
+            helpBtn.addEventListener('click', () => {
+                helpModal.classList.remove('hidden');
+                helpModal.classList.add('animate-fadeIn');
+            });
+        }
+        
+        if (closeHelp) {
+            closeHelp.addEventListener('click', () => this._closeHelpModal(helpModal));
+        }
+        
+        if (closeHelpBtn) {
+            closeHelpBtn.addEventListener('click', () => this._closeHelpModal(helpModal));
+        }
+        
+        helpModal.addEventListener('click', (e) => {
+            if (e.target === helpModal) {
+                this._closeHelpModal(helpModal);
+            }
+        });
+        
+        helpModal.addEventListener('touchend', (e) => {
+            if (e.target === helpModal) {
+                this._closeHelpModal(helpModal);
+            }
+        });
+    }
+    
+    _closeHelpModal(modal) {
+        modal.classList.add('animate-fadeOut');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('animate-fadeOut');
+        }, 300);
+    }
+    
+    _setupTabControls() {
+        const tabButtons = document.querySelectorAll('.tab-button');
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetId = button.getAttribute('data-tab');
+                
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                const tabContents = document.querySelectorAll('.tab-content');
+                tabContents.forEach(content => {
+                    if (content.id === targetId) {
+                        content.classList.add('active');
+                    } else {
+                        content.classList.remove('active');
+                    }
+                });
+            });
+        });
+
+        const mobileTabButtons = document.querySelectorAll('.mobile-tab-button');
+        mobileTabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetId = button.getAttribute('data-tab');
+                
+                mobileTabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                const tabContents = document.querySelectorAll('#mobile-tabs-container .tab-content');
+                tabContents.forEach(content => {
+                    if (content.id === targetId) {
+                        content.classList.add('active');
+                    } else {
+                        content.classList.remove('active');
+                    }
+                });
+            });
+        });
+    }
+    
+    _setupMobileInteraction() {
+        if (Utils.isMobile()) {
+            this._setupDrawerSwipe();
+        }
+    }
+    
+    _setupDrawerSwipe() {
+        const drawer = document.getElementById('sidebar-drawer');
+        const backdrop = document.getElementById('drawer-backdrop');
+        const network = document.getElementById('network');
+        
+        if (!drawer || !network) return;
+        
+        let startY = 0;
+        let startTime = 0;
+        
+        network.addEventListener('touchstart', (e) => {
+            startY = e.touches[0].clientY;
+            startTime = Date.now();
+        });
+        
+        network.addEventListener('touchend', (e) => {
+            const endY = e.changedTouches[0].clientY;
+            const deltaY = startY - endY;
+            const deltaTime = Date.now() - startTime;
+            
+            if (deltaY > 50 && deltaTime < 300) {
+                drawer.classList.add('open');
+                backdrop.classList.add('open');
+            }
+        });
+        
+        drawer.addEventListener('touchstart', (e) => {
+            startY = e.touches[0].clientY;
+            startTime = Date.now();
+        });
+        
+        drawer.addEventListener('touchend', (e) => {
+            const endY = e.changedTouches[0].clientY;
+            const deltaY = endY - startY;
+            const deltaTime = Date.now() - startTime;
+            
+            if (deltaY > 50 && deltaTime < 300) {
+                drawer.classList.remove('open');
+                backdrop.classList.remove('open');
+            }
+        });
+    }
+    
+    _setupKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this._handleEscapeKey();
+            } else if (e.key === 'h' || e.key === 'H') {
+                this._toggleHelpModal();
+            } else if (e.key === 's' || e.key === 'S') {
+                this._toggleSimulation();
+            } else if (e.key === 'f' || e.key === 'F') {
+                this._toggleFullscreen();
+            }
+        });
+    }
+    
+    _handleEscapeKey() {
+        const helpModal = document.getElementById('help-modal');
+        if (helpModal && !helpModal.classList.contains('hidden')) {
+            this._closeHelpModal(helpModal);
+            return;
+        }
+        
+        const drawerEl = document.getElementById('sidebar-drawer');
+        const backdropEl = document.getElementById('drawer-backdrop');
+        if (drawerEl && drawerEl.classList.contains('open')) {
+            drawerEl.classList.remove('open');
+            if (backdropEl) backdropEl.classList.remove('open');
+            return;
+        }
+        
+        this._simulation.stopSimulation();
+    }
+    
+    _toggleHelpModal() {
+        const helpModal = document.getElementById('help-modal');
+        if (helpModal.classList.contains('hidden')) {
+            helpModal.classList.remove('hidden');
+            helpModal.classList.add('animate-fadeIn');
+        } else {
+            this._closeHelpModal(helpModal);
+        }
+    }
+    
+    _toggleSimulation() {
+        if (this._simulation.isRunning()) {
+            this._simulation.stopSimulation();
+        } else {
+            this._simulation.startPlayback();
+        }
+    }
+    
+    _toggleFullscreen() {
+        const appContainer = document.getElementById('app-container');
+        if (!appContainer) return;
+        
+        if (!document.fullscreenElement &&
+            !document.mozFullScreenElement &&
+            !document.webkitFullscreenElement &&
+            !document.msFullscreenElement) {
+            if (appContainer.requestFullscreen) {
+                appContainer.requestFullscreen();
+            } else if (appContainer.mozRequestFullScreen) {
+                appContainer.mozRequestFullScreen();
+            } else if (appContainer.webkitRequestFullscreen) {
+                appContainer.webkitRequestFullscreen();
+            } else if (appContainer.msRequestFullscreen) {
+                appContainer.msRequestFullscreen();
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.mozCancelFullScreen) {
+                document.mozCancelFullScreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+        }
+    }
+    
+    _handleFullscreenChange() {
+        this._simulation.handleResize();
+        this._updateFullscreenButton();
+    }
+    
+    _updateFullscreenButton() {
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        
+        if (!fullscreenBtn) return;
+        
+        if (document.fullscreenElement ||
+            document.mozFullScreenElement ||
+            document.webkitFullscreenElement ||
+            document.msFullscreenElement) {
+            fullscreenBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                全画面解除
+            `;
+        } else {
+            fullscreenBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 0h-4m4 0l-5-5" />
+                </svg>
+                全画面
+            `;
+        }
+    }
+    
+    _updateTerminalOptions(selectElement) {
+        if (!selectElement) return;
+        
+        selectElement.innerHTML = '';
+        
+        const terminalNodes = this._simulation.getTerminalNodes();
+            
+        terminalNodes.forEach(id => {
+            const option = document.createElement('option');
+            option.value = id;
+            option.textContent = `端末 ${id}`;
+            selectElement.appendChild(option);
+        });
+        
+        if (terminalNodes.length > 0) {
+            if (selectElement.id === 'source') {
+                selectElement.value = terminalNodes[0];
+            } else if (selectElement.id === 'destination') {
+                selectElement.value = terminalNodes.length > 1 ? terminalNodes[1] : terminalNodes[0];
+            }
+        }
+    }
+    
+    _updateActiveTerminals() {
+        const sourceSelect = document.getElementById('source');
+        const destSelect = document.getElementById('destination');
+        
+        if (!sourceSelect || !destSelect) return;
+        
+        const source = sourceSelect.value;
+        const destination = destSelect.value;
+        
+        document.querySelectorAll('.terminal').forEach(el => {
+            el.classList.remove('active');
+        });
+        
+        const sourceEl = document.querySelector(`.terminal[data-id="${source}"]`);
+        const destEl = document.querySelector(`.terminal[data-id="${destination}"]`);
+        
+        if (sourceEl) sourceEl.classList.add('active');
+        if (destEl) destEl.classList.add('active');
+    }
+    
+    handleTerminalClick(id) {
+        const sourceSelect = document.getElementById('source');
+        const destSelect = document.getElementById('destination');
+        
+        if (!sourceSelect || !destSelect) return;
+        
+        if (window.event && window.event.shiftKey) {
+            destSelect.value = id;
+        } else {
+            const now = new Date().getTime();
+            if (this._lastTerminalTap && this._lastTerminalTap.id === id && now - this._lastTerminalTap.time < 500) {
+                destSelect.value = id;
+            } else {
+                sourceSelect.value = id;
+            }
+            
+            this._lastTerminalTap = { id, time: now };
+        }
+        
+        this._updateActiveTerminals();
+    }
+    
+    updateSongSelectionDropdown() {
+        const songSelect = document.getElementById('song-select');
+        if (!songSelect) return;
+        
+        songSelect.innerHTML = '';
+        
+        songsData.forEach((song, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = `${song.title} - ${song.artist}`;
+            songSelect.appendChild(option);
+        });
+        
+        songSelect.value = this._simulation.getSelectedSongIndex();
+        
+        if (Utils.isMobile()) {
+            songSelect.classList.add('text-sm');
+        }
+    }
+    
+    updateSimulationStatus(isRunning) {
+        const statusEl = document.getElementById('simulation-status');
+        if (!statusEl) return;
+        
+        if (isRunning) {
+            statusEl.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-miku-500 bg-opacity-20 text-miku-300 shadow-sm transition-all duration-300';
+            statusEl.innerHTML = '<span class="h-2.5 w-2.5 mr-1.5 rounded-full bg-miku-400 animate-pulse"></span>再生中';
+        } else {
+            statusEl.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-pink-500 bg-opacity-20 text-pink-300 shadow-sm transition-all duration-300';
+            statusEl.innerHTML = '<span class="h-2.5 w-2.5 mr-1.5 rounded-full bg-pink-400"></span>停止中';
+        }
+    }
+    
+    updateRoutingTable() {
+        this._updateRoutingTableById('routing-table');
+        this._updateRoutingTableById('mobile-routing-table');
+    }
+    
+    _updateRoutingTableById(tableId) {
+        const tableBody = document.querySelector(`#${tableId} tbody`);
+        if (!tableBody) return;
+        
+        tableBody.innerHTML = '';
+        
+        const sections = [
+            { title: 'ルータ X', routes: [
+                { dest: '端末 A', port: '1' },
+                { dest: '端末 B', port: '2' },
+                { dest: '端末 C,D', port: '5' }
+            ]},
+            { title: 'ルータ Y', routes: [
+                { dest: '端末 C', port: '3' },
+                { dest: '端末 D', port: '4' },
+                { dest: '端末 A,B', port: '5' }
+            ]}
+        ];
+        
+        sections.forEach(section => {
+            this._addRoutingTableSection(tableBody, section.title);
+            section.routes.forEach(route => {
+                this._addRoutingTableRow(tableBody, route.dest, route.port);
+            });
+        });
+    }
+    
+    _addRoutingTableSection(tableBody, title) {
+        if (!tableBody) return;
+        
+        const row = document.createElement('tr');
+        row.classList.add('bg-space-800', 'bg-opacity-80');
+        const cell = document.createElement('td');
+        cell.setAttribute('colspan', '2');
+        cell.classList.add('px-4', 'py-2.5', 'font-medium', 'text-miku-300', 'text-center', 'border-t', 'border-b', 'border-miku-800');
+        cell.textContent = title;
+        row.appendChild(cell);
+        tableBody.appendChild(row);
+    }
+    
+    _addRoutingTableRow(tableBody, destination, port) {
+        if (!tableBody) return;
+        
+        const row = document.createElement('tr');
+        row.classList.add('hover:bg-space-800', 'hover:bg-opacity-50', 'transition-colors');
+        
+        const destCell = document.createElement('td');
+        destCell.classList.add('px-4', 'py-2.5', 'border-b', 'border-miku-800', 'text-sm', 'text-white');
+        destCell.textContent = destination;
+        
+        const portCell = document.createElement('td');
+        portCell.classList.add('px-4', 'py-2.5', 'border-b', 'border-miku-800', 'text-sm', 'font-medium', 'text-miku-300');
+        portCell.textContent = port;
+        
+        row.appendChild(destCell);
+        row.appendChild(portCell);
+        tableBody.appendChild(row);
+    }
+    
+    showInitialHelp() {
+        setTimeout(() => {
+            const helpModal = document.getElementById('help-modal');
+            if (helpModal) {
+                helpModal.classList.remove('hidden');
+                helpModal.classList.add('animate-fadeIn');
+            }
+        }, 500);
+    }
+    
+    enableSendButton(enabled) {
+        const sendBtn = document.getElementById('send-btn');
+        if (sendBtn) {
+            sendBtn.disabled = !enabled;
+            if (enabled) {
+                sendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                sendBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
+    }
+}
+
+// ===== フォールバックマネージャー =====
+class FallbackManager {
+    constructor(onSendLyric) {
+        this._onSendLyric = onSendLyric;
+        this._fallbackLyrics = [
+            { text: "マジカル", time: 1000 },
+            { text: "ミライ", time: 3000 },
+            { text: "初音", time: 5000 },
+            { text: "ミク", time: 6000 },
+            { text: "歌詞が", time: 8000 },
+            { text: "流れて", time: 9500 },
+            { text: "いく", time: 11000 }
+        ];
+        this._fallbackTimer = null;
+        this._fallbackLyricsIndex = 0;
+        this._fallbackStartTime = 0;
+    }
+    
+    start() {
+        this._fallbackLyricsIndex = 0;
+        this._fallbackStartTime = Date.now();
+        
+        if (this._fallbackTimer) clearInterval(this._fallbackTimer);
+        
+        this._fallbackTimer = setInterval(() => {
+            const elapsed = Date.now() - this._fallbackStartTime;
+            
+            while (this._fallbackLyricsIndex < this._fallbackLyrics.length) {
+                const lyric = this._fallbackLyrics[this._fallbackLyricsIndex];
+                
+                if (lyric.time <= elapsed) {
+                    this._onSendLyric(lyric.text);
+                    this._fallbackLyricsIndex++;
+                } else {
+                    break;
+                }
+            }
+            
+            if (this._fallbackLyricsIndex >= this._fallbackLyrics.length) {
+                this._fallbackLyricsIndex = 0;
+                this._fallbackStartTime = Date.now();
+            }
+        }, 100);
+    }
+    
+    stop() {
+        if (this._fallbackTimer) {
+            clearInterval(this._fallbackTimer);
+            this._fallbackTimer = null;
+        }
+    }
+}
+
+// ===== メインシミュレーションクラス =====
+class LyricsNetworkSimulation {
+    constructor() {
+        this._isRunning = false;
+        this._isCleaningUp = false;
+        this._userInteracted = false;
+        this._loadingOverlay = Utils.createLoadingOverlay();
+        document.body.appendChild(this._loadingOverlay);
+        
+        // 各マネージャーの初期化
+        this._networkModel = new NetworkModel();
+        this._logManager = new LogManager();
+        this._renderer = new NetworkRenderer(this._networkModel, (id) => this._uiController.handleTerminalClick(id));
+        this._animationManager = new LyricAnimationManager(this._networkModel, this._renderer);
+        this._lyricFlowManager = new LyricFlowManager(this._networkModel, this._renderer, this._animationManager, this._logManager);
+        
+        this._textAliveManager = new TextAliveManager(
+            () => this._handleTextAliveReady(),
+            (position) => this._handleTimeUpdate(position),
+            () => this._handlePlay(),
+            () => this._handlePause(),
+            () => this._handleStop()
+        );
+        
+        this._fallbackManager = new FallbackManager((text) => this._sendFallbackLyric(text));
+        this._uiController = new UIController(this);
+        
+        // 初期化処理
+        this._initialize();
+    }
+    
+    async _initialize() {
+        this._setupUserInteractionDetection();
+        this._initUI();
+        this._renderer.calculateScaleFactor();
+        this._renderer.render();
+        this._uiController.updateRoutingTable();
+        this._uiController.showInitialHelp();
+        
+        window.addEventListener('resize', () => this.handleResize());
+        
+        window.addEventListener('beforeunload', () => {
+            this.dispose();
+        });
+        
+        await this._textAliveManager.initialize();
+    }
+    
+    _setupUserInteractionDetection() {
+        const interactionHandler = () => {
+            this._userInteracted = true;
+            
+            const messageEl = document.getElementById('user-interaction-message');
+            if (messageEl && messageEl.parentNode) {
+                messageEl.parentNode.removeChild(messageEl);
+            }
+        };
+        
+        document.addEventListener('click', interactionHandler, { once: true });
+        document.addEventListener('keydown', interactionHandler, { once: true });
+        document.addEventListener('touchstart', interactionHandler, { once: true });
+    }
+    
+    _initUI() {
+        this._logManager.addEntry('ミク☆スターネットワーク歌詞シミュレーションを初期化しました。', 'system');
+        this._logManager.addEntry('TextAlive APIを読み込み中です。', 'system');
+        this._logManager.addEntry('「送信開始」ボタンをクリックして再生を開始します。', 'system');
+        this._logManager.addEntry('「H」キーを押すとヘルプが表示されます。', 'system');
+        
+        this._uiController.updateSimulationStatus(false);
+        this._uiController.updateSongSelectionDropdown();
+    }
+    
+    _handleTextAliveReady() {
+        Utils.removeElement(this._loadingOverlay);
+        
+        const songInfo = this._textAliveManager.getCurrentSongInfo();
+        if (songInfo) {
+            this._logManager.addEntry(`曲「${songInfo.name}」の準備完了`, 'success');
+            if (songInfo.license) {
+                console.log('ライセンス情報:', songInfo.license);
+            }
+        }
+        
+        if (this._textAliveManager.isFallbackMode()) {
+            this._logManager.addEntry("TextAlive API接続に失敗しました。フォールバックモードで実行します。", "error");
+            this._logManager.addEntry("このモードでは、歌詞の正確なタイミングは提供されません。", "system");
+        }
+    }
+    
+    _handleTimeUpdate(position) {
+        if (!this._isRunning) return;
+        
+        const word = this._textAliveManager.findCurrentLyric(position);
+        
+        if (word && word.startTime <= position && !word.processed) {
+            this._sendLyricWord(word);
+            word.processed = true;
+        }
+    }
+    
+    _handlePlay() {
+        this._logManager.addEntry('再生開始', 'success');
+        this._isRunning = true;
+        this._uiController.updateSimulationStatus(true);
+    }
+    
+    _handlePause() {
+        this._logManager.addEntry('再生一時停止', 'info');
+        this._isRunning = false;
+        this._uiController.updateSimulationStatus(false);
+    }
+    
+    _handleStop() {
+        this._logManager.addEntry('再生停止', 'info');
+        this._isRunning = false;
+        this._lyricFlowManager.clearAll();
+        this._uiController.updateSimulationStatus(false);
+        this._uiController.enableSendButton(true);
+        
+        if (this._textAliveManager.isPlaying()) return;
+        
+        const position = 0; // 簡略化のため
+        const duration = 1; // 簡略化のため
+        
+        if (duration > 0 && position > 0 && (duration - position) < 5000) {
+            this._logManager.addEntry('曲が終了しました。ページをリロードします...', 'system');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        }
+    }
+    
+    _sendLyricWord(word) {
+        if (!this._isRunning || !word) return;
+        
+        const sourceSelect = document.getElementById('source');
+        const destSelect = document.getElementById('destination');
+        
+        if (!sourceSelect || !destSelect) return;
+        
+        const source = sourceSelect.value;
+        const destination = destSelect.value;
+        
+        this._lyricFlowManager.sendLyric(word.text, source, destination);
+    }
+    
+    _sendFallbackLyric(text) {
+        const sourceSelect = document.getElementById('source');
+        const destSelect = document.getElementById('destination');
+        
+        if (!sourceSelect || !destSelect) return;
+        
+        const source = sourceSelect.value;
+        const destination = destSelect.value;
+        
+        this._lyricFlowManager.sendLyric(text, source, destination);
+    }
+    
+    // ===== 公開API =====
+    
+    async startPlayback() {
+        if (!this._textAliveManager.isReady()) {
+            this._logManager.addEntry('曲の準備ができていません。しばらくお待ちください。', 'error');
+            return;
+        }
+        
+        if (this._isRunning) {
+            this.stopSimulation();
+            return;
+        }
+        
+        if (!this._userInteracted) {
+            if (!document.getElementById('user-interaction-message')) {
+                const messageEl = document.createElement('div');
+                messageEl.id = 'user-interaction-message';
+                messageEl.className = 'fixed top-0 left-0 right-0 bg-pink-500 text-white p-2 text-center z-50';
+                messageEl.innerHTML = 'ページ上のどこかをクリックして再生を開始してください';
+                
+                document.body.appendChild(messageEl);
+                
+                const handleInteraction = () => {
+                    this._userInteracted = true;
+                    if (messageEl.parentNode) {
+                        messageEl.parentNode.removeChild(messageEl);
+                    }
+                    
+                    document.removeEventListener('click', handleInteraction);
+                    document.removeEventListener('keydown', handleInteraction);
+                    document.removeEventListener('touchstart', handleInteraction);
+                    
+                    setTimeout(() => {
+                        this._actuallyStartPlayback();
+                    }, 100);
+                };
+                
+                document.addEventListener('click', handleInteraction);
+                document.addEventListener('keydown', handleInteraction);
+                document.addEventListener('touchstart', handleInteraction);
+                
+                this._logManager.addEntry('再生を開始するには、ページ上で操作してください。', 'info');
+                return;
+            }
+            return;
+        }
+        
+        this._actuallyStartPlayback();
+    }
+    
+    async _actuallyStartPlayback() {
+        const success = await this._textAliveManager.requestPlay();
+        
+        if (!success) {
+            this._fallbackManager.start();
+            this._isRunning = true;
+            this._uiController.updateSimulationStatus(true);
+        }
+        
+        this._uiController.enableSendButton(false);
+    }
+    
+    async stopSimulation() {
+        if (this._isCleaningUp) return;
+        
+        this._isCleaningUp = true;
+        
+        await this._textAliveManager.requestPause();
+        this._fallbackManager.stop();
+        
+        this._isRunning = false;
+        this._lyricFlowManager.clearAll();
+        this._renderer.setActiveElements(new Set());
+        this._renderer.render();
+        this._logManager.addEntry('再生を停止しました。', 'info');
+        
+        this._uiController.enableSendButton(true);
+        this._uiController.updateSimulationStatus(false);
+        
+        this._isCleaningUp = false;
+    }
+    
+    async changeSong(songIndex) {
+        await this.stopSimulation();
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        document.body.appendChild(this._loadingOverlay);
+        
+        try {
+            const selectedSong = songsData[songIndex];
+            this._logManager.addEntry(`曲「${selectedSong.title}」を読み込み中...`, 'system');
+            await this._textAliveManager.changeSong(songIndex);
+        } catch (error) {
+            console.error('曲変更エラー:', error);
+            this._logManager.addEntry(`曲変更エラー: ${error.message}`, 'error');
+            Utils.removeElement(this._loadingOverlay);
+        }
+    }
+    
+    handleResize() {
+        this._renderer.calculateScaleFactor();
+        this._renderer.render();
+    }
+    
+    isRunning() {
+        return this._isRunning;
+    }
+    
+    getTerminalNodes() {
+        return this._networkModel.getTerminalNodes();
+    }
+    
+    getSelectedSongIndex() {
+        return this._textAliveManager.getSelectedSongIndex();
+    }
+    
+    dispose() {
+        window.removeEventListener('resize', () => this.handleResize());
+        
+        this._fallbackManager.stop();
+        this._animationManager.dispose();
+        this._textAliveManager.dispose();
+        this._logManager.dispose();
+        this._lyricFlowManager.clearAll();
+    }
+}
+
+// ===== エントリーポイント =====
 document.addEventListener('DOMContentLoaded', () => {
     try {
         window.simulation = new LyricsNetworkSimulation();
-        
-        // ページアンロード時のクリーンアップ
-        window.addEventListener('beforeunload', () => {
-            if (window.simulation) {
-                window.simulation.dispose();
-            }
-        });
     } catch (e) {
         console.error('シミュレーションの初期化エラー:', e);
     }
@@ -2372,17 +2173,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const networkEl = document.getElementById('network');
 
     if (closeDrawerBtn && drawerEl && backdropEl) {
-        // 閉じるボタンクリックでドロワーを閉じる
         closeDrawerBtn.addEventListener('click', () => {
             drawerEl.classList.remove('open');
             backdropEl.classList.remove('open');
         });
         
-        // メインコンテンツ領域のクリックでもドロワーを閉じる
         if (networkEl) {
             networkEl.addEventListener('click', (e) => {
-                // ピンチズームやパケットクリック処理の妨げにならないよう、
-                // ドロワーが開いている場合のみ処理
                 if (drawerEl.classList.contains('open')) {
                     drawerEl.classList.remove('open');
                     backdropEl.classList.remove('open');
@@ -2391,7 +2188,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // スワイプでドロワーを閉じる機能の強化
     if (drawerEl) {
         let startY = 0;
         let startTime = 0;
@@ -2406,8 +2202,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const deltaY = endY - startY;
             const deltaTime = Date.now() - startTime;
             
-            // 短い時間での下方向のスワイプでドロワーを閉じる
-            // しきい値を小さくして操作性向上
             if (deltaY > 30 && deltaTime < 300) {
                 drawerEl.classList.remove('open');
                 backdropEl.classList.remove('open');
