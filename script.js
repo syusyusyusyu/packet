@@ -66,12 +66,12 @@ class NetworkModel {
         const baseScale = Utils.isMobile() ? 1.0 : 1.2;
         
         this._nodes = {
-            A: { x: 25 * baseScale, y: 50 * baseScale, type: 'terminal', label: 'A', direction: 'right' },
-            B: { x: 25 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'B', direction: 'right' },
-            C: { x: 765 * baseScale, y: 50 * baseScale, type: 'terminal', label: 'C', direction: 'left' },
-            D: { x: 765 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'D', direction: 'left' },
-            X: { x: 250 * baseScale, y: 250 * baseScale, type: 'router', label: 'X' },
-            Y: { x: 540 * baseScale, y: 250 * baseScale, type: 'router', label: 'Y' }
+            A: { x: -35 * baseScale, y: 50 * baseScale, type: 'terminal', label: 'A', direction: 'right' },
+            B: { x: -35 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'B', direction: 'right' },
+            C: { x: 705 * baseScale, y: 50 * baseScale, type: 'terminal', label: 'C', direction: 'left' },
+            D: { x: 705 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'D', direction: 'left' },
+            X: { x: 190 * baseScale, y: 250 * baseScale, type: 'router', label: 'X' },
+            Y: { x: 480 * baseScale, y: 250 * baseScale, type: 'router', label: 'Y' }
         };
         
         this._connections = [
