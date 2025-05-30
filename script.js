@@ -503,23 +503,23 @@ class NetworkRenderer {
         // デバイスタイプに応じたスケーリング調整
         const deviceType = Utils.getDeviceType();
         
-        switch (deviceType) {
-            case 'smartphone':
-                // スマートフォンはより小さくして、全体が見えるように
-                this._scaleFactor = Math.min(this._scaleFactor * 0.75, 0.6);
-                break;
-            case 'mobile':
-                // 768px以下のモバイルデバイス
-                this._scaleFactor = Math.min(this._scaleFactor * 0.8, 0.7);
-                break;
-            case 'tablet':
-                // タブレットは少し小さめだが見やすく
-                this._scaleFactor = Math.min(this._scaleFactor * 0.9, 0.85);
-                break;
-            default:
-                // デスクトップはそのまま
-                break;
-        }
+        // switch (deviceType) {
+        //     case 'smartphone':
+        //         // スマートフォンはより小さくして、全体が見えるように
+        //         this._scaleFactor = Math.min(this._scaleFactor * 0.75, 0.6);
+        //         break;
+        //     case 'mobile':
+        //         // 768px以下のモバイルデバイス
+        //         this._scaleFactor = Math.min(this._scaleFactor * 0.8, 0.7);
+        //         break;
+        //     case 'tablet':
+        //         // タブレットは少し小さめだが見やすく
+        //         this._scaleFactor = Math.min(this._scaleFactor * 0.9, 0.85);
+        //         break;
+        //     default:
+        //         // デスクトップはそのまま
+        //         break;
+        // }
         
         // オフセット計算（中央配置）
         this._offsetX = (containerWidth - (this._baseWidth * this._scaleFactor)) / 2;
@@ -597,20 +597,20 @@ class NetworkRenderer {
             const deviceType = Utils.getDeviceType();
             let connectionHeight = '3px';
             
-            switch (deviceType) {
-                case 'smartphone':
-                    connectionHeight = '4px';
-                    break;
-                case 'mobile':
-                    connectionHeight = '5px';
-                    break;
-                case 'tablet':
-                    connectionHeight = '4px';
-                    break;
-                default:
-                    connectionHeight = '3px';
-                    break;
-            }
+            // switch (deviceType) {
+            //     case 'smartphone':
+            //         connectionHeight = '4px';
+            //         break;
+            //     case 'mobile':
+            //         connectionHeight = '5px';
+            //         break;
+            //     case 'tablet':
+            //         connectionHeight = '4px';
+            //         break;
+            //     default:
+            //         connectionHeight = '3px';
+            //         break;
+            // }
             
             connectionEl.style.height = connectionHeight;
             
@@ -637,24 +637,24 @@ class NetworkRenderer {
                 let portSize = '40px';
                 let fontSize = '16px';
                 
-                switch (deviceType) {
-                    case 'smartphone':
-                        portSize = '24px';
-                        fontSize = '10px';
-                        break;
-                    case 'mobile':
-                        portSize = '28px';
-                        fontSize = '12px';
-                        break;
-                    case 'tablet':
-                        portSize = '32px';
-                        fontSize = '14px';
-                        break;
-                    default:
-                        portSize = '40px';
-                        fontSize = '16px';
-                        break;
-                }
+                // switch (deviceType) {
+                //     case 'smartphone':
+                //         portSize = '24px';
+                //         fontSize = '10px';
+                //         break;
+                //     case 'mobile':
+                //         portSize = '28px';
+                //         fontSize = '12px';
+                //         break;
+                //     case 'tablet':
+                //         portSize = '32px';
+                //         fontSize = '14px';
+                //         break;
+                //     default:
+                //         portSize = '40px';
+                //         fontSize = '16px';
+                //         break;
+                // }
                 
                 portLabelEl.style.width = portSize;
                 portLabelEl.style.height = portSize;
@@ -689,24 +689,24 @@ class NetworkRenderer {
                 let iconSize = '70px';
                 let labelSize = '16px';
                 
-                switch (deviceType) {
-                    case 'smartphone':
-                        iconSize = '45px';
-                        labelSize = '12px';
-                        break;
-                    case 'mobile':
-                        iconSize = '55px';
-                        labelSize = '14px';
-                        break;
-                    case 'tablet':
-                        iconSize = '60px';
-                        labelSize = '15px';
-                        break;
-                    default:
-                        iconSize = '70px';
-                        labelSize = '16px';
-                        break;
-                }
+                // switch (deviceType) {
+                //     case 'smartphone':
+                //         iconSize = '45px';
+                //         labelSize = '12px';
+                //         break;
+                //     case 'mobile':
+                //         iconSize = '55px';
+                //         labelSize = '14px';
+                //         break;
+                //     case 'tablet':
+                //         iconSize = '60px';
+                //         labelSize = '15px';
+                //         break;
+                //     default:
+                //         iconSize = '70px';
+                //         labelSize = '16px';
+                //         break;
+                // }
                 
                 pcIcon.style.width = iconSize;
                 pcIcon.style.height = iconSize;
@@ -740,24 +740,24 @@ class NetworkRenderer {
                 let iconSize = '70px';
                 let labelSize = '16px';
                 
-                switch (deviceType) {
-                    case 'smartphone':
-                        iconSize = '45px';
-                        labelSize = '12px';
-                        break;
-                    case 'mobile':
-                        iconSize = '55px';
-                        labelSize = '14px';
-                        break;
-                    case 'tablet':
-                        iconSize = '60px';
-                        labelSize = '15px';
-                        break;
-                    default:
-                        iconSize = '70px';
-                        labelSize = '16px';
-                        break;
-                }
+                // switch (deviceType) {
+                //     case 'smartphone':
+                //         iconSize = '45px';
+                //         labelSize = '12px';
+                //         break;
+                //     case 'mobile':
+                //         iconSize = '55px';
+                //         labelSize = '14px';
+                //         break;
+                //     case 'tablet':
+                //         iconSize = '60px';
+                //         labelSize = '15px';
+                //         break;
+                //     default:
+                //         iconSize = '70px';
+                //         labelSize = '16px';
+                //         break;
+                // }
                 
                 pcIcon.style.width = iconSize;
                 pcIcon.style.height = iconSize;
@@ -827,20 +827,20 @@ class NetworkRenderer {
             const deviceType = Utils.getDeviceType();
             let touchSize = '44px';
             
-            switch (deviceType) {
-                case 'smartphone':
-                    touchSize = '48px';
-                    break;
-                case 'mobile':
-                    touchSize = '46px';
-                    break;
-                case 'tablet':
-                    touchSize = '44px';
-                    break;
-                default:
-                    touchSize = '44px';
-                    break;
-            }
+            // switch (deviceType) {
+            //     case 'smartphone':
+            //         touchSize = '48px';
+            //         break;
+            //     case 'mobile':
+            //         touchSize = '46px';
+            //         break;
+            //     case 'tablet':
+            //         touchSize = '44px';
+            //         break;
+            //     default:
+            //         touchSize = '44px';
+            //         break;
+            // }
             
             touchArea.style.width = touchSize;
             touchArea.style.height = touchSize;
@@ -908,20 +908,20 @@ class NetworkRenderer {
         const deviceType = Utils.getDeviceType();
         let fontSize = '24px';
         
-        switch (deviceType) {
-            case 'smartphone':
-                fontSize = '18px';
-                break;
-            case 'mobile':
-                fontSize = '20px';
-                break;
-            case 'tablet':
-                fontSize = '22px';
-                break;
-            default:
-                fontSize = '24px';
-                break;
-        }
+        // switch (deviceType) {
+        //     case 'smartphone':
+        //         fontSize = '18px';
+        //         break;
+        //     case 'mobile':
+        //         fontSize = '20px';
+        //         break;
+        //     case 'tablet':
+        //         fontSize = '22px';
+        //         break;
+        //     default:
+        //         fontSize = '24px';
+        //         break;
+        // }
         
         viewerChar.style.fontSize = fontSize;
         
