@@ -63,7 +63,7 @@ class NetworkModel {
     }
     
     _initializeNetwork() {
-        const baseScale = Utils.isMobile() ? 1.0 : 1.2;
+        const baseScale = 1.2;
         
         this._nodes = {
             A: { x: -35 * baseScale, y: 50 * baseScale, type: 'terminal', label: 'A', direction: 'right' },
