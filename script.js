@@ -908,20 +908,20 @@ class NetworkRenderer {
         const deviceType = Utils.getDeviceType();
         let fontSize = '24px';
         
-        // switch (deviceType) {
-        //     case 'smartphone':
-        //         fontSize = '18px';
-        //         break;
-        //     case 'mobile':
-        //         fontSize = '20px';
-        //         break;
-        //     case 'tablet':
-        //         fontSize = '22px';
-        //         break;
-        //     default:
-        //         fontSize = '24px';
-        //         break;
-        // }
+        switch (deviceType) {
+            case 'smartphone':
+                fontSize = '18px';
+                break;
+            case 'mobile':
+                fontSize = '20px';
+                break;
+            case 'tablet':
+                fontSize = '22px';
+                break;
+            default:
+                fontSize = '24px';
+                break;
+        }
         
         viewerChar.style.fontSize = fontSize;
         
