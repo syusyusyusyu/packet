@@ -98,12 +98,18 @@
                             </svg>
                             送信開始
                         </button>
-                        
-                        <button id="stop-btn" class="inline-flex items-center px-4 sm:px-5 py-2 sm:py-3 border-2 border-transparent text-sm sm:text-base font-medium rounded-lg shadow-md text-white bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-300 hover:to-pink-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 transition-all duration-200 transform hover:scale-105">
+                          <button id="stop-btn" class="inline-flex items-center px-4 sm:px-5 py-2 sm:py-3 border-2 border-transparent text-sm sm:text-base font-medium rounded-lg shadow-md text-white bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-300 hover:to-pink-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 transition-all duration-200 transform hover:scale-105">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd" />
                             </svg>
                             停止
+                        </button>
+                        
+                        <button id="restart-btn" class="inline-flex items-center px-4 sm:px-5 py-2 sm:py-3 border-2 border-transparent text-sm sm:text-base font-medium rounded-lg shadow-md text-white bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-all duration-200 transform hover:scale-105">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                            </svg>
+                            最初から
                         </button>
                         
                         <button id="fullscreen-btn" class="hidden lg:inline-flex items-center px-4 sm:px-5 py-2 sm:py-3 border-2 border-miku-400 text-sm sm:text-base font-medium rounded-lg shadow-md text-white bg-space-800 bg-opacity-90 hover:bg-space-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-miku-500 transition-all duration-200 transform hover:scale-105">
@@ -306,12 +312,12 @@
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" />
                             </svg>
                             操作手順
-                        </h3>
-                        <ol class="list-decimal pl-8 space-y-2 ml-2 text-miku-100">
+                        </h3>                        <ol class="list-decimal pl-8 space-y-2 ml-2 text-miku-100">
                             <li>「送信元」と「送信先」をドロップダウンから選択します。</li>
                             <li>「曲選択」で再生したい曲を選びます。</li>
                             <li>「送信開始」ボタンをクリックして、曲の再生とシミュレーションを開始します。</li>
                             <li>「停止」ボタンで、再生とシミュレーションを一時停止できます。</li>
+                            <li>「最初から」ボタンで、曲を最初から再生できます。</li>
                         </ol>
                     </div>
                     <div>
@@ -334,11 +340,14 @@
                                 <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
                             </svg>
                             キーボードショートカット
-                        </h3>
-                        <div class="grid grid-cols-2 gap-2 mt-2">
+                        </h3>                        <div class="grid grid-cols-2 gap-2 mt-2">
                             <div class="flex items-center">
                                 <kbd class="px-2 py-1 bg-space-800 border border-miku-400 rounded text-xs font-semibold shadow-sm mr-2 text-miku-300">S</kbd>
                                 <span class="text-miku-100">再生開始/停止</span>
+                            </div>
+                            <div class="flex items-center">
+                                <kbd class="px-2 py-1 bg-space-800 border border-miku-400 rounded text-xs font-semibold shadow-sm mr-2 text-miku-300">R</kbd>
+                                <span class="text-miku-100">最初から再生</span>
                             </div>
                             <div class="flex items-center">
                                 <kbd class="px-2 py-1 bg-space-800 border border-miku-400 rounded text-xs font-semibold shadow-sm mr-2 text-miku-300">F</kbd>
@@ -379,9 +388,9 @@
         <!-- ショートカットガイド -->
         <div class="fixed bottom-6 right-6 z-50">
             <div class="fixed bottom-20 right-6 bg-space-800 rounded-lg p-3 border border-miku-400 shadow-lg text-white text-sm w-48 animate-fadeIn z-50" id="shortcut-tooltip" style="display: none;">
-                <p class="font-semibold mb-2 text-miku-300">ショートカット:</p>
-                <ul class="space-y-1">
+                <p class="font-semibold mb-2 text-miku-300">ショートカット:</p>                <ul class="space-y-1">
                     <li><kbd class="px-1.5 py-0.5 bg-space-700 border border-miku-400 rounded text-xs mr-1">S</kbd> 再生/停止</li>
+                    <li><kbd class="px-1.5 py-0.5 bg-space-700 border border-miku-400 rounded text-xs mr-1">R</kbd> 最初から</li>
                     <li><kbd class="px-1.5 py-0.5 bg-space-700 border border-miku-400 rounded text-xs mr-1">F</kbd> 全画面</li>
                     <li><kbd class="px-1.5 py-0.5 bg-space-700 border border-miku-400 rounded text-xs mr-1">H</kbd> ヘルプ</li>
                 </ul>

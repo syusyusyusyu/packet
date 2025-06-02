@@ -186,12 +186,20 @@ class LogManager {
         if (logContainer) {
             logContainer.scrollTop = logContainer.scrollHeight;
         }
-    }
-
-    dispose() {
+    }    dispose() {
         if (this._updateInterval) {
             clearInterval(this._updateInterval);
             this._updateInterval = null;
+        }
+    }
+
+    clear() {
+        this._pendingEntries = [];
+        if (this._container) {
+            this._container.innerHTML = '';
+        }
+        if (this._mobileContainer) {
+            this._mobileContainer.innerHTML = '';
         }
     }
 }
@@ -283,16 +291,28 @@ class TextAliveManager {
             video: { apiKey: initialSong.apiToken }
         });
     }
-    
-    _handleVideoReady(v) {
+      _handleVideoReady(v) {
         console.log('楽曲準備完了:', v);
+        
+        // TextAlive Playerの利用可能メソッドをデバッグログに出力
+        if (this._player) {
+            console.log('Player利用可能メソッド:', {
+                hasRequestSeek: typeof this._player.requestSeek === 'function',
+                hasSeekTo: typeof this._player.seekTo === 'function',
+                hasVideoSeekTo: this._player.video && typeof this._player.video.seekTo === 'function',
+                playerMethods: Object.getOwnPropertyNames(this._player).filter(name => typeof this._player[name] === 'function'),
+                videoMethods: this._player.video ? Object.getOwnPropertyNames(this._player.video).filter(name => typeof this._player.video[name] === 'function') : []
+            });
+        }
+        
         this._isReady = true;
         this._onReady();
     }
-    
-    _handlePlay() {
+      _handlePlay() {
+        console.log('TextAliveManager._handlePlay() 呼び出し');
         this._playRequestPending = false;
         this._resetLyricProcessedState();
+        console.log('歌詞処理状態をリセットしました - _onPlay()を呼び出し');
         this._onPlay();
     }
     
@@ -304,27 +324,86 @@ class TextAliveManager {
     _handleStop() {
         this._playRequestPending = false;
         this._onStop();
-    }
-    
-    _resetLyricProcessedState() {
+    }    _resetLyricProcessedState() {
         try {
+            console.log('歌詞処理状態リセット開始');
+            let resetCount = 0;
+            
+            // デバッグ: プレイヤーデータ構造を詳しく調査
+            console.log('プレイヤーデータ構造調査:', {
+                hasVideo: !!this._player.video,
+                hasData: !!this._player.data,
+                videoPhrases: this._player.video ? !!this._player.video.phrases : false,
+                dataPhrases: this._player.data ? !!this._player.data.phrases : false,
+                videoWords: this._player.video ? !!this._player.video.words : false,
+                dataWords: this._player.data ? !!this._player.data.words : false,
+                videoKeys: this._player.video ? Object.keys(this._player.video) : [],
+                dataKeys: this._player.data ? Object.keys(this._player.data) : []
+            });
+            
+            // 方法1: player.video.phrases
             if (this._player && this._player.video && this._player.video.phrases) {
-                this._player.video.phrases.forEach(phrase => {
+                console.log('video.phrasesを使用して歌詞状態をリセット');
+                console.log('phrases数:', this._player.video.phrases.length);
+                this._player.video.phrases.forEach((phrase, phraseIndex) => {
                     if (phrase && phrase.words) {
-                        phrase.words.forEach(word => {
-                            if (word) word.processed = false;
-                        });
-                    }
-                });
-            } else if (this._player && this._player.data && this._player.data.phrases) {
-                this._player.data.phrases.forEach(phrase => {
-                    if (phrase && phrase.words) {
-                        phrase.words.forEach(word => {
-                            if (word) word.processed = false;
+                        console.log(`フレーズ ${phraseIndex}: ${phrase.words.length}個の単語`);
+                        phrase.words.forEach((word, wordIndex) => {
+                            if (word) {
+                                console.log(`  単語 ${wordIndex}: "${word.text}" processed: ${word.processed} -> false`);
+                                word.processed = false;
+                                resetCount++;
+                            }
                         });
                     }
                 });
             }
+            
+            // 方法2: player.data.phrases
+            if (this._player && this._player.data && this._player.data.phrases) {
+                console.log('data.phrasesを使用して歌詞状態をリセット');
+                console.log('phrases数:', this._player.data.phrases.length);
+                this._player.data.phrases.forEach((phrase, phraseIndex) => {
+                    if (phrase && phrase.words) {
+                        console.log(`フレーズ ${phraseIndex}: ${phrase.words.length}個の単語`);
+                        phrase.words.forEach((word, wordIndex) => {
+                            if (word) {
+                                console.log(`  単語 ${wordIndex}: "${word.text}" processed: ${word.processed} -> false`);
+                                word.processed = false;
+                                resetCount++;
+                            }
+                        });
+                    }
+                });
+            }
+            
+            // 方法3: player.video自体にwordsプロパティがある場合
+            if (this._player && this._player.video && this._player.video.words) {
+                console.log('video.wordsを使用して歌詞状態をリセット');
+                console.log('words数:', this._player.video.words.length);
+                this._player.video.words.forEach((word, wordIndex) => {
+                    if (word) {
+                        console.log(`単語 ${wordIndex}: "${word.text}" processed: ${word.processed} -> false`);
+                        word.processed = false;
+                        resetCount++;
+                    }
+                });
+            }
+            
+            // 方法4: player.data自体にwordsプロパティがある場合
+            if (this._player && this._player.data && this._player.data.words) {
+                console.log('data.wordsを使用して歌詞状態をリセット');
+                console.log('words数:', this._player.data.words.length);
+                this._player.data.words.forEach((word, wordIndex) => {
+                    if (word) {
+                        console.log(`単語 ${wordIndex}: "${word.text}" processed: ${word.processed} -> false`);
+                        word.processed = false;
+                        resetCount++;
+                    }
+                });
+            }
+            
+            console.log(`歌詞処理状態リセット完了: ${resetCount}個の歌詞単語をリセット`);
         } catch (e) {
             console.error('歌詞データ処理エラー:', e);
         }
@@ -369,8 +448,7 @@ class TextAliveManager {
         }
         return false;
     }
-    
-    async requestPause() {
+      async requestPause() {
         if (this._player && !this._fallbackActive) {
             try {
                 if (this._playRequestPending) {
@@ -388,6 +466,96 @@ class TextAliveManager {
                 console.error('TextAlive Player一時停止エラー:', e);
             }
         }
+    }    async requestRestart() {
+        if (this._player && !this._fallbackActive) {
+            try {
+                console.log('リスタート開始 - プレイヤー状態:', {
+                    isPlaying: this._player.isPlaying,
+                    position: this._player.timer ? this._player.timer.position : 'N/A',
+                    hasTimer: !!this._player.timer,
+                    hasVideo: !!this._player.video
+                });
+                  // 現在の再生を確実に停止し、保留中のリクエストもクリア
+                this._playRequestPending = false;
+                
+                if (this._player.isPlaying) {
+                    this._player.requestPause();
+                    // 少し長めに待機してpause処理が完了するのを確実にする
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                
+                // 楽曲の最初に戻る - 複数の方法を試す
+                let seekSuccess = false;
+                
+                // 方法1: timer.seek (最も一般的)
+                if (!seekSuccess && this._player.timer && this._player.timer.seek) {
+                    try {
+                        this._player.timer.seek(0);
+                        seekSuccess = true;
+                        console.log('timer.seekでリスタート成功');
+                    } catch (e) {
+                        console.log('timer.seek使用不可:', e.message);
+                    }
+                }
+                
+                // 方法2: requestSeek
+                if (!seekSuccess && this._player.requestSeek) {
+                    try {
+                        this._player.requestSeek(0);
+                        seekSuccess = true;
+                        console.log('requestSeekでリスタート成功');
+                    } catch (e) {
+                        console.log('requestSeek使用不可:', e.message);
+                    }
+                }
+                
+                // 方法3: seekTo
+                if (!seekSuccess && this._player.seekTo) {
+                    try {
+                        this._player.seekTo(0);
+                        seekSuccess = true;
+                        console.log('seekToでリスタート成功');
+                    } catch (e) {
+                        console.log('seekTo使用不可:', e.message);
+                    }
+                }
+                
+                // 方法4: video.seekTo
+                if (!seekSuccess && this._player.video && this._player.video.seekTo) {
+                    try {
+                        this._player.video.seekTo(0);
+                        seekSuccess = true;
+                        console.log('video.seekToでリスタート成功');
+                    } catch (e) {
+                        console.log('video.seekTo使用不可:', e.message);
+                    }
+                }
+                
+                // 方法5: プレイヤーを再初期化
+                if (!seekSuccess) {
+                    console.log('シーク機能が使用できないため、曲を再読み込みします');
+                    const currentSongIndex = this._selectedSongIndex;
+                    await this.changeSong(currentSongIndex);
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    seekSuccess = true;
+                }
+                  // 歌詞の処理状態をリセット
+                this._resetLyricProcessedState();
+                console.log('歌詞処理状態をリセットしました');
+                
+                // 少し待ってから再生開始
+                await new Promise(resolve => setTimeout(resolve, 200));
+                  this._playRequestPending = true;
+                console.log('requestPlay()を呼び出します - _playRequestPending:', this._playRequestPending);
+                await this._player.requestPlay();
+                console.log('リスタート完了 - requestPlay()呼び出し完了');
+                return true;
+            } catch (error) {
+                console.error('TextAlive Player最初から再生エラー:', error);
+                return false;
+            }
+        }
+        return false;
     }
     
     getCurrentSongInfo() {
@@ -1268,12 +1436,20 @@ class LyricFlowManager {
             counter.innerHTML = `アクティブな歌詞: <span class="font-bold text-miku-300">${activeCount}</span>`;
         }
     }
-    
-    clearAll() {
+      clearAll() {
         this._lyrics = [];
         this._updateLyricCounter();
         this._animationManager.clearAll();
         this._renderer.clearViewerLyrics();
+    }
+    
+    resetStats() {
+        this._stats = {
+            lyricsCreated: 0,
+            lyricsDelivered: 0,
+            totalHops: 0
+        };
+        this._lyricId = 0;
     }
     
     getStats() {
@@ -1295,10 +1471,10 @@ class UIController {
         this._setupMobileInteraction();
         this._setupKeyboardShortcuts();
     }
-    
-    _setupEventListeners() {
+      _setupEventListeners() {
         const sendBtn = document.getElementById('send-btn');
         const stopBtn = document.getElementById('stop-btn');
+        const restartBtn = document.getElementById('restart-btn');
         const fullscreenBtn = document.getElementById('fullscreen-btn');
         const songSelect = document.getElementById('song-select');
         const sourceSelect = document.getElementById('source');
@@ -1312,6 +1488,11 @@ class UIController {
         if (stopBtn) {
             stopBtn.addEventListener('click', () => this._simulation.stopSimulation());
             this._addTouchFeedback(stopBtn);
+        }
+        
+        if (restartBtn) {
+            restartBtn.addEventListener('click', () => this._simulation.restartPlayback());
+            this._addTouchFeedback(restartBtn);
         }
         
         if (fullscreenBtn) {
@@ -1521,8 +1702,7 @@ class UIController {
             }
         });
     }
-    
-    _setupKeyboardShortcuts() {
+      _setupKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 this._handleEscapeKey();
@@ -1530,6 +1710,8 @@ class UIController {
                 this._toggleHelpModal();
             } else if (e.key === 's' || e.key === 'S') {
                 this._toggleSimulation();
+            } else if (e.key === 'r' || e.key === 'R') {
+                this._simulation.restartPlayback();
             } else if (e.key === 'f' || e.key === 'F') {
                 this._toggleFullscreen();
             }
@@ -1861,12 +2043,16 @@ class FallbackManager {
             }
         }, 100);
     }
-    
-    stop() {
+      stop() {
         if (this._fallbackTimer) {
             clearInterval(this._fallbackTimer);
             this._fallbackTimer = null;
         }
+    }
+    
+    restart() {
+        this.stop();
+        this.start();
     }
 }
 
@@ -1958,22 +2144,38 @@ class LyricsNetworkSimulation {
             this._logManager.addEntry("TextAlive API接続に失敗しました。フォールバックモードで実行します。", "error");
             this._logManager.addEntry("このモードでは、歌詞の正確なタイミングは提供されません。", "system");
         }
-    }
-    
-    _handleTimeUpdate(position) {
-        if (!this._isRunning) return;
+    }    _handleTimeUpdate(position) {
+        if (!this._isRunning) {
+            console.log('_handleTimeUpdate: シミュレーションが停止中なのでスキップ, position:', position);
+            return;
+        }
         
         const word = this._textAliveManager.findCurrentLyric(position);
         
         if (word && word.startTime <= position && !word.processed) {
+            console.log('歌詞送信:', word.text, 'at position:', position, 'startTime:', word.startTime, 'word object:', word);
             this._sendLyricWord(word);
             word.processed = true;
+        } else if (word && word.processed) {
+            // 処理済みの歌詞をデバッグ（最初の3個だけ表示）
+            if (position < 10000) { // 最初の10秒間のみ
+                console.log('処理済み歌詞スキップ:', word.text, 'at position:', position, 'startTime:', word.startTime);
+            }
+        } else if (word) {
+            // その他の条件
+            console.log('歌詞あるが条件不一致:', {
+                text: word.text,
+                position: position,
+                startTime: word.startTime,
+                processed: word.processed,
+                条件: `startTime(${word.startTime}) <= position(${position}): ${word.startTime <= position}, processed: ${word.processed}`
+            });
         }
-    }
-    
-    _handlePlay() {
+    }_handlePlay() {
+        console.log('_handlePlay イベント発生 - 再生開始, 現在の_isRunning:', this._isRunning);
         this._logManager.addEntry('再生開始', 'success');
         this._isRunning = true;
+        console.log('_handlePlay で _isRunning を true に設定しました');
         this._uiController.updateSimulationStatus(true);
     }
     
@@ -2104,13 +2306,58 @@ class LyricsNetworkSimulation {
         this._renderer.setActiveElements(new Set());
         this._renderer.render();
         this._logManager.addEntry('再生を停止しました。', 'info');
-        
-        this._uiController.enableSendButton(true);
+          this._uiController.enableSendButton(true);
         this._uiController.updateSimulationStatus(false);
         
         this._isCleaningUp = false;
+    }    async restartPlayback() {
+        if (!this._textAliveManager.isReady()) {
+            this._logManager.addEntry('曲の準備ができていません。しばらくお待ちください。', 'error');
+            return;
+        }
+        
+        // ログをクリアしてから開始メッセージを追加
+        this._logManager.clear();
+        this._logManager.addEntry('再生を最初から開始します...', 'info');
+        console.log('restartPlayback開始 - 現在の_isRunning:', this._isRunning);
+          // 現在の再生を停止してクリア（ただし状態はまだ維持）
+        if (this._isRunning) {
+            console.log('現在実行中なので歌詞とアニメーションをクリア');
+            this._lyricFlowManager.clearAll();
+            this._renderer.setActiveElements(new Set());
+            this._renderer.render();
+        }
+        
+        // 統計情報をリセット
+        this._lyricFlowManager.resetStats();
+        console.log('統計情報をリセットしました');
+        
+        // TextAliveManagerに再開を要求
+        console.log('TextAliveManager.requestRestart()を呼び出し中...');
+        const success = await this._textAliveManager.requestRestart();
+        console.log('requestRestart()の結果:', success);
+        
+        if (success) {
+            // TextAliveが正常に動作している場合、_handlePlay()イベントで状態が更新される
+            this._logManager.addEntry('再生をリスタートしました', 'success');
+            console.log('TextAliveリスタート成功 - _handlePlay()イベントを待機中...');
+        } else {
+            // フォールバックモードでリスタート
+            console.log('フォールバックモードでリスタート開始');
+            await this.stopSimulation();
+            await new Promise(resolve => setTimeout(resolve, 200));
+            this._fallbackManager.restart();
+            this._isRunning = true;
+            console.log('フォールバックモード: _isRunning を true に設定');
+            this._uiController.updateSimulationStatus(true);
+            this._logManager.addEntry('フォールバックモードでリスタートしました', 'info');
+            console.log('フォールバックモードでリスタート完了');
+        }
+        
+        this._uiController.enableSendButton(false);
+        console.log('restartPlayback完了');
     }
-    
+
     async changeSong(songIndex) {
         await this.stopSimulation();
         await new Promise(resolve => setTimeout(resolve, 300));
