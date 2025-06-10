@@ -298,15 +298,15 @@
 .star-label {
     position: absolute;
     transform: translate(-50%, -50%);
-    width: 28px;
-    height: 28px;
+    width: 40px;
+    height: 40px;
     clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
     background-color: #ffdd45;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    font-size: 14px;
+    font-size: 16px;
     z-index: 15;
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     box-shadow: 0 0 8px rgba(255, 204, 41, 0.8);
@@ -801,12 +801,11 @@
         width: 32px;
         height: 20px;
         font-size: 10px;
-    }
-    
-    /* Mobile star labels */
+    }    /* Mobile star labels */
     .star-label {
-        width: 32px;
-        height: 32px;
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
     }
     
     /* Mobile lyrics */
