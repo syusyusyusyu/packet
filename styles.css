@@ -1,11 +1,32 @@
-/* =================================================================
-   UNIFIED STYLES.CSS - Network Visualization with Miku Theme
-   ================================================================= */
-
-/* ===== FONTS & BASE STYLES ===== */
+/* ===== フォント読み込み ===== */
 @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@300;400;500;700&family=Zen+Maru+Gothic:wght@400;500;700&display=swap');
 
-/* ===== ANIMATIONS ===== */
+/* ===== アニメーションキーフレーム ===== */
+@keyframes fade-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-out {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-10px); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
 @keyframes pulse {
     0% { box-shadow: 0 0 0 0 rgba(57, 240, 236, 0.5); }
     70% { box-shadow: 0 0 0 8px rgba(57, 240, 236, 0); }
@@ -16,16 +37,6 @@
     0% { box-shadow: 0 0 0 0 rgba(255, 107, 203, 0.5); }
     70% { box-shadow: 0 0 0 8px rgba(255, 107, 203, 0); }
     100% { box-shadow: 0 0 0 0 rgba(255, 107, 203, 0); }
-}
-
-@keyframes fade-in {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fade-out {
-    from { opacity: 1; transform: translateY(0); }
-    to { opacity: 0; transform: translateY(-10px); }
 }
 
 @keyframes packet-pulse {
@@ -58,60 +69,42 @@
     100% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
 }
 
-/* Animation utility classes */
-.animate-fadeIn { animation: fadeIn 0.4s ease-in; }
-.animate-fadeOut { animation: fadeOut 0.4s ease-out; }
-.animate-float { animation: float 3s ease-in-out infinite; }
-.fade-in { animation: fade-in 0.3s ease-out forwards; }
-.fade-out { animation: fade-out 0.3s ease-in forwards; }
+/* ===== アニメーションクラス ===== */
+.fade-in {
+    animation: fade-in 0.3s ease-out forwards;
+}
 
-/* ===== BACKGROUND & THEME ===== */
-/* Starry background - Miku theme */
+.fade-out {
+    animation: fade-out 0.3s ease-in forwards;
+}
+
+.animate-fadeIn { 
+    animation: fadeIn 0.4s ease-in; 
+}
+
+.animate-fadeOut { 
+    animation: fadeOut 0.4s ease-out; 
+}
+
+.animate-float { 
+    animation: float 3s ease-in-out infinite; 
+}
+
+/* ===== 背景とテーマ ===== */
 .starry-bg {
     background: linear-gradient(to bottom, #0a2144 0%, #1e2959 50%, #39266f 100%);
     position: relative;
     overflow: hidden;
 }
 
-/* Meteor animation */
-.meteor {
-    position: absolute;
-    width: 100px;
-    height: 2px;
-    background: linear-gradient(to right, rgba(255,255,255,0), rgba(255,255,255,1) 50%, rgba(84,240,240,1));
-    border-radius: 999px;
-    filter: drop-shadow(0 0 6px #39F0EC);
-    animation: meteor 5s ease-in-out infinite;
-    animation-delay: calc(var(--delay) * 1s);
-    opacity: 0;
+.glass-effect {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(57, 240, 236, 0.2);
+    box-shadow: 0 8px 32px rgba(57, 240, 236, 0.15);
 }
 
-.meteor::before {
-    content: '';
-    position: absolute;
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.7);
-    box-shadow: 0 0 10px 2px #39F0EC;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-/* Floating mini stars */
-.floating-star {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-    background-color: rgba(255, 221, 69, 0.6);
-    animation: float-star 8s ease-in-out infinite;
-    animation-delay: calc(var(--delay) * 1s);
-    box-shadow: 0 0 4px rgba(255, 221, 69, 0.7);
-}
-
-/* Miku color effects */
+/* ===== ミクカラーエフェクト ===== */
 .miku-glow {
     box-shadow: 0 0 10px rgba(57, 240, 236, 0.6);
 }
@@ -124,7 +117,7 @@
     border-color: #39f0ec;
 }
 
-/* ===== LOADING OVERLAY ===== */
+/* ===== ローディングオーバーレイ ===== */
 .loading-overlay {
     position: fixed;
     top: 0;
@@ -140,25 +133,7 @@
     flex-direction: column;
 }
 
-/* ===== GLASSMORPHISM EFFECTS ===== */
-.glass-effect {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(57, 240, 236, 0.2);
-    box-shadow: 0 8px 32px rgba(57, 240, 236, 0.15);
-}
-
-/* Touch feedback for mobile devices */
-.touch-feedback {
-    transition: transform 0.1s ease-out, opacity 0.1s ease-out;
-}
-
-.touch-feedback:active {
-    transform: scale(0.95);
-    opacity: 0.8;
-}
-
-/* ===== NETWORK NODES ===== */
+/* ===== ノードスタイル ===== */
 .node {
     position: absolute;
     display: flex;
@@ -178,7 +153,7 @@
     z-index: 20;
 }
 
-/* Terminal nodes */
+/* 端末ノード */
 .terminal {
     width: 70px;
     height: 70px;
@@ -198,7 +173,7 @@
     animation: pink-pulse 2.5s infinite;
 }
 
-/* Router nodes */
+/* ルーターノード */
 .router {
     width: 76px;
     height: 76px;
@@ -244,7 +219,7 @@
     opacity: 0.9;
 }
 
-/* ===== CONNECTIONS & PACKETS ===== */
+/* ===== 接続ライン ===== */
 .connection {
     position: absolute;
     background-color: rgba(57, 240, 236, 0.5);
@@ -262,7 +237,7 @@
     box-shadow: 0 0 12px rgba(255, 107, 203, 0.7);
 }
 
-/* Packets - lyrics displayed as network packets */
+/* ===== パケット ===== */
 .packet {
     position: absolute;
     width: 36px;
@@ -294,8 +269,8 @@
     z-index: -1;
 }
 
-/* ===== STAR LABELS (PORT LABELS) ===== */
-.star-label {
+/* ===== 星ラベル・ポートラベル ===== */
+.star-label, .port-label {
     position: absolute;
     transform: translate(-50%, -50%);
     width: 28px;
@@ -313,22 +288,21 @@
     color: #000;
 }
 
-.star-label.active {
+.star-label.active, .port-label.active {
     transform: translate(-50%, -50%) scale(1.25);
     background-color: #ff6bcb;
     box-shadow: 0 0 12px rgba(255, 107, 203, 0.8);
     z-index: 16;
 }
 
-.star-label:hover, .star-label:active {
+.star-label:hover, .star-label:active, .port-label:hover, .port-label:active {
     transform: translate(-50%, -50%) scale(1.15);
     cursor: pointer;
     background-color: #ffb245;
     box-shadow: 0 0 12px rgba(255, 178, 69, 0.8);
 }
 
-/* ===== LYRICS FEATURES ===== */
-/* Lyric bubbles */
+/* ===== 歌詞バブル ===== */
 .lyric-bubble {
     position: absolute;
     padding: 8px 16px;
@@ -351,7 +325,7 @@
     box-shadow: 0 0 15px rgba(255, 107, 203, 0.7);
 }
 
-/* Viewer lyric characters */
+/* ===== 視聴用歌詞 ===== */
 .viewer-lyric-char {
     display: inline-block;
     color: white;
@@ -381,7 +355,7 @@
     transform: scale(1.1);
 }
 
-/* ===== LOGS ===== */
+/* ===== ログエントリー ===== */
 .log-entry {
     background-color: rgba(16, 37, 70, 0.75);
     border-left-width: 4px;
@@ -434,32 +408,44 @@
     display: none;
 }
 
-/* ===== SCROLLBARS ===== */
-::-webkit-scrollbar {
+/* ===== 流れ星・浮遊星 ===== */
+.meteor {
+    position: absolute;
+    width: 100px;
+    height: 2px;
+    background: linear-gradient(to right, rgba(255,255,255,0), rgba(255,255,255,1) 50%, rgba(84,240,240,1));
+    border-radius: 999px;
+    filter: drop-shadow(0 0 6px #39F0EC);
+    animation: meteor 5s ease-in-out infinite;
+    animation-delay: calc(var(--delay) * 1s);
+    opacity: 0;
+}
+
+.meteor::before {
+    content: '';
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 0 10px 2px #39F0EC;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.floating-star {
+    position: absolute;
     width: 10px;
+    height: 10px;
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    background-color: rgba(255, 221, 69, 0.6);
+    animation: float-star 8s ease-in-out infinite;
+    animation-delay: calc(var(--delay) * 1s);
+    box-shadow: 0 0 4px rgba(255, 221, 69, 0.7);
 }
 
-::-webkit-scrollbar-track {
-    background: rgba(16, 37, 70, 0.5);
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-    background-color: rgba(57, 240, 236, 0.6);
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(57, 240, 236, 0.8);
-}
-
-#log-container {
-    height: auto;
-    max-height: calc(55vh - 130px);
-    overflow-y: auto;
-}
-
-/* ===== TABS ===== */
+/* ===== タブ切り替え ===== */
 .tab-button {
     padding: 0.5rem 1rem;
     border-radius: 0.5rem 0.5rem 0 0;
@@ -488,7 +474,7 @@
     flex-direction: column;
 }
 
-/* ===== HELP MODAL ===== */
+/* ===== ヘルプモーダル ===== */
 .help-modal-content {
     background: rgba(16, 37, 70, 0.93);
     backdrop-filter: blur(10px);
@@ -496,8 +482,7 @@
     color: #fff;
 }
 
-/* ===== MOBILE & TOUCH OPTIMIZATIONS ===== */
-/* Pinch zoom container */
+/* ===== ピンチズーム操作 ===== */
 .pinch-zoom-container {
     touch-action: none;
     overflow: hidden;
@@ -535,36 +520,17 @@
     animation: zoom-out-indicator 0.4s ease-out forwards;
 }
 
-/* Mobile touch areas */
-.mobile-touch-area {
-    position: absolute;
-    width: 44px;
-    height: 44px;
-    transform: translate(-50%, -50%);
-    background-color: transparent;
-    z-index: 5;
-    border-radius: 50%;
+/* ===== タッチフィードバック ===== */
+.touch-feedback {
+    transition: transform 0.1s ease-out, opacity 0.1s ease-out;
 }
 
-/* Mobile control buttons */
-.mobile-control-button {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.mobile-control-button:active {
+.touch-feedback:active {
     transform: scale(0.95);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    opacity: 0.8;
 }
 
-/* ===== LAYOUT OPTIMIZATIONS ===== */
+/* ===== サイドバー ===== */
 .sidebar-container {
     transform: translateX(0);
     transition: transform 0.3s ease-in-out, width 0.3s ease-in-out;
@@ -574,6 +540,7 @@
     transform: translateX(100%);
 }
 
+/* ===== レイアウト ===== */
 #network-container {
     min-height: calc(100vh - 130px);
 }
@@ -591,42 +558,110 @@
     overflow-y: auto;
 }
 
-/* Grid system */
+#log-container {
+    height: auto;
+    max-height: calc(55vh - 130px);
+    overflow-y: auto;
+}
+
+/* ===== フレックスグリッドシステム ===== */
 .grid-auto-fit {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1rem;
 }
 
-/* Animation optimizations */
-.network-container {
-    will-change: transform;
-    transform: translate3d(0, 0, 0);
-    backface-visibility: hidden;
+/* ===== スクロールバー ===== */
+::-webkit-scrollbar {
+    width: 10px;
 }
 
-/* ===== RESPONSIVE DESIGN ===== */
+::-webkit-scrollbar-track {
+    background: rgba(16, 37, 70, 0.5);
+    border-radius: 4px;
+}
 
-/* Tablet optimizations */
-@media (min-width: 768px) and (max-width: 1024px) {
+::-webkit-scrollbar-thumb {
+    background-color: rgba(57, 240, 236, 0.6);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(57, 240, 236, 0.8);
+}
+
+#log-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+#log-container::-webkit-scrollbar-track {
+    background: rgba(16, 37, 70, 0.3);
+    border-radius: 4px;
+}
+
+#log-container::-webkit-scrollbar-thumb {
+    background-color: rgba(57, 240, 236, 0.4);
+    border-radius: 4px;
+}
+
+#log-container::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(57, 240, 236, 0.6);
+}
+
+/* ===== モバイル対応 ===== */
+@media (max-width: 640px) {
+    .control-panel {
+        flex-direction: column;
+    }
+    
+    .control-group {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .button-group {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+    
+    .packet-counter {
+        width: 100%;
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+    
     .terminal {
-        width: 52px;
-        height: 52px;
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
     }
     
     .router {
-        width: 70px;
-        height: 70px;
+        width: 50px;
+        height: 50px;
     }
     
-    .viewer-lyric-char {
-        font-size: 22px;
+    .router .text-sm {
+        font-size: 11px;
     }
     
-    .star-label {
-        width: 32px;
-        height: 32px;
-        font-size: 14px;
+    .router-icon {
+        width: 20px;
+        height: 20px;
+        margin-bottom: 2px;
+    }
+      .star-label {
+        width: 24px;
+        height: 24px;
+        font-size: 10px;
+    }
+    
+    .packet {
+        width: 28px;
+        height: 18px;
+        font-size: 9px;
     }
     
     .connection {
@@ -637,15 +672,28 @@
         height: 6px;
     }
     
+    .viewer-lyric-char {
+        font-size: 18px;
+    }
+    
     .mobile-touch-area {
-        width: 44px;
-        height: 44px;
+        position: absolute;
+        width: 48px;
+        height: 48px;
+        transform: translate(-50%, -50%);
+        background-color: transparent;
+        z-index: 5;
+        border-radius: 50%;
+    }
+    
+    #network-container {
+        height: 55vh !important;
+        min-height: 280px !important;
     }
 }
 
-/* Mobile optimizations */
 @media (max-width: 768px) {
-    /* Mobile body and app container */
+    /* モバイルで本体をスクロール可能に */
     body {
         overflow-y: auto !important;
         height: auto !important;
@@ -656,7 +704,7 @@
         min-height: 100vh;
     }
     
-    /* Network visualization area */
+    /* ネットワーク可視化エリアを固定高さに */
     #network-container {
         height: 60vh !important;
         min-height: 300px;
@@ -672,19 +720,14 @@
         overflow: hidden;
     }
     
-    /* Mobile tabs container */
+    /* モバイル用タブコンテンツを追加 - 常に表示する */
     #mobile-tabs-container {
         display: block !important;
         margin-top: 1rem;
         width: 100%;
     }
     
-    /* Hide desktop sidebar */
-    #sidebar {
-        display: none !important;
-    }
-    
-    /* Mobile drawer */
+    /* サイドバードロワー */
     .sidebar-drawer {
         position: fixed;
         bottom: 0;
@@ -696,6 +739,8 @@
         z-index: 30;
         border-radius: 1rem 1rem 0 0;
         box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25);
+        background: rgba(10, 33, 68, 0.95);
+        backdrop-filter: blur(10px);
     }
     
     .sidebar-drawer.open {
@@ -704,7 +749,7 @@
     
     .drawer-handle {
         position: absolute;
-        top: -24px;
+        top: -20px;
         left: 50%;
         transform: translateX(-50%);
         width: 80px;
@@ -741,40 +786,20 @@
         visibility: visible;
     }
     
-    /* Hide toggle buttons for mobile */
+    /* デスクトップ用サイドバーを強制非表示 */
+    #sidebar {
+        display: none !important;
+    }
+    
     #toggle-drawer {
         display: none !important;
     }
     
-    /* Control panel adjustments */
-    .control-panel {
-        flex-direction: column;
-    }
-    
-    .control-group {
-        width: 100%;
-        margin-bottom: 0.5rem;
-    }
-    
-    .button-group {
-        width: 100%;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.5rem;
-    }
-    
-    .packet-counter {
-        width: 100%;
-        text-align: center;
-        margin-bottom: 0.5rem;
-    }
-    
-    /* Force vertical layout */
+    /* メインコンテンツレイアウトを垂直に強制 */
     .flex-col, .flex-row {
         flex-direction: column !important;
     }
     
-    /* Mobile node sizes */
     .terminal {
         width: 48px;
         height: 48px;
@@ -795,21 +820,17 @@
         height: 26px;
         margin-bottom: 4px;
     }
+      .star-label {
+        width: 32px;
+        height: 32px;
+    }
     
-    /* Mobile packet adjustments */
     .packet {
         width: 32px;
         height: 20px;
         font-size: 10px;
     }
     
-    /* Mobile star labels */
-    .star-label {
-        width: 32px;
-        height: 32px;
-    }
-    
-    /* Mobile lyrics */
     .viewer-lyric-char {
         font-size: 20px;
     }
@@ -818,7 +839,29 @@
         bottom: 20px !important;
     }
     
-    /* Mobile log adjustments */
+    .mobile-control-button {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .mobile-control-button:active {
+        transform: scale(0.95);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+    
+    .tab-button {
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        padding-right: 2.5rem;
+    }
+    
     .log-entry {
         font-size: 12px;
         padding: 0.5rem;
@@ -828,52 +871,42 @@
         font-size: 10px;
     }
     
-    /* Mobile tabs */
-    .tab-button {
-        padding: 0.75rem 1rem;
-        font-size: 1rem;
-        padding-right: 2.5rem;
-    }
-    
-    /* Close button touch area */
+    /* 閉じるボタンのタッチエリア拡大 */
     #close-drawer {
         padding: 8px;
         margin: -8px;
     }
     
-    /* Accessibility - touch targets */
-    button, select, .node, .star-label {
-        min-height: 44px;
-        min-width: 44px;
+    .routing-table-container {
+        max-height: 40vh;
     }
     
-    select {
-        background-size: 12px;
-        padding-right: 36px;
+    #log-container {
+        height: calc(100vh - 400px);
+        min-height: 200px;
+        max-height: calc(70vh - 100px);
     }
 }
 
-/* Smartphone specific optimizations */
-@media (max-width: 640px) {
+/* ===== タブレット用最適化 ===== */
+@media (min-width: 768px) and (max-width: 1024px) {
     .terminal {
-        width: 40px;
-        height: 40px;
+        width: 52px;
+        height: 52px;
     }
     
     .router {
-        width: 50px;
-        height: 50px;
+        width: 70px;
+        height: 70px;
     }
     
-    .terminal-label, .router-label {
-        font-size: 12px !important;
-        bottom: -20px !important;
+    .viewer-lyric-char {
+        font-size: 22px;
     }
-    
-    .star-label {
-        width: 24px;
-        height: 24px;
-        font-size: 10px;
+      .star-label {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
     }
     
     .connection {
@@ -884,30 +917,13 @@
         height: 6px;
     }
     
-    .packet {
-        font-size: 9px !important;
-        height: 18px !important;
-        padding: 1px 4px !important;
-        min-width: 28px !important;
-    }
-    
-    .viewer-lyric-char {
-        font-size: 18px;
-    }
-    
     .mobile-touch-area {
-        width: 48px;
-        height: 48px;
-    }
-    
-    /* Network container size for small screens */
-    #network-container {
-        height: 55vh !important;
-        min-height: 280px !important;
+        width: 44px;
+        height: 44px;
     }
 }
 
-/* Large screen optimizations */
+/* ===== デスクトップ用最適化 ===== */
 @media (min-width: 1536px) {
     .container {
         max-width: none;
@@ -915,7 +931,26 @@
     }
 }
 
-/* Tailwind width utilities */
+/* ===== アクセシビリティ ===== */
+@media (max-width: 768px) {    button, select, .node, .star-label {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    select {
+        background-size: 12px;
+        padding-right: 36px;
+    }
+}
+
+/* ===== ユーティリティクラス ===== */
+.network-container {
+    will-change: transform;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+}
+
+/* ===== Tailwind 拡張 ===== */
 @layer base {
     .w-112 {
         width: 28rem;

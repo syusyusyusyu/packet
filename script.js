@@ -784,8 +784,9 @@ class NetworkRenderer {
               if (connection.portLabel) {
                 const midX = fromPos.x + dx / 2;
                 const midY = fromPos.y + dy / 2;
-                  const portLabelEl = document.createElement('div');
-                portLabelEl.classList.add('star-label');
+                
+                const portLabelEl = document.createElement('div');
+                portLabelEl.classList.add('port-label');
                 portLabelEl.dataset.id = `port-${connection.id}`;
                 portLabelEl.dataset.port = connection.portLabel;
                 if (this._activeElements.has(`port-${connection.id}`)) {
@@ -819,11 +820,9 @@ class NetworkRenderer {
                         portSize = '40px';
                         fontSize = '16px';
                         break;
-                }
-                
-                portLabelEl.style.width = portSize;
-                portLabelEl.style.height = portSize;
-                portLabelEl.style.fontSize = fontSize;
+                }                portLabelEl.style.setProperty('width', portSize, 'important');
+                portLabelEl.style.setProperty('height', portSize, 'important');
+                portLabelEl.style.setProperty('font-size', fontSize, 'important');
                 
                 networkEl.appendChild(portLabelEl);
             }
@@ -2119,7 +2118,7 @@ class LyricsNetworkSimulation {
     }
     
     _initUI() {
-        this._logManager.addEntry('シミュレーションを初期化しました。', 'system');
+        this._logManager.addEntry('ミク☆スターネットワーク歌詞シミュレーションを初期化しました。', 'system');
         this._logManager.addEntry('TextAlive APIを読み込み中です。', 'system');
         this._logManager.addEntry('「送信開始」ボタンをクリックして再生を開始します。', 'system');
         this._logManager.addEntry('「H」キーを押すとヘルプが表示されます。', 'system');
