@@ -784,9 +784,8 @@ class NetworkRenderer {
               if (connection.portLabel) {
                 const midX = fromPos.x + dx / 2;
                 const midY = fromPos.y + dy / 2;
-                
-                const portLabelEl = document.createElement('div');
-                portLabelEl.classList.add('port-label');
+                  const portLabelEl = document.createElement('div');
+                portLabelEl.classList.add('star-label');
                 portLabelEl.dataset.id = `port-${connection.id}`;
                 portLabelEl.dataset.port = connection.portLabel;
                 if (this._activeElements.has(`port-${connection.id}`)) {
