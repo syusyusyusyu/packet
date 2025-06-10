@@ -2120,7 +2120,7 @@ class LyricsNetworkSimulation {
     }
     
     _initUI() {
-        this._logManager.addEntry('ミク☆スターネットワーク歌詞シミュレーションを初期化しました。', 'system');
+        this._logManager.addEntry('シミュレーションを初期化しました。', 'system');
         this._logManager.addEntry('TextAlive APIを読み込み中です。', 'system');
         this._logManager.addEntry('「送信開始」ボタンをクリックして再生を開始します。', 'system');
         this._logManager.addEntry('「H」キーを押すとヘルプが表示されます。', 'system');
