@@ -672,7 +672,7 @@ class NetworkRenderer {
         switch (deviceType) {
             case 'smartphone':
                 // スマートフォンはより小さくして、全体が見えるように
-                this._scaleFactor = Math.min(this._scaleFactor * 0.5, 0.45);
+                this._scaleFactor = Math.min(this._scaleFactor * 0.525, 0.45);
                 break;
             case 'mobile':
                 // 768px以下のモバイルデバイス
