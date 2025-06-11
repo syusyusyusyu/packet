@@ -97,6 +97,12 @@
     overflow: hidden;
 }
 
+.network-gradient-bg {
+    background: linear-gradient(to bottom, #0d47a1 0%, #1976d2 50%, #ffffff 100%);
+    position: relative;
+    overflow: hidden;
+}
+
 .glass-effect {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
@@ -328,10 +334,13 @@
 /* ===== 視聴用歌詞 ===== */
 .viewer-lyric-char {
     display: inline-block;
-    color: white;
+    color: #1a237e;
     font-weight: bold;
     opacity: 0;
     transform: translateY(20px);
+    text-shadow: 
+        0 1px 2px rgba(255, 255, 255, 0.8),
+        0 2px 4px rgba(0, 0, 0, 0.6);
     transition: 
         opacity 0.3s ease-out,
         transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -352,7 +361,19 @@
 
 .viewer-lyric-char.highlighted {
     color: rgba(255, 107, 203, 1);
+    text-shadow: 
+        0 1px 2px rgba(255, 255, 255, 0.9),
+        0 2px 6px rgba(255, 107, 203, 0.8);
     transform: scale(1.1);
+}
+
+/* ===== ターミナル・ルータラベル ===== */
+.terminal-label {
+    color: #ffd700 !important;
+    text-shadow: 
+        0 1px 2px rgba(0, 0, 0, 0.8),
+        0 2px 4px rgba(0, 0, 0, 0.6) !important;
+    font-weight: bold !important;
 }
 
 /* ===== ログエントリー ===== */

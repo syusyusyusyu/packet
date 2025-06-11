@@ -926,8 +926,7 @@ class NetworkRenderer {
                 pcIcon.style.width = iconSize;
                 pcIcon.style.height = iconSize;
                 nodeEl.appendChild(pcIcon);
-                
-                const label = document.createElement('div');
+                  const label = document.createElement('div');
                 label.textContent = `ルータ${node.label}`;
                 label.classList.add('terminal-label');
                 label.style.position = 'absolute';
@@ -936,7 +935,6 @@ class NetworkRenderer {
                 label.style.bottom = '0px';
                 label.style.fontSize = labelSize;
                 label.style.fontWeight = 'bold';
-                label.style.color = 'white';
                 label.style.whiteSpace = 'nowrap';
                 nodeEl.appendChild(label);
                 
