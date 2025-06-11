@@ -761,19 +761,6 @@ video {
   min-height: 400px;
 }
 
-.min-h-\[300px\] {
-  min-height: 300px;
-}
-
-.min-h-\[250px\] {
-  min-height: 250px;
-}
-
-.min-h-\[200px\] {
-  min-height: 200px;
-}
-
-
 .w-1\/2 {
   width: 50%;
 }

@@ -97,10 +97,9 @@
     overflow: hidden;
 }
 
-.network-gradient-bg {
-    background: linear-gradient(to bottom, #0d47a1 0%, #1976d2 50%, #ffffff 100%);
-    position: relative;
-    overflow: hidden;
+/* ===== ネットワークコンテナ専用背景 ===== */
+#network.starry-bg {
+    background: linear-gradient(to bottom, #001a4d 0%, #2666dd 50%, #ffffff 100%);
 }
 
 .glass-effect {
@@ -334,13 +333,10 @@
 /* ===== 視聴用歌詞 ===== */
 .viewer-lyric-char {
     display: inline-block;
-    color: #ffffff;
+    color: white;
     font-weight: bold;
     opacity: 0;
     transform: translateY(20px);
-    text-shadow: 
-        0 1px 2px rgba(0, 0, 0, 0.8),
-        0 2px 4px rgba(0, 0, 0, 0.6);
     transition: 
         opacity 0.3s ease-out,
         transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -361,19 +357,7 @@
 
 .viewer-lyric-char.highlighted {
     color: rgba(255, 107, 203, 1);
-    text-shadow: 
-        0 1px 2px rgba(255, 255, 255, 0.9),
-        0 2px 6px rgba(255, 107, 203, 0.8);
     transform: scale(1.1);
-}
-
-/* ===== ターミナル・ルータラベル ===== */
-.terminal-label {
-    color: #ffffff !important;
-    text-shadow: 
-        0 1px 2px rgba(0, 0, 0, 0.8),
-        0 2px 4px rgba(0, 0, 0, 0.6) !important;
-    font-weight: bold !important;
 }
 
 /* ===== ログエントリー ===== */
@@ -564,16 +548,6 @@
 /* ===== レイアウト ===== */
 #network-container {
     min-height: calc(100vh - 130px);
-    width: 100%;
-    position: relative;
-}
-
-#network {
-    width: 100%;
-    height: 100%;
-    min-height: 450px;
-    position: relative;
-    overflow: hidden;
 }
 
 #sidebar {
@@ -593,11 +567,6 @@
     height: auto;
     max-height: calc(55vh - 130px);
     overflow-y: auto;
-}
-
-/* ===== 歌詞表示位置調整 ===== */
-.viewer-lyrics-container {
-    top: 10px !important;
 }
 
 /* ===== フレックスグリッドシステム ===== */
@@ -668,18 +637,15 @@
         margin-bottom: 0.5rem;
     }
     
-    /* ネットワーク要素のサイズ調整 */
     .terminal {
-        width: 50px;
-        height: 50px;
-        font-size: 18px;
-        border-width: 2px;
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
     }
     
     .router {
-        width: 56px;
-        height: 56px;
-        border-width: 2px;
+        width: 50px;
+        height: 50px;
     }
     
     .router .text-sm {
@@ -687,73 +653,47 @@
     }
     
     .router-icon {
-        width: 22px;
-        height: 22px;
-        margin-bottom: 3px;
+        width: 20px;
+        height: 20px;
+        margin-bottom: 2px;
     }
-    
-    .star-label, .port-label {
+      .star-label {
         width: 24px;
         height: 24px;
-        font-size: 11px;
+        font-size: 10px;
     }
     
     .packet {
         width: 28px;
         height: 18px;
-        font-size: 10px;
-        border-radius: 9px;
+        font-size: 9px;
     }
     
     .connection {
-        height: 2px;
+        height: 4px;
     }
     
     .connection.active {
-        height: 3px;
+        height: 6px;
     }
     
-    /* 歌詞表示サイズ調整 */
     .viewer-lyric-char {
         font-size: 18px;
     }
     
-    .lyric-bubble {
-        padding: 6px 12px;
-        font-size: 14px;
-        border-radius: 12px;
-    }
-    
     .mobile-touch-area {
         position: absolute;
-        width: 44px;
-        height: 44px;
+        width: 48px;
+        height: 48px;
         transform: translate(-50%, -50%);
         background-color: transparent;
         z-index: 5;
         border-radius: 50%;
-    }    
+    }
+    
     #network-container {
-        height: calc(100vh - 130px) !important;
-        min-height: 400px !important;  /* より大きな最小高さを確保 */
-        width: 100% !important;
-    }
-    
-    #network {
-        position: absolute !important;
-        top: 0;
-        left: 0;
-        width: 100% !important;
-        height: 100% !important;
-        overflow: hidden;
-        /* パディングを適切に設定 */
-        padding: 8px !important;
-    }
-    
-    /* ネットワークの描画エリアのマージンを調整 */
-    #network .zoom-area {
-        padding: 0 !important;
-        margin: 0 !important;
+        height: 55vh !important;
+        min-height: 280px !important;
     }
 }
 
@@ -767,10 +707,12 @@
     #app-container {
         height: auto !important;
         min-height: 100vh;
-    }    /* ネットワーク可視化エリアを固定高さに */
+    }
+    
+    /* ネットワーク可視化エリアを固定高さに */
     #network-container {
-        height: calc(100vh - 130px) !important;
-        min-height: 400px;  /* より大きな最小高さを確保 */
+        height: 60vh !important;
+        min-height: 300px;
         position: relative;
     }
     
@@ -862,17 +804,16 @@
     .flex-col, .flex-row {
         flex-direction: column !important;
     }
-      .terminal {
-        width: 56px;
-        height: 56px;
+    
+    .terminal {
+        width: 48px;
+        height: 48px;
         font-size: 20px;
-        border-width: 2px;
     }
     
     .router {
-        width: 68px;
-        height: 68px;
-        border-width: 2px;
+        width: 64px;
+        height: 64px;
     }
     
     .router .text-sm {
@@ -880,41 +821,26 @@
     }
     
     .router-icon {
-        width: 28px;
-        height: 28px;
+        width: 26px;
+        height: 26px;
         margin-bottom: 4px;
     }
-    
-    .star-label, .port-label {
-        width: 30px;
-        height: 30px;
-        font-size: 12px;
+      .star-label {
+        width: 32px;
+        height: 32px;
     }
     
     .packet {
         width: 32px;
         height: 20px;
         font-size: 10px;
-        border-radius: 10px;
     }
     
-    .connection {
-        height: 3px;
-    }
-    
-    .connection.active {
-        height: 4px;
-    }
-    
-    /* 歌詞表示サイズ調整 */
     .viewer-lyric-char {
         font-size: 20px;
     }
-    
-    .lyric-bubble {
-        padding: 8px 14px;
-        font-size: 15px;
-        border-radius: 14px;
+      .viewer-lyrics-container {
+        top: 20px !important;
     }
     
     .mobile-control-button {
@@ -969,39 +895,22 @@
 /* ===== タブレット用最適化 ===== */
 @media (min-width: 768px) and (max-width: 1024px) {
     .terminal {
-        width: 62px;
-        height: 62px;
-        font-size: 22px;
-        border-width: 3px;
+        width: 52px;
+        height: 52px;
     }
     
     .router {
-        width: 72px;
-        height: 72px;
-        border-width: 3px;
+        width: 70px;
+        height: 70px;
     }
     
-    .router .text-sm {
-        font-size: 13px;
+    .viewer-lyric-char {
+        font-size: 22px;
     }
-    
-    .router-icon {
-        width: 30px;
-        height: 30px;
-        margin-bottom: 5px;
-    }
-    
-    .star-label, .port-label {
-        width: 30px;
-        height: 30px;
-        font-size: 13px;
-    }
-    
-    .packet {
-        width: 34px;
-        height: 22px;
-        font-size: 11px;
-        border-radius: 11px;
+      .star-label {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
     }
     
     .connection {
@@ -1012,20 +921,9 @@
         height: 6px;
     }
     
-    /* 歌詞表示サイズ調整 */
-    .viewer-lyric-char {
-        font-size: 22px;
-    }
-    
-    .lyric-bubble {
-        padding: 10px 16px;
-        font-size: 16px;
-        border-radius: 16px;
-    }
-    
     .mobile-touch-area {
-        width: 50px;
-        height: 50px;
+        width: 44px;
+        height: 44px;
     }
 }
 
@@ -1041,7 +939,9 @@
 @media (max-width: 768px) {    button, select, .node, .star-label {
         min-height: 44px;
         min-width: 44px;
-    }    select {
+    }
+
+    select {
         background-size: 12px;
         padding-right: 36px;
     }

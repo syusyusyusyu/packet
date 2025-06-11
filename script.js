@@ -59,66 +59,17 @@ class NetworkModel {
         this._connections = [];
         this._initializeNetwork();
     }
-      _initializeNetwork() {
-        this._updateNodePositions();
-    }    _updateNodePositions() {
-        // 画面サイズに応じた動的な座標計算
-        const networkEl = document.getElementById('network');
-        let containerWidth = networkEl ? networkEl.clientWidth : 800;
-        let containerHeight = networkEl ? networkEl.clientHeight : 600;
-        
-        // 最小サイズを保証
-        containerWidth = Math.max(containerWidth, 300);
-        containerHeight = Math.max(containerHeight, 200);        // デバイス別の調整
-        const deviceType = Utils.getDeviceType();
-        let edgeOffset = 40;  // 左右の余白を増やす
-        let verticalPadding = 50; // 上下の余白を増やす
-        
-        switch (deviceType) {
-            case 'smartphone':
-                edgeOffset = 30;  // スマホでは少し余白を持たせる
-                verticalPadding = 45;
-                break;
-            case 'mobile':
-                edgeOffset = 32;  // モバイルでも適度な余白
-                verticalPadding = 48;
-                break;
-            case 'tablet':
-                edgeOffset = 40;
-                verticalPadding = 50;
-                break;
-            default:
-                edgeOffset = 40;
-                verticalPadding = 50;
-                break;
-        }
-        
-        // 端末の位置を左右端に配置、上下に均一な余白を持たせる
-        const leftX = edgeOffset;  // 左端に配置
-        const rightX = containerWidth - edgeOffset;  // 右端に配置        // 上下の余白を適度に設定
-        let topY = edgeOffset + verticalPadding;  // 上端からの余白
-        let bottomY = containerHeight - edgeOffset - verticalPadding;  // 下端からの余白
-        
-        // 高さが低い場合の調整（端末が重ならないように）
-        const minVerticalDistance = 80; // 端末間の最小距離
-        if (bottomY - topY < minVerticalDistance) {
-            const centerY = containerHeight / 2;
-            topY = centerY - minVerticalDistance / 2;
-            bottomY = centerY + minVerticalDistance / 2;
-        }
-        
-        // ルーターの位置（中央付近）
-        const centerX = containerWidth / 2;
-        const centerY = containerHeight / 2;
-        const routerOffsetX = Math.min(containerWidth * 0.15, 120); // 中央から15%オフセット（最大120px）
+    
+    _initializeNetwork() {
+        const baseScale = 1.2;
         
         this._nodes = {
-            A: { x: leftX, y: topY, type: 'terminal', label: 'A', direction: 'right' },
-            B: { x: leftX, y: bottomY, type: 'terminal', label: 'B', direction: 'right' },
-            C: { x: rightX, y: topY, type: 'terminal', label: 'C', direction: 'left' },
-            D: { x: rightX, y: bottomY, type: 'terminal', label: 'D', direction: 'left' },
-            X: { x: centerX - routerOffsetX, y: centerY, type: 'router', label: 'X' },
-            Y: { x: centerX + routerOffsetX, y: centerY, type: 'router', label: 'Y' }
+            A: { x: -35 * baseScale, y: 50 * baseScale, type: 'terminal', label: 'A', direction: 'right' },
+            B: { x: -35 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'B', direction: 'right' },
+            C: { x: 705 * baseScale, y: 50 * baseScale, type: 'terminal', label: 'C', direction: 'left' },
+            D: { x: 705 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'D', direction: 'left' },
+            X: { x: 190 * baseScale, y: 250 * baseScale, type: 'router', label: 'X' },
+            Y: { x: 480 * baseScale, y: 250 * baseScale, type: 'router', label: 'Y' }
         };
         
         this._connections = [
@@ -126,11 +77,8 @@ class NetworkModel {
             { from: 'B', to: 'X', fromPort: null, toPort: 2, portLabel: 2, id: 'B-X' },
             { from: 'C', to: 'Y', fromPort: null, toPort: 3, portLabel: 3, id: 'C-Y' },
             { from: 'D', to: 'Y', fromPort: null, toPort: 4, portLabel: 4, id: 'D-Y' },
-            { from: 'X', to: 'Y', fromPort: 5, toPort: 5, portLabel: 5, id: 'X-Y' }        ];
-    }
-    
-    updateLayout() {
-        this._updateNodePositions();
+            { from: 'X', to: 'Y', fromPort: 5, toPort: 5, portLabel: 5, id: 'X-Y' }
+        ];
     }
     
     getNodes() {
@@ -320,7 +268,7 @@ class TextAliveManager {
         this._player = new Player({
             app: {
                 token: "vP37NoaGGtVq40se",
-                name: "シミュレーター"
+                name: "ミク☆スターネットワーク歌詞シミュレーター"
             },
             player: {
                 mediaElement: document.createElement("audio"),
@@ -681,26 +629,29 @@ class TextAliveManager {
 
 // ===== ネットワークレンダラー =====
 class NetworkRenderer {
-    constructor(networkModel, onTerminalClick) {        this._model = networkModel;
+    constructor(networkModel, onTerminalClick) {
+        this._model = networkModel;
         this._onTerminalClick = onTerminalClick;
         this._scaleFactor = 1;
         this._offsetX = 0;
         this._offsetY = 0;
         this._baseWidth = 800;
-        this._baseHeight = 750; // 余白を考慮して少し大きくする
+        this._baseHeight = 700;
         this._activeElements = new Set();
         this._viewerLyricsContainer = null;
         this._displayedViewerLyrics = new Map();
         
         this._initializeViewerLyricsContainer();
-    }    _initializeViewerLyricsContainer() {
+    }
+      _initializeViewerLyricsContainer() {
         this._viewerLyricsContainer = document.getElementById('viewer-lyrics-container') || document.createElement('div');
         if (!this._viewerLyricsContainer.parentNode) {
-            this._viewerLyricsContainer.className = 'viewer-lyrics-container absolute top-4 left-0 right-0 flex flex-wrap justify-center items-center gap-2 py-2 px-4 overflow-hidden z-10 pointer-events-none text-2xl font-bold';
+            this._viewerLyricsContainer.className = 'viewer-lyrics-container absolute top-12 left-0 right-0 flex flex-wrap justify-center items-center gap-2 py-2 px-4 overflow-hidden z-10 pointer-events-none text-2xl font-bold';
             const networkEl = document.getElementById('network');
             if (networkEl) networkEl.appendChild(this._viewerLyricsContainer);
         }
-    }      calculateScaleFactor() {
+    }
+      calculateScaleFactor() {
         const networkEl = document.getElementById('network');
         if (!networkEl) return;
         
@@ -709,15 +660,40 @@ class NetworkRenderer {
         
         if (containerWidth === 0 || containerHeight === 0) return;
         
-        // 動的ノード配置を更新
-        this._model.updateLayout();
+        const scaleX = containerWidth / this._baseWidth;
+        const scaleY = containerHeight / this._baseHeight;
         
-        // スケールファクターは1に固定（ノード位置が動的に計算されるため）
-        this._scaleFactor = 1;
+        this._scaleFactor = Math.min(scaleX, scaleY, 1);
         
-        // オフセットは不要（ノード位置が既に適切に配置されている）
-        this._offsetX = 0;
-        this._offsetY = 0;
+        // デバイスタイプに応じたスケーリング調整
+        const deviceType = Utils.getDeviceType();
+        
+        switch (deviceType) {
+            case 'smartphone':
+                // スマートフォンはより小さくして、全体が見えるように
+                this._scaleFactor = Math.min(this._scaleFactor * 0.75, 0.6);
+                break;
+            case 'mobile':
+                // 768px以下のモバイルデバイス
+                this._scaleFactor = Math.min(this._scaleFactor * 0.8, 0.7);
+                break;
+            case 'tablet':
+                // タブレットは少し小さめだが見やすく
+                this._scaleFactor = Math.min(this._scaleFactor * 0.9, 0.85);
+                break;
+            default:
+                // デスクトップはそのまま
+                break;
+        }
+        
+        // オフセット計算（中央配置）
+        this._offsetX = (containerWidth - (this._baseWidth * this._scaleFactor)) / 2;
+        this._offsetY = (containerHeight - (this._baseHeight * this._scaleFactor)) / 2;
+        
+        // モバイルデバイスの場合、少し上に配置して操作しやすくする
+        if (Utils.isMobile()) {
+            this._offsetY = Math.max(this._offsetY - 20, 10);
+        }
     }
     
     scalePosition(x, y) {
@@ -788,10 +764,10 @@ class NetworkRenderer {
             
             switch (deviceType) {
                 case 'smartphone':
-                    connectionHeight = '3px';
+                    connectionHeight = '4px';
                     break;
                 case 'mobile':
-                    connectionHeight = '4px';
+                    connectionHeight = '5px';
                     break;
                 case 'tablet':
                     connectionHeight = '4px';
@@ -825,24 +801,25 @@ class NetworkRenderer {
                 const deviceType = Utils.getDeviceType();
                 let portSize = '40px';
                 let fontSize = '16px';
-                  switch (deviceType) {
+                
+                switch (deviceType) {
                     case 'smartphone':
-                        portSize = '28px';  // 見やすいサイズに
-                        fontSize = '14px';  // PC版と同じフォントサイズに
+                        portSize = '24px';
+                        fontSize = '10px';
                         break;
                     case 'mobile':
-                        portSize = '28px';  // 見やすいサイズに
-                        fontSize = '14px';  // PC版と同じフォントサイズに
+                        portSize = '28px';
+                        fontSize = '12px';
                         break;
                     case 'tablet':
-                        portSize = '28px';  // 見やすいサイズに
-                        fontSize = '14px';  // PC版と同じフォントサイズに
-                        break;
-                    default:
-                        portSize = '28px';
+                        portSize = '32px';
                         fontSize = '14px';
                         break;
-                }portLabelEl.style.setProperty('width', portSize, 'important');
+                    default:
+                        portSize = '40px';
+                        fontSize = '16px';
+                        break;
+                }                portLabelEl.style.setProperty('width', portSize, 'important');
                 portLabelEl.style.setProperty('height', portSize, 'important');
                 portLabelEl.style.setProperty('font-size', fontSize, 'important');
                 
@@ -874,18 +851,19 @@ class NetworkRenderer {
                 const deviceType = Utils.getDeviceType();
                 let iconSize = '70px';
                 let labelSize = '16px';
-                  switch (deviceType) {
+                
+                switch (deviceType) {
                     case 'smartphone':
-                        iconSize = '70px';  // PC版と同じサイズに
-                        labelSize = '16px'; // PC版と同じサイズに
+                        iconSize = '45px';
+                        labelSize = '12px';
                         break;
                     case 'mobile':
-                        iconSize = '70px';  // PC版と同じサイズに
-                        labelSize = '16px'; // PC版と同じサイズに
+                        iconSize = '55px';
+                        labelSize = '14px';
                         break;
                     case 'tablet':
-                        iconSize = '70px';  // PC版と同じサイズに
-                        labelSize = '16px'; // PC版と同じサイズに
+                        iconSize = '60px';
+                        labelSize = '15px';
                         break;
                     default:
                         iconSize = '70px';
@@ -924,18 +902,19 @@ class NetworkRenderer {
                 const deviceType = Utils.getDeviceType();
                 let iconSize = '70px';
                 let labelSize = '16px';
-                  switch (deviceType) {
+                
+                switch (deviceType) {
                     case 'smartphone':
-                        iconSize = '70px';  // PC版と同じサイズに
-                        labelSize = '16px'; // PC版と同じサイズに
+                        iconSize = '45px';
+                        labelSize = '12px';
                         break;
                     case 'mobile':
-                        iconSize = '70px';  // PC版と同じサイズに
-                        labelSize = '16px'; // PC版と同じサイズに
+                        iconSize = '55px';
+                        labelSize = '14px';
                         break;
                     case 'tablet':
-                        iconSize = '70px';  // PC版と同じサイズに
-                        labelSize = '16px'; // PC版と同じサイズに
+                        iconSize = '60px';
+                        labelSize = '15px';
                         break;
                     default:
                         iconSize = '70px';
@@ -946,7 +925,8 @@ class NetworkRenderer {
                 pcIcon.style.width = iconSize;
                 pcIcon.style.height = iconSize;
                 nodeEl.appendChild(pcIcon);
-                  const label = document.createElement('div');
+                
+                const label = document.createElement('div');
                 label.textContent = `ルータ${node.label}`;
                 label.classList.add('terminal-label');
                 label.style.position = 'absolute';
@@ -955,6 +935,7 @@ class NetworkRenderer {
                 label.style.bottom = '0px';
                 label.style.fontSize = labelSize;
                 label.style.fontWeight = 'bold';
+                label.style.color = 'white';
                 label.style.whiteSpace = 'nowrap';
                 nodeEl.appendChild(label);
                 
@@ -1089,15 +1070,16 @@ class NetworkRenderer {
         // デバイスタイプに応じたフォントサイズ調整
         const deviceType = Utils.getDeviceType();
         let fontSize = '24px';
-          switch (deviceType) {
+        
+        switch (deviceType) {
             case 'smartphone':
-                fontSize = '24px';  // PC版と同じサイズに
+                fontSize = '18px';
                 break;
             case 'mobile':
-                fontSize = '24px';  // PC版と同じサイズに
+                fontSize = '20px';
                 break;
             case 'tablet':
-                fontSize = '24px';  // PC版と同じサイズに
+                fontSize = '22px';
                 break;
             default:
                 fontSize = '24px';
@@ -1341,30 +1323,9 @@ class LyricAnimationManager {
             Utils.fadeOutAndRemove(el);
         });
     }
-      dispose() {
-        this.clearAll();
-    }
     
-    refreshPacketPositions() {
-        // 全画面切り替え時にパケット位置を再計算
-        const networkEl = document.getElementById('network');
-        if (!networkEl) return;
-        
-        const lyricEls = networkEl.querySelectorAll('.packet');
-        lyricEls.forEach(el => {
-            const lyricId = el.dataset.lyricId;
-            if (lyricId) {
-                // 現在のアニメーション情報を取得して位置を更新
-                const currentTransform = el.style.transform;
-                if (currentTransform) {
-                    // トランスフォームを一時的にリセットして再計算
-                    el.style.transform = '';
-                    requestAnimationFrame(() => {
-                        el.style.transform = currentTransform;
-                    });
-                }
-            }
-        });
+    dispose() {
+        this.clearAll();
     }
 }
 
@@ -1507,9 +1468,11 @@ class UIController {
         this._setupMobileInteraction();
         this._setupKeyboardShortcuts();
     }
-      _setupEventListeners() {        const sendBtn = document.getElementById('send-btn');
+      _setupEventListeners() {
+        const sendBtn = document.getElementById('send-btn');
         const stopBtn = document.getElementById('stop-btn');
         const restartBtn = document.getElementById('restart-btn');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
         const songSelect = document.getElementById('song-select');
         const sourceSelect = document.getElementById('source');
         const destSelect = document.getElementById('destination');
@@ -1523,9 +1486,15 @@ class UIController {
             stopBtn.addEventListener('click', () => this._simulation.stopSimulation());
             this._addTouchFeedback(stopBtn);
         }
-          if (restartBtn) {
+        
+        if (restartBtn) {
             restartBtn.addEventListener('click', () => this._simulation.restartPlayback());
             this._addTouchFeedback(restartBtn);
+        }
+        
+        if (fullscreenBtn) {
+            fullscreenBtn.addEventListener('click', () => this._toggleFullscreen());
+            this._addTouchFeedback(fullscreenBtn);
         }
         
         if (songSelect) {
@@ -1534,19 +1503,17 @@ class UIController {
                 this._simulation.changeSong(selectedIndex);
             });
         }
-          if (sourceSelect && destSelect) {
+        
+        if (sourceSelect && destSelect) {
             this._updateTerminalOptions(sourceSelect);
             this._updateTerminalOptions(destSelect);
             
             sourceSelect.addEventListener('change', () => this._updateActiveTerminals());
             destSelect.addEventListener('change', () => this._updateActiveTerminals());
         }
-          // リサイズイベントも監視
-        window.addEventListener('resize', () => {
-            setTimeout(() => {
-                this._simulation.handleResize();
-            }, 100);
-        });
+        
+        document.addEventListener('fullscreenchange', () => this._handleFullscreenChange());
+        document.addEventListener('webkitfullscreenchange', () => this._handleFullscreenChange());
     }
     
     _addTouchFeedback(element) {
@@ -1731,7 +1698,8 @@ class UIController {
                 backdrop.classList.remove('open');
             }
         });
-    }    _setupKeyboardShortcuts() {
+    }
+      _setupKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 this._handleEscapeKey();
@@ -1741,6 +1709,8 @@ class UIController {
                 this._toggleSimulation();
             } else if (e.key === 'r' || e.key === 'R') {
                 this._simulation.restartPlayback();
+            } else if (e.key === 'f' || e.key === 'F') {
+                this._toggleFullscreen();
             }
         });
     }
@@ -1778,7 +1748,68 @@ class UIController {
             this._simulation.stopSimulation();
         } else {
             this._simulation.startPlayback();
-        }    }
+        }
+    }
+    
+    _toggleFullscreen() {
+        const appContainer = document.getElementById('app-container');
+        if (!appContainer) return;
+        
+        if (!document.fullscreenElement &&
+            !document.mozFullScreenElement &&
+            !document.webkitFullscreenElement &&
+            !document.msFullscreenElement) {
+            if (appContainer.requestFullscreen) {
+                appContainer.requestFullscreen();
+            } else if (appContainer.mozRequestFullScreen) {
+                appContainer.mozRequestFullScreen();
+            } else if (appContainer.webkitRequestFullscreen) {
+                appContainer.webkitRequestFullscreen();
+            } else if (appContainer.msRequestFullscreen) {
+                appContainer.msRequestFullscreen();
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.mozCancelFullScreen) {
+                document.mozCancelFullScreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+        }
+    }
+    
+    _handleFullscreenChange() {
+        this._simulation.handleResize();
+        this._updateFullscreenButton();
+    }
+    
+    _updateFullscreenButton() {
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        
+        if (!fullscreenBtn) return;
+        
+        if (document.fullscreenElement ||
+            document.mozFullScreenElement ||
+            document.webkitFullscreenElement ||
+            document.msFullscreenElement) {
+            fullscreenBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                全画面解除
+            `;
+        } else {
+            fullscreenBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 0h-4m4 0l-5-5" />
+                </svg>
+                全画面
+            `;
+        }
+    }
     
     _updateTerminalOptions(selectElement) {
         if (!selectElement) return;
@@ -2340,25 +2371,10 @@ class LyricsNetworkSimulation {
             Utils.removeElement(this._loadingOverlay);
         }
     }
-      handleResize() {
-        // 全画面表示状態を確認
-        const isFullscreen = document.fullscreenElement ||
-            document.mozFullScreenElement ||
-            document.webkitFullscreenElement ||
-            document.msFullscreenElement;
-            
-        // 全画面表示時は少し遅延を入れてより安定した描画を行う
-        const delay = isFullscreen ? 150 : 50;
-        
-        setTimeout(() => {
-            this._renderer.calculateScaleFactor();
-            this._renderer.render();
-            
-            // 全画面表示時はパケットの位置も再計算
-            if (isFullscreen && this._isRunning) {
-                this._animationManager.refreshPacketPositions();
-            }
-        }, delay);
+    
+    handleResize() {
+        this._renderer.calculateScaleFactor();
+        this._renderer.render();
     }
     
     isRunning() {
