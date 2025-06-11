@@ -69,10 +69,10 @@ class NetworkModel {
         
         // 最小サイズを保証
         containerWidth = Math.max(containerWidth, 300);
-        containerHeight = Math.max(containerHeight, 200);
-          // デバイス別の調整
+        containerHeight = Math.max(containerHeight, 200);        // デバイス別の調整
         const deviceType = Utils.getDeviceType();
-        let edgeOffset = 20;  // 画面端からの最小距離を小さく        let verticalPadding = 30; // 上下の余白を小さく
+        let edgeOffset = 20;  // 画面端からの最小距離を小さく
+        let verticalPadding = 30; // 上下の余白を小さく
         
         switch (deviceType) {
             case 'smartphone':
