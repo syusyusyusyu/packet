@@ -75,31 +75,43 @@ class NetworkModel {
         const deviceType = Utils.getDeviceType();
         let edgeOffset = 50;  // 画面端からの最小距離
         let terminalMargin = 40;  // 端末の追加マージン
+        let verticalPadding = 60; // 上下の追加余白
         
         switch (deviceType) {
             case 'smartphone':
                 edgeOffset = 15;
                 terminalMargin = 20;
+                verticalPadding = 30;
                 break;
             case 'mobile':
                 edgeOffset = 25;
                 terminalMargin = 25;
+                verticalPadding = 40;
                 break;
             case 'tablet':
                 edgeOffset = 35;
                 terminalMargin = 30;
+                verticalPadding = 50;
                 break;
             default:
                 edgeOffset = 50;
                 terminalMargin = 40;
+                verticalPadding = 60;
                 break;
         }
-        
-        // 端末の位置を画面端に配置
+          // 端末の位置を画面端に配置（上下に余白を持たせる）
         const leftX = edgeOffset + terminalMargin;
         const rightX = containerWidth - edgeOffset - terminalMargin;
-        const topY = edgeOffset + terminalMargin;
-        const bottomY = containerHeight - edgeOffset - terminalMargin;
+        let topY = edgeOffset + terminalMargin + verticalPadding;
+        let bottomY = containerHeight - edgeOffset - terminalMargin - verticalPadding;
+        
+        // 高さが低い場合の調整（端末が重ならないように）
+        const minVerticalDistance = 80; // 端末間の最小距離
+        if (bottomY - topY < minVerticalDistance) {
+            const centerY = containerHeight / 2;
+            topY = centerY - minVerticalDistance / 2;
+            bottomY = centerY + minVerticalDistance / 2;
+        }
         
         // ルーターの位置（中央付近）
         const centerX = containerWidth / 2;
@@ -675,14 +687,13 @@ class TextAliveManager {
 
 // ===== ネットワークレンダラー =====
 class NetworkRenderer {
-    constructor(networkModel, onTerminalClick) {
-        this._model = networkModel;
+    constructor(networkModel, onTerminalClick) {        this._model = networkModel;
         this._onTerminalClick = onTerminalClick;
         this._scaleFactor = 1;
         this._offsetX = 0;
         this._offsetY = 0;
         this._baseWidth = 800;
-        this._baseHeight = 700;
+        this._baseHeight = 750; // 余白を考慮して少し大きくする
         this._activeElements = new Set();
         this._viewerLyricsContainer = null;
         this._displayedViewerLyrics = new Map();
@@ -1506,11 +1517,9 @@ class UIController {
         this._setupMobileInteraction();
         this._setupKeyboardShortcuts();
     }
-      _setupEventListeners() {
-        const sendBtn = document.getElementById('send-btn');
+      _setupEventListeners() {        const sendBtn = document.getElementById('send-btn');
         const stopBtn = document.getElementById('stop-btn');
         const restartBtn = document.getElementById('restart-btn');
-        const fullscreenBtn = document.getElementById('fullscreen-btn');
         const songSelect = document.getElementById('song-select');
         const sourceSelect = document.getElementById('source');
         const destSelect = document.getElementById('destination');
@@ -1524,15 +1533,9 @@ class UIController {
             stopBtn.addEventListener('click', () => this._simulation.stopSimulation());
             this._addTouchFeedback(stopBtn);
         }
-        
-        if (restartBtn) {
+          if (restartBtn) {
             restartBtn.addEventListener('click', () => this._simulation.restartPlayback());
             this._addTouchFeedback(restartBtn);
-        }
-        
-        if (fullscreenBtn) {
-            fullscreenBtn.addEventListener('click', () => this._toggleFullscreen());
-            this._addTouchFeedback(fullscreenBtn);
         }
         
         if (songSelect) {
@@ -1541,23 +1544,16 @@ class UIController {
                 this._simulation.changeSong(selectedIndex);
             });
         }
-        
-        if (sourceSelect && destSelect) {
+          if (sourceSelect && destSelect) {
             this._updateTerminalOptions(sourceSelect);
             this._updateTerminalOptions(destSelect);
             
             sourceSelect.addEventListener('change', () => this._updateActiveTerminals());
             destSelect.addEventListener('change', () => this._updateActiveTerminals());
         }
-          document.addEventListener('fullscreenchange', () => this._handleFullscreenChange());
-        document.addEventListener('webkitfullscreenchange', () => this._handleFullscreenChange());
-        document.addEventListener('mozfullscreenchange', () => this._handleFullscreenChange());
-        document.addEventListener('MSFullscreenChange', () => this._handleFullscreenChange());
-        
-        // リサイズイベントも監視して全画面表示時の調整を行う
+          // リサイズイベントも監視
         window.addEventListener('resize', () => {
             setTimeout(() => {
-                this._adjustLayoutForFullscreen();
                 this._simulation.handleResize();
             }, 100);
         });
@@ -1745,8 +1741,7 @@ class UIController {
                 backdrop.classList.remove('open');
             }
         });
-    }
-      _setupKeyboardShortcuts() {
+    }    _setupKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 this._handleEscapeKey();
@@ -1756,8 +1751,6 @@ class UIController {
                 this._toggleSimulation();
             } else if (e.key === 'r' || e.key === 'R') {
                 this._simulation.restartPlayback();
-            } else if (e.key === 'f' || e.key === 'F') {
-                this._toggleFullscreen();
             }
         });
     }
@@ -1795,105 +1788,7 @@ class UIController {
             this._simulation.stopSimulation();
         } else {
             this._simulation.startPlayback();
-        }
-    }
-    
-    _toggleFullscreen() {
-        const appContainer = document.getElementById('app-container');
-        if (!appContainer) return;
-        
-        if (!document.fullscreenElement &&
-            !document.mozFullScreenElement &&
-            !document.webkitFullscreenElement &&
-            !document.msFullscreenElement) {
-            if (appContainer.requestFullscreen) {
-                appContainer.requestFullscreen();
-            } else if (appContainer.mozRequestFullScreen) {
-                appContainer.mozRequestFullScreen();
-            } else if (appContainer.webkitRequestFullscreen) {
-                appContainer.webkitRequestFullscreen();
-            } else if (appContainer.msRequestFullscreen) {
-                appContainer.msRequestFullscreen();
-            }
-        } else {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-            } else if (document.mozCancelFullScreen) {
-                document.mozCancelFullScreen();
-            } else if (document.webkitExitFullscreen) {
-                document.webkitExitFullscreen();
-            } else if (document.msExitFullscreen) {
-                document.msExitFullscreen();
-            }
-        }
-    }
-      _handleFullscreenChange() {
-        // 全画面変更時のリサイズ処理を遅延実行
-        setTimeout(() => {
-            this._simulation.handleResize();
-            this._adjustLayoutForFullscreen();
-        }, 100);
-        this._updateFullscreenButton();
-    }
-
-    _adjustLayoutForFullscreen() {
-        const isFullscreen = document.fullscreenElement ||
-            document.mozFullScreenElement ||
-            document.webkitFullscreenElement ||
-            document.msFullscreenElement;
-            
-        const networkContainer = document.getElementById('network-container');
-        const sidebar = document.getElementById('sidebar');
-        const mobileTabsContainer = document.getElementById('mobile-tabs-container');
-        
-        if (isFullscreen) {
-            // 全画面時のレイアウト調整
-            if (networkContainer) {
-                networkContainer.style.height = 'calc(100vh - 140px)';
-            }
-            if (sidebar) {
-                sidebar.style.height = 'calc(100vh - 140px)';
-            }
-            if (mobileTabsContainer) {
-                mobileTabsContainer.style.maxHeight = '300px';
-            }
-        } else {
-            // 通常時のレイアウトに戻す
-            if (networkContainer) {
-                networkContainer.style.height = '';
-            }
-            if (sidebar) {
-                sidebar.style.height = '';
-            }
-            if (mobileTabsContainer) {
-                mobileTabsContainer.style.maxHeight = '';
-            }
-        }
-    }
-    
-    _updateFullscreenButton() {
-        const fullscreenBtn = document.getElementById('fullscreen-btn');
-        
-        if (!fullscreenBtn) return;
-          if (document.fullscreenElement ||
-            document.mozFullScreenElement ||
-            document.webkitFullscreenElement ||
-            document.msFullscreenElement) {
-            fullscreenBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                全画面解除
-            `;
-        } else {
-            fullscreenBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 0h-4m4 0l-5-5" />
-                </svg>
-                全画面
-            `;
-        }
-    }
+        }    }
     
     _updateTerminalOptions(selectElement) {
         if (!selectElement) return;

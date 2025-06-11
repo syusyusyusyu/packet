@@ -571,7 +571,7 @@
 #network {
     width: 100%;
     height: 100%;
-    min-height: 400px;
+    min-height: 450px;
     position: relative;
     overflow: hidden;
 }
@@ -720,10 +720,9 @@
         background-color: transparent;
         z-index: 5;
         border-radius: 50%;
-    }    
-    #network-container {
+    }      #network-container {
         height: calc(100vh - 130px) !important;
-        min-height: 280px !important;
+        min-height: 320px !important;
         width: 100% !important;
     }
     
@@ -748,11 +747,10 @@
         height: auto !important;
         min-height: 100vh;
     }
-    
-    /* ネットワーク可視化エリアを固定高さに */
+      /* ネットワーク可視化エリアを固定高さに */
     #network-container {
         height: calc(100vh - 130px) !important;
-        min-height: 300px;
+        min-height: 350px;
         position: relative;
     }
     
@@ -970,217 +968,14 @@
     }
 }
 
-/* ===== 全画面表示時のレスポンシブ調整 ===== */
-@media screen and (max-width: 1024px) {
-    #app-container:fullscreen .control-panel,
-    #app-container:-webkit-full-screen .control-panel,
-    #app-container:-moz-full-screen .control-panel,
-    #app-container:-ms-fullscreen .control-panel {
-        flex-wrap: wrap;
-        gap: 0.5rem;
-    }
-    
-    #app-container:fullscreen .control-group,
-    #app-container:-webkit-full-screen .control-group,
-    #app-container:-moz-full-screen .control-group,
-    #app-container:-ms-fullscreen .control-group {
-        width: auto;
-        min-width: 200px;
-    }
-}
-
-@media screen and (max-width: 768px) {
-    #app-container:fullscreen #network-container,
-    #app-container:-webkit-full-screen #network-container,
-    #app-container:-moz-full-screen #network-container,
-    #app-container:-ms-fullscreen #network-container {
-        height: calc(100vh - 160px); /* モバイル時のヘッダー高さを考慮 */
-    }
-    
-    #app-container:fullscreen #mobile-tabs-container,
-    #app-container:-webkit-full-screen #mobile-tabs-container,
-    #app-container:-moz-full-screen #mobile-tabs-container,
-    #app-container:-ms-fullscreen #mobile-tabs-container {
-        height: 250px;
-        max-height: 250px;
-    }
-    
-    #app-container:fullscreen #mobile-log-container,
-    #app-container:-webkit-full-screen #mobile-log-container,
-    #app-container:-moz-full-screen #mobile-log-container,
-    #app-container:-ms-fullscreen #mobile-log-container {
-        max-height: 180px;
-    }
-}
-
-/* 全画面表示時のスクロール調整 */
-#app-container:fullscreen,
-#app-container:-webkit-full-screen,
-#app-container:-moz-full-screen,
-#app-container:-ms-fullscreen {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(57, 240, 236, 0.3) rgba(16, 37, 70, 0.1);
-}
-
-#app-container:fullscreen::-webkit-scrollbar,
-#app-container:-webkit-full-screen::-webkit-scrollbar,
-#app-container:-moz-full-screen::-webkit-scrollbar,
-#app-container:-ms-fullscreen::-webkit-scrollbar {
-    width: 8px;
-}
-
-#app-container:fullscreen::-webkit-scrollbar-track,
-#app-container:-webkit-full-screen::-webkit-scrollbar-track,
-#app-container:-moz-full-screen::-webkit-scrollbar-track,
-#app-container:-ms-fullscreen::-webkit-scrollbar-track {
-    background: rgba(16, 37, 70, 0.1);
-}
-
-#app-container:fullscreen::-webkit-scrollbar-thumb,
-#app-container:-webkit-full-screen::-webkit-scrollbar-thumb,
-#app-container:-moz-full-screen::-webkit-scrollbar-thumb,
-#app-container:-ms-fullscreen::-webkit-scrollbar-thumb {
-    background: rgba(57, 240, 236, 0.3);
-    border-radius: 4px;
-}
-
-#app-container:fullscreen::-webkit-scrollbar-thumb:hover,
-#app-container:-webkit-full-screen::-webkit-scrollbar-thumb:hover,
-#app-container:-moz-full-screen::-webkit-scrollbar-thumb:hover,
-#app-container:-ms-fullscreen::-webkit-scrollbar-thumb:hover {
-    background: rgba(57, 240, 236, 0.5);
-}
-
 /* ===== アクセシビリティ ===== */
 @media (max-width: 768px) {    button, select, .node, .star-label {
         min-height: 44px;
         min-width: 44px;
-    }
-
-    select {
+    }    select {
         background-size: 12px;
         padding-right: 36px;
     }
-}
-
-/* ===== 全画面表示対応 ===== */
-#app-container:fullscreen,
-#app-container:-webkit-full-screen,
-#app-container:-moz-full-screen,
-#app-container:-ms-fullscreen {
-    height: 100vh;
-    overflow-y: auto;
-    overflow-x: hidden;
-}
-
-/* 全画面時のレイアウト調整 */
-#app-container:fullscreen .flex-col,
-#app-container:-webkit-full-screen .flex-col,
-#app-container:-moz-full-screen .flex-col,
-#app-container:-ms-fullscreen .flex-col {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-}
-
-/* 全画面時のメインコンテンツ調整 */
-#app-container:fullscreen .flex-1,
-#app-container:-webkit-full-screen .flex-1,
-#app-container:-moz-full-screen .flex-1,
-#app-container:-ms-fullscreen .flex-1 {
-    flex: 1;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-
-/* 全画面時のネットワークコンテナ調整 */
-#app-container:fullscreen #network-container,
-#app-container:-webkit-full-screen #network-container,
-#app-container:-moz-full-screen #network-container,
-#app-container:-ms-fullscreen #network-container {
-    height: calc(100vh - 140px); /* ヘッダーとコントロールパネルの高さを考慮 */
-    min-height: 400px;
-    flex: 1;
-}
-
-/* 全画面時のサイドバー調整 */
-#app-container:fullscreen #sidebar,
-#app-container:-webkit-full-screen #sidebar,
-#app-container:-moz-full-screen #sidebar,
-#app-container:-ms-fullscreen #sidebar {
-    height: calc(100vh - 140px); /* ヘッダーとコントロールパネルの高さを考慮 */
-    max-height: calc(100vh - 140px);
-}
-
-/* 全画面時のコントロールパネル調整 */
-#app-container:fullscreen .control-panel,
-#app-container:-webkit-full-screen .control-panel,
-#app-container:-moz-full-screen .control-panel,
-#app-container:-ms-fullscreen .control-panel {
-    flex-wrap: nowrap;
-    justify-content: space-between;
-    align-items: center;
-}
-
-/* 全画面時のログコンテナ調整 */
-#app-container:fullscreen #log-container,
-#app-container:-webkit-full-screen #log-container,
-#app-container:-moz-full-screen #log-container,
-#app-container:-ms-fullscreen #log-container {
-    height: calc(100vh - 280px); /* より多くのスペースを確保 */
-    max-height: calc(100vh - 280px);
-}
-
-/* 全画面時のモバイルタブ調整 */
-#app-container:fullscreen #mobile-tabs-container,
-#app-container:-webkit-full-screen #mobile-tabs-container,
-#app-container:-moz-full-screen #mobile-tabs-container,
-#app-container:-ms-fullscreen #mobile-tabs-container {
-    height: 300px;
-    max-height: 300px;
-}
-
-/* 全画面時のモバイルログコンテナ調整 */
-#app-container:fullscreen #mobile-log-container,
-#app-container:-webkit-full-screen #mobile-log-container,
-#app-container:-moz-full-screen #mobile-log-container,
-#app-container:-ms-fullscreen #mobile-log-container {
-    max-height: 220px;
-}
-
-/* 全画面時のネットワーク表示領域の高さを動的に調整 */
-#app-container:fullscreen .flex-1 > div,
-#app-container:-webkit-full-screen .flex-1 > div,
-#app-container:-moz-full-screen .flex-1 > div,
-#app-container:-ms-fullscreen .flex-1 > div {
-    height: 100%;
-}
-
-/* 全画面時のネットワーク可視化エリア */
-#app-container:fullscreen #network,
-#app-container:-webkit-full-screen #network,
-#app-container:-moz-full-screen #network,
-#app-container:-ms-fullscreen #network {
-    height: 100%;
-    min-height: 100%;
-    width: 100%;
-}
-
-/* 全画面時のメインコンテンツエリア */
-#app-container:fullscreen .max-w-none,
-#app-container:-webkit-full-screen .max-w-none,
-#app-container:-moz-full-screen .max-w-none,
-#app-container:-ms-fullscreen .max-w-none {
-    height: calc(100vh - 140px);
-}
-
-/* 全画面時のレスポンシブ配置 */
-#app-container:fullscreen .lg\\:flex-row,
-#app-container:-webkit-full-screen .lg\\:flex-row,
-#app-container:-moz-full-screen .lg\\:flex-row,
-#app-container:-ms-fullscreen .lg\\:flex-row {
-    height: 100%;
 }
 
 /* ===== ユーティリティクラス ===== */

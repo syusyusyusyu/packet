@@ -103,19 +103,11 @@
                             </svg>
                             停止
                         </button>
-                        
-                        <button id="restart-btn" class="inline-flex items-center px-4 sm:px-5 py-2 sm:py-3 border-2 border-transparent text-sm sm:text-base font-medium rounded-lg shadow-md text-white bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-all duration-200 transform hover:scale-105">
+                          <button id="restart-btn" class="inline-flex items-center px-4 sm:px-5 py-2 sm:py-3 border-2 border-transparent text-sm sm:text-base font-medium rounded-lg shadow-md text-white bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-all duration-200 transform hover:scale-105">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
                             </svg>
                             最初から
-                        </button>
-                        
-                        <button id="fullscreen-btn" class="hidden lg:inline-flex items-center px-4 sm:px-5 py-2 sm:py-3 border-2 border-miku-400 text-sm sm:text-base font-medium rounded-lg shadow-md text-white bg-space-800 bg-opacity-90 hover:bg-space-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-miku-500 transition-all duration-200 transform hover:scale-105">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-miku-300" fill="none" viewBox="0 0 20 20" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 0h-4m4 0l-5-5" />
-                            </svg>
-                            全画面
                         </button>
                     </div>
                 </div>
@@ -343,14 +335,9 @@
                             <div class="flex items-center">
                                 <kbd class="px-2 py-1 bg-space-800 border border-miku-400 rounded text-xs font-semibold shadow-sm mr-2 text-miku-300">S</kbd>
                                 <span class="text-miku-100">再生開始/停止</span>
-                            </div>
-                            <div class="flex items-center">
+                            </div>                            <div class="flex items-center">
                                 <kbd class="px-2 py-1 bg-space-800 border border-miku-400 rounded text-xs font-semibold shadow-sm mr-2 text-miku-300">R</kbd>
                                 <span class="text-miku-100">最初から再生</span>
-                            </div>
-                            <div class="flex items-center">
-                                <kbd class="px-2 py-1 bg-space-800 border border-miku-400 rounded text-xs font-semibold shadow-sm mr-2 text-miku-300">F</kbd>
-                                <span class="text-miku-100">全画面表示の切り替え</span>
                             </div>
                             <div class="flex items-center">
                                 <kbd class="px-2 py-1 bg-space-800 border border-miku-400 rounded text-xs font-semibold shadow-sm mr-2 text-miku-300">H</kbd>
@@ -385,12 +372,10 @@
         </div>
 
         <!-- ショートカットガイド -->
-        <div class="fixed bottom-6 right-6 z-50">
-            <div class="fixed bottom-20 right-6 bg-space-800 rounded-lg p-3 border border-miku-400 shadow-lg text-white text-sm w-48 animate-fadeIn z-50" id="shortcut-tooltip" style="display: none;">
+        <div class="fixed bottom-6 right-6 z-50">            <div class="fixed bottom-20 right-6 bg-space-800 rounded-lg p-3 border border-miku-400 shadow-lg text-white text-sm w-48 animate-fadeIn z-50" id="shortcut-tooltip" style="display: none;">
                 <p class="font-semibold mb-2 text-miku-300">ショートカット:</p>                <ul class="space-y-1">
                     <li><kbd class="px-1.5 py-0.5 bg-space-700 border border-miku-400 rounded text-xs mr-1">S</kbd> 再生/停止</li>
                     <li><kbd class="px-1.5 py-0.5 bg-space-700 border border-miku-400 rounded text-xs mr-1">R</kbd> 最初から</li>
-                    <li><kbd class="px-1.5 py-0.5 bg-space-700 border border-miku-400 rounded text-xs mr-1">F</kbd> 全画面</li>
                     <li><kbd class="px-1.5 py-0.5 bg-space-700 border border-miku-400 rounded text-xs mr-1">H</kbd> ヘルプ</li>
                 </ul>
             </div>
