@@ -667,60 +667,60 @@
         text-align: center;
         margin-bottom: 0.5rem;
     }
-    
-    .terminal {
-        width: 40px;
-        height: 40px;
-        font-size: 16px;
+      .terminal {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
     }
     
     .router {
-        width: 50px;
-        height: 50px;
+        width: 40px;
+        height: 40px;
     }
     
     .router .text-sm {
-        font-size: 11px;
-    }
-    
-    .router-icon {
-        width: 20px;
-        height: 20px;
-        margin-bottom: 2px;
-    }
-      .star-label {
-        width: 24px;
-        height: 24px;
-        font-size: 10px;
-    }
-    
-    .packet {
-        width: 28px;
-        height: 18px;
         font-size: 9px;
     }
     
+    .router-icon {
+        width: 16px;
+        height: 16px;
+        margin-bottom: 1px;
+    }
+      .star-label {
+        width: 20px;
+        height: 20px;
+        font-size: 8px;
+    }
+    
+    .packet {
+        width: 24px;
+        height: 16px;
+        font-size: 8px;
+    }
+    
     .connection {
-        height: 4px;
+        height: 3px;
     }
     
     .connection.active {
-        height: 6px;
+        height: 4px;
     }
     
     .viewer-lyric-char {
-        font-size: 18px;
+        font-size: 16px;
     }
     
     .mobile-touch-area {
         position: absolute;
-        width: 48px;
-        height: 48px;
+        width: 44px;
+        height: 44px;
         transform: translate(-50%, -50%);
         background-color: transparent;
         z-index: 5;
         border-radius: 50%;
-    }      #network-container {
+    }
+      #network-container {
         height: calc(100vh - 130px) !important;
         min-height: 320px !important;
         width: 100% !important;
@@ -733,6 +733,14 @@
         width: 100% !important;
         height: 100% !important;
         overflow: hidden;
+        /* パディングを適切に設定 */
+        padding: 8px !important;
+    }
+    
+    /* ネットワークの描画エリアのマージンを調整 */
+    #network .zoom-area {
+        padding: 0 !important;
+        margin: 0 !important;
     }
 }
 
@@ -746,11 +754,10 @@
     #app-container {
         height: auto !important;
         min-height: 100vh;
-    }
-      /* ネットワーク可視化エリアを固定高さに */
+    }      /* ネットワーク可視化エリアを固定高さに */
     #network-container {
         height: calc(100vh - 130px) !important;
-        min-height: 350px;
+        min-height: 380px;
         position: relative;
     }
     

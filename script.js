@@ -76,17 +76,16 @@ class NetworkModel {
         let edgeOffset = 50;  // 画面端からの最小距離
         let terminalMargin = 40;  // 端末の追加マージン
         let verticalPadding = 60; // 上下の追加余白
-        
-        switch (deviceType) {
+          switch (deviceType) {
             case 'smartphone':
-                edgeOffset = 15;
-                terminalMargin = 20;
-                verticalPadding = 30;
+                edgeOffset = 35;  // 画面端からの余白を大幅に増加
+                terminalMargin = 40; // 端末のマージンも増加
+                verticalPadding = 50; // 上下余白も増加
                 break;
             case 'mobile':
-                edgeOffset = 25;
-                terminalMargin = 25;
-                verticalPadding = 40;
+                edgeOffset = 40;
+                terminalMargin = 45;
+                verticalPadding = 60;
                 break;
             case 'tablet':
                 edgeOffset = 35;
