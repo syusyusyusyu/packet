@@ -642,10 +642,12 @@ class NetworkRenderer {
         this._displayedViewerLyrics = new Map();
         
         this._initializeViewerLyricsContainer();
-    }      _initializeViewerLyricsContainer() {
+    }      
+    
+    _initializeViewerLyricsContainer() {
         this._viewerLyricsContainer = document.getElementById('viewer-lyrics-container') || document.createElement('div');
         if (!this._viewerLyricsContainer.parentNode) {
-            this._viewerLyricsContainer.className = 'viewer-lyrics-container absolute top-12 left-0 right-0 flex flex-wrap justify-center items-start gap-2 py-2 px-4 overflow-hidden z-10 pointer-events-none text-2xl font-bold';
+            this._viewerLyricsContainer.className = 'viewer-lyrics-container absolute top-0 left-0 right-0 flex flex-wrap justify-center items-start gap-2 py-2 px-4 overflow-hidden z-10 pointer-events-none text-2xl font-bold';
             const networkEl = document.getElementById('network');
             if (networkEl) networkEl.appendChild(this._viewerLyricsContainer);
         }
@@ -678,11 +680,11 @@ class NetworkRenderer {
 
         // 歌詞コンテナの安全な配置位置を計算
         this._adjustLyricsPosition(terminalPositions, networkRect);
-    }    _adjustLyricsPosition(terminalPositions, networkRect) {
+    }      _adjustLyricsPosition(terminalPositions, networkRect) {
         if (!this._viewerLyricsContainer) return;
 
         const containerHeight = Math.min(120, networkRect.height * 0.3);
-        let topPosition = 20;
+        let topPosition = 0; // 一番上から開始
 
         // 上部の端末との衝突をチェック
         const topTerminals = terminalPositions.filter(terminal => 
@@ -697,7 +699,7 @@ class NetworkRenderer {
 
         // 歌詞コンテナが画面外に出ないよう調整
         if (topPosition + containerHeight > networkRect.height - 40) {
-            topPosition = Math.max(20, networkRect.height - containerHeight - 40);
+            topPosition = Math.max(0, networkRect.height - containerHeight - 40); // 最小値を0に設定
         }
 
         // 端末の左右の位置も考慮してパディングを調整
