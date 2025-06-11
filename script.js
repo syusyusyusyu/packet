@@ -906,11 +906,11 @@ class NetworkRenderer {
                 
                 switch (deviceType) {
                     case 'smartphone':
-                        iconSize = '40px';
+                        iconSize = '50px';
                         labelSize = '11px';
                         break;
                     case 'mobile':
-                        iconSize = '50px';
+                        iconSize = '55px';
                         labelSize = '13px';
                         break;
                     case 'tablet':
