@@ -369,7 +369,7 @@
 
 /* ===== ターミナル・ルータラベル ===== */
 .terminal-label {
-    color: #ffd700 !important;
+    color: #ffffff !important;
     text-shadow: 
         0 1px 2px rgba(0, 0, 0, 0.8),
         0 2px 4px rgba(0, 0, 0, 0.6) !important;
