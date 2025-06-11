@@ -667,48 +667,61 @@
         text-align: center;
         margin-bottom: 0.5rem;
     }
-      .terminal {
-        width: 32px;
-        height: 32px;
-        font-size: 12px;
+    
+    /* ネットワーク要素のサイズ調整 */
+    .terminal {
+        width: 50px;
+        height: 50px;
+        font-size: 18px;
+        border-width: 2px;
     }
     
     .router {
-        width: 40px;
-        height: 40px;
+        width: 56px;
+        height: 56px;
+        border-width: 2px;
     }
     
     .router .text-sm {
-        font-size: 9px;
+        font-size: 11px;
     }
     
     .router-icon {
-        width: 16px;
-        height: 16px;
-        margin-bottom: 1px;
+        width: 22px;
+        height: 22px;
+        margin-bottom: 3px;
     }
-      .star-label {
-        width: 20px;
-        height: 20px;
-        font-size: 8px;
+    
+    .star-label, .port-label {
+        width: 24px;
+        height: 24px;
+        font-size: 11px;
     }
     
     .packet {
-        width: 24px;
-        height: 16px;
-        font-size: 8px;
+        width: 28px;
+        height: 18px;
+        font-size: 10px;
+        border-radius: 9px;
     }
     
     .connection {
-        height: 3px;
+        height: 2px;
     }
     
     .connection.active {
-        height: 4px;
+        height: 3px;
     }
     
+    /* 歌詞表示サイズ調整 */
     .viewer-lyric-char {
-        font-size: 16px;
+        font-size: 18px;
+    }
+    
+    .lyric-bubble {
+        padding: 6px 12px;
+        font-size: 14px;
+        border-radius: 12px;
     }
     
     .mobile-touch-area {
@@ -849,16 +862,17 @@
     .flex-col, .flex-row {
         flex-direction: column !important;
     }
-    
-    .terminal {
-        width: 48px;
-        height: 48px;
+      .terminal {
+        width: 56px;
+        height: 56px;
         font-size: 20px;
+        border-width: 2px;
     }
     
     .router {
-        width: 64px;
-        height: 64px;
+        width: 68px;
+        height: 68px;
+        border-width: 2px;
     }
     
     .router .text-sm {
@@ -866,21 +880,41 @@
     }
     
     .router-icon {
-        width: 26px;
-        height: 26px;
+        width: 28px;
+        height: 28px;
         margin-bottom: 4px;
     }
-      .star-label {
-        width: 32px;
-        height: 32px;
+    
+    .star-label, .port-label {
+        width: 30px;
+        height: 30px;
+        font-size: 12px;
     }
     
     .packet {
         width: 32px;
         height: 20px;
         font-size: 10px;
-    }    .viewer-lyric-char {
+        border-radius: 10px;
+    }
+    
+    .connection {
+        height: 3px;
+    }
+    
+    .connection.active {
+        height: 4px;
+    }
+    
+    /* 歌詞表示サイズ調整 */
+    .viewer-lyric-char {
         font-size: 20px;
+    }
+    
+    .lyric-bubble {
+        padding: 8px 14px;
+        font-size: 15px;
+        border-radius: 14px;
     }
     
     .mobile-control-button {
@@ -935,22 +969,39 @@
 /* ===== タブレット用最適化 ===== */
 @media (min-width: 768px) and (max-width: 1024px) {
     .terminal {
-        width: 52px;
-        height: 52px;
+        width: 62px;
+        height: 62px;
+        font-size: 22px;
+        border-width: 3px;
     }
     
     .router {
-        width: 70px;
-        height: 70px;
+        width: 72px;
+        height: 72px;
+        border-width: 3px;
     }
     
-    .viewer-lyric-char {
-        font-size: 22px;
+    .router .text-sm {
+        font-size: 13px;
     }
-      .star-label {
-        width: 32px;
-        height: 32px;
-        font-size: 14px;
+    
+    .router-icon {
+        width: 30px;
+        height: 30px;
+        margin-bottom: 5px;
+    }
+    
+    .star-label, .port-label {
+        width: 30px;
+        height: 30px;
+        font-size: 13px;
+    }
+    
+    .packet {
+        width: 34px;
+        height: 22px;
+        font-size: 11px;
+        border-radius: 11px;
     }
     
     .connection {
@@ -961,9 +1012,20 @@
         height: 6px;
     }
     
+    /* 歌詞表示サイズ調整 */
+    .viewer-lyric-char {
+        font-size: 22px;
+    }
+    
+    .lyric-bubble {
+        padding: 10px 16px;
+        font-size: 16px;
+        border-radius: 16px;
+    }
+    
     .mobile-touch-area {
-        width: 44px;
-        height: 44px;
+        width: 50px;
+        height: 50px;
     }
 }
 
