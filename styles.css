@@ -358,7 +358,6 @@
         opacity 0.5s ease-in,
         transform 0.5s ease-in;
 }
-
 .viewer-lyric-char.highlighted {
     color: rgba(255, 107, 203, 1);
     text-shadow: 
