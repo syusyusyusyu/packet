@@ -97,11 +97,14 @@ class NetworkModel {
                 terminalMargin = 40;
                 verticalPadding = 60;
                 break;
-        }        // 端末の位置を左右端に配置、上下に余白を持たせる
+        }        // 端末の位置を左右端に配置、上下に均一な余白を持たせる
         const leftX = edgeOffset;  // 左端に配置
         const rightX = containerWidth - edgeOffset;  // 右端に配置
-        let topY = edgeOffset + terminalMargin + verticalPadding;
-        let bottomY = containerHeight - edgeOffset - terminalMargin - verticalPadding;
+        
+        // 上下の余白を統一（edgeOffset + verticalPaddingで統一）
+        const uniformMargin = edgeOffset + verticalPadding;
+        let topY = uniformMargin;
+        let bottomY = containerHeight - uniformMargin;
         
         // 高さが低い場合の調整（端末が重ならないように）
         const minVerticalDistance = 80; // 端末間の最小距離
