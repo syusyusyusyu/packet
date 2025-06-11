@@ -642,14 +642,83 @@ class NetworkRenderer {
         this._displayedViewerLyrics = new Map();
         
         this._initializeViewerLyricsContainer();
-    }
-      _initializeViewerLyricsContainer() {
+    }      _initializeViewerLyricsContainer() {
         this._viewerLyricsContainer = document.getElementById('viewer-lyrics-container') || document.createElement('div');
         if (!this._viewerLyricsContainer.parentNode) {
-            this._viewerLyricsContainer.className = 'viewer-lyrics-container absolute top-12 left-0 right-0 flex flex-wrap justify-center items-center gap-2 py-2 px-4 overflow-hidden z-10 pointer-events-none text-2xl font-bold';
+            this._viewerLyricsContainer.className = 'viewer-lyrics-container absolute top-12 left-0 right-0 flex flex-wrap justify-center items-start gap-2 py-2 px-4 overflow-hidden z-10 pointer-events-none text-2xl font-bold';
             const networkEl = document.getElementById('network');
             if (networkEl) networkEl.appendChild(this._viewerLyricsContainer);
         }
+    }
+
+    // 端末位置を考慮した歌詞表示の調整
+    _adjustLyricsForTerminals() {
+        if (!this._viewerLyricsContainer || !this._model) return;
+
+        const nodes = this._model.getNodes();
+        const networkEl = document.getElementById('network');
+        if (!networkEl) return;
+
+        const networkRect = networkEl.getBoundingClientRect();
+        const terminalPositions = [];
+
+        // 端末（A, B, C, D）の位置を取得
+        ['A', 'B', 'C', 'D'].forEach(nodeId => {
+            const node = nodes[nodeId];
+            if (node) {
+                const scaledPos = this.scalePosition(node.x, node.y);
+                terminalPositions.push({
+                    id: nodeId,
+                    x: scaledPos.x,
+                    y: scaledPos.y,
+                    radius: 40 // 端末の影響範囲
+                });
+            }
+        });
+
+        // 歌詞コンテナの安全な配置位置を計算
+        this._adjustLyricsPosition(terminalPositions, networkRect);
+    }    _adjustLyricsPosition(terminalPositions, networkRect) {
+        if (!this._viewerLyricsContainer) return;
+
+        const containerHeight = Math.min(120, networkRect.height * 0.3);
+        let topPosition = 20;
+
+        // 上部の端末との衝突をチェック
+        const topTerminals = terminalPositions.filter(terminal => 
+            terminal.y < containerHeight + terminal.radius
+        );
+
+        if (topTerminals.length > 0) {
+            // 最も下にある端末の下に配置
+            const lowestTopTerminal = Math.max(...topTerminals.map(t => t.y + t.radius));
+            topPosition = Math.max(topPosition, lowestTopTerminal + 10);
+        }
+
+        // 歌詞コンテナが画面外に出ないよう調整
+        if (topPosition + containerHeight > networkRect.height - 40) {
+            topPosition = Math.max(20, networkRect.height - containerHeight - 40);
+        }
+
+        // 端末の左右の位置も考慮してパディングを調整
+        const leftTerminals = terminalPositions.filter(t => t.x < networkRect.width * 0.3);
+        const rightTerminals = terminalPositions.filter(t => t.x > networkRect.width * 0.7);
+        
+        let leftPadding = 20;
+        let rightPadding = 20;
+        
+        if (leftTerminals.length > 0) {
+            leftPadding = Math.max(40, ...leftTerminals.map(t => t.x + t.radius - networkRect.left));
+        }
+        
+        if (rightTerminals.length > 0) {
+            rightPadding = Math.max(40, networkRect.right - Math.min(...rightTerminals.map(t => t.x - t.radius)));
+        }
+
+        this._viewerLyricsContainer.style.top = `${topPosition}px`;
+        this._viewerLyricsContainer.style.maxHeight = `${containerHeight}px`;
+        this._viewerLyricsContainer.style.paddingLeft = `${leftPadding}px`;
+        this._viewerLyricsContainer.style.paddingRight = `${rightPadding}px`;
     }
       calculateScaleFactor() {
         const networkEl = document.getElementById('network');
@@ -702,8 +771,7 @@ class NetworkRenderer {
             y: (y * this._scaleFactor) + this._offsetY
         };
     }
-    
-    render() {
+      render() {
         const networkEl = document.getElementById('network');
         if (!networkEl) return;
         
@@ -726,6 +794,9 @@ class NetworkRenderer {
         if (Utils.isMobile()) {
             this._setupTouchTargets(networkEl);
         }
+
+        // レンダリング後に歌詞位置を調整
+        this._adjustLyricsForTerminals();
     }
     
     _renderConnections(networkEl) {
@@ -1058,10 +1129,12 @@ class NetworkRenderer {
                 }
             }
         }
-    }
-      displayViewerLyric(text) {
+    }      displayViewerLyric(text) {
         if (this._displayedViewerLyrics.has(text)) return;
         if (!this._viewerLyricsContainer) return;
+
+        // 端末位置を考慮した歌詞表示位置の調整
+        this._adjustLyricsForTerminals();
 
         const viewerChar = document.createElement('span');
         viewerChar.className = 'viewer-lyric-char';
@@ -1096,11 +1169,18 @@ class NetworkRenderer {
 
         requestAnimationFrame(() => {
             viewerChar.classList.add('active');
-        });
-
-        this._displayedViewerLyrics.set(text, {
+        });        this._displayedViewerLyrics.set(text, {
             element: viewerChar
         });
+
+        // 定期的に歌詞位置を再調整（特に動的な画面変更に対応）
+        const adjustmentInterval = setInterval(() => {
+            if (viewerChar.parentNode) {
+                this._adjustLyricsForTerminals();
+            } else {
+                clearInterval(adjustmentInterval);
+            }
+        }, 1000);
 
         setTimeout(() => {
             viewerChar.classList.add('fade-out');
@@ -1113,6 +1193,7 @@ class NetworkRenderer {
                     viewerChar.remove();
                 }
                 this._displayedViewerLyrics.delete(text);
+                clearInterval(adjustmentInterval);
             }, 500);
         }, 5000);
     }
@@ -2091,8 +2172,12 @@ class LyricsNetworkSimulation {
         this._renderer.render();
         this._uiController.updateRoutingTable();
         this._uiController.showInitialHelp();
+          window.addEventListener('resize', () => this.handleResize());
         
-        window.addEventListener('resize', () => this.handleResize());
+        // デバイスの向き変更にも対応
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => this.handleResize(), 100);
+        });
         
         window.addEventListener('beforeunload', () => {
             this.dispose();
@@ -2371,10 +2456,11 @@ class LyricsNetworkSimulation {
             Utils.removeElement(this._loadingOverlay);
         }
     }
-    
-    handleResize() {
+      handleResize() {
         this._renderer.calculateScaleFactor();
         this._renderer.render();
+        // 画面サイズ変更時に歌詞位置も再調整
+        this._renderer._adjustLyricsForTerminals();
     }
     
     isRunning() {

@@ -838,9 +838,19 @@
     
     .viewer-lyric-char {
         font-size: 20px;
-    }
-      .viewer-lyrics-container {
+    }      
+    
+    .viewer-lyrics-container {
         top: 20px !important;
+        line-height: 1.4 !important;
+        overflow-y: auto !important;
+        scrollbar-width: none !important; /* Firefox */
+        -ms-overflow-style: none !important; /* IE and Edge */
+        max-height: 30vh !important;
+    }
+    
+    .viewer-lyrics-container::-webkit-scrollbar {
+        display: none !important; /* Chrome, Safari, and Opera */
     }
     
     .mobile-control-button {
