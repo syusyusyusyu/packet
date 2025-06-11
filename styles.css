@@ -706,7 +706,7 @@
     
     /* ネットワーク可視化エリアを固定高さに */
     #network-container {
-        height: 60vh !important;
+        height: calc(100vh - 130px) !important;
         min-height: 300px;
         position: relative;
     }

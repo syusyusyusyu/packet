@@ -64,12 +64,12 @@ class NetworkModel {
         const baseScale = 1.2;
         
         this._nodes = {
-            A: { x: -35 * baseScale, y: 50 * baseScale, type: 'terminal', label: 'A', direction: 'right' },
-            B: { x: -35 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'B', direction: 'right' },
-            C: { x: 705 * baseScale, y: 50 * baseScale, type: 'terminal', label: 'C', direction: 'left' },
-            D: { x: 705 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'D', direction: 'left' },
-            X: { x: 190 * baseScale, y: 250 * baseScale, type: 'router', label: 'X' },
-            Y: { x: 480 * baseScale, y: 250 * baseScale, type: 'router', label: 'Y' }
+            A: { x: -200 * baseScale, y: 30 * baseScale, type: 'terminal', label: 'A', direction: 'right' },
+            B: { x: -200 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'B', direction: 'right' },
+            C: { x: 870 * baseScale, y: 30 * baseScale, type: 'terminal', label: 'C', direction: 'left' },
+            D: { x: 870 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'D', direction: 'left' },
+            X: { x: 155 * baseScale, y: 230 * baseScale, type: 'router', label: 'X' },
+            Y: { x: 515 * baseScale, y: 230 * baseScale, type: 'router', label: 'Y' }
         };
         
         this._connections = [
@@ -268,7 +268,7 @@ class TextAliveManager {
         this._player = new Player({
             app: {
                 token: "vP37NoaGGtVq40se",
-                name: "ミク☆スターネットワーク歌詞シミュレーター"
+                name: "シミュレーター"
             },
             player: {
                 mediaElement: document.createElement("audio"),
@@ -672,7 +672,7 @@ class NetworkRenderer {
         switch (deviceType) {
             case 'smartphone':
                 // スマートフォンはより小さくして、全体が見えるように
-                this._scaleFactor = Math.min(this._scaleFactor * 0.75, 0.6);
+                this._scaleFactor = Math.min(this._scaleFactor * 0.55, 0.45);
                 break;
             case 'mobile':
                 // 768px以下のモバイルデバイス
@@ -765,10 +765,10 @@ class NetworkRenderer {
             
             switch (deviceType) {
                 case 'smartphone':
-                    connectionHeight = '4px';
+                    connectionHeight = '3px';
                     break;
                 case 'mobile':
-                    connectionHeight = '5px';
+                    connectionHeight = '4px';
                     break;
                 case 'tablet':
                     connectionHeight = '4px';
@@ -805,12 +805,12 @@ class NetworkRenderer {
                 
                 switch (deviceType) {
                     case 'smartphone':
-                        portSize = '24px';
-                        fontSize = '10px';
+                        portSize = '18px';
+                        fontSize = '8px';
                         break;
                     case 'mobile':
-                        portSize = '28px';
-                        fontSize = '12px';
+                        portSize = '24px';
+                        fontSize = '10px';
                         break;
                     case 'tablet':
                         portSize = '32px';
@@ -855,12 +855,12 @@ class NetworkRenderer {
                 
                 switch (deviceType) {
                     case 'smartphone':
-                        iconSize = '45px';
-                        labelSize = '12px';
+                        iconSize = '40px';
+                        labelSize = '11px';
                         break;
                     case 'mobile':
-                        iconSize = '55px';
-                        labelSize = '14px';
+                        iconSize = '50px';
+                        labelSize = '13px';
                         break;
                     case 'tablet':
                         iconSize = '60px';
@@ -906,12 +906,12 @@ class NetworkRenderer {
                 
                 switch (deviceType) {
                     case 'smartphone':
-                        iconSize = '45px';
-                        labelSize = '12px';
+                        iconSize = '40px';
+                        labelSize = '11px';
                         break;
                     case 'mobile':
-                        iconSize = '55px';
-                        labelSize = '14px';
+                        iconSize = '50px';
+                        labelSize = '13px';
                         break;
                     case 'tablet':
                         iconSize = '60px';
