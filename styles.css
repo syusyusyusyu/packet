@@ -719,10 +719,10 @@
         background-color: transparent;
         z-index: 5;
         border-radius: 50%;
-    }
-      #network-container {
+    }    
+    #network-container {
         height: calc(100vh - 130px) !important;
-        min-height: 320px !important;
+        min-height: 400px !important;  /* より大きな最小高さを確保 */
         width: 100% !important;
     }
     
@@ -754,10 +754,10 @@
     #app-container {
         height: auto !important;
         min-height: 100vh;
-    }      /* ネットワーク可視化エリアを固定高さに */
+    }    /* ネットワーク可視化エリアを固定高さに */
     #network-container {
         height: calc(100vh - 130px) !important;
-        min-height: 380px;
+        min-height: 400px;  /* より大きな最小高さを確保 */
         position: relative;
     }
     
