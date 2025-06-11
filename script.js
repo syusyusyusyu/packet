@@ -71,34 +71,33 @@ class NetworkModel {
         containerWidth = Math.max(containerWidth, 300);
         containerHeight = Math.max(containerHeight, 200);        // デバイス別の調整
         const deviceType = Utils.getDeviceType();
-        let edgeOffset = 20;  // 画面端からの最小距離を小さく
-        let verticalPadding = 30; // 上下の余白を小さく
+        let edgeOffset = 40;  // 左右の余白を増やす
+        let verticalPadding = 50; // 上下の余白を増やす
         
         switch (deviceType) {
             case 'smartphone':
-                edgeOffset = 15;  // スマホではより端に近く
-                verticalPadding = 25;
+                edgeOffset = 30;  // スマホでは少し余白を持たせる
+                verticalPadding = 45;
                 break;
             case 'mobile':
-                edgeOffset = 18;  // モバイルでもより端に近く
-                verticalPadding = 28;
+                edgeOffset = 32;  // モバイルでも適度な余白
+                verticalPadding = 48;
                 break;
             case 'tablet':
-                edgeOffset = 20;
-                verticalPadding = 30;
+                edgeOffset = 40;
+                verticalPadding = 50;
                 break;
             default:
-                edgeOffset = 20;
-                verticalPadding = 30;
+                edgeOffset = 40;
+                verticalPadding = 50;
                 break;
         }
         
         // 端末の位置を左右端に配置、上下に均一な余白を持たせる
         const leftX = edgeOffset;  // 左端に配置
-        const rightX = containerWidth - edgeOffset;  // 右端に配置
-          // 上下の余白をより少なく（edgeOffsetのみを使用）
-        let topY = edgeOffset + 10;  // 上端からの最小余白
-        let bottomY = containerHeight - edgeOffset - 10;  // 下端からの最小余白
+        const rightX = containerWidth - edgeOffset;  // 右端に配置        // 上下の余白を適度に設定
+        let topY = edgeOffset + verticalPadding;  // 上端からの余白
+        let bottomY = containerHeight - edgeOffset - verticalPadding;  // 下端からの余白
         
         // 高さが低い場合の調整（端末が重ならないように）
         const minVerticalDistance = 80; // 端末間の最小距離
