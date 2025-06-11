@@ -642,11 +642,10 @@ class NetworkRenderer {
         this._displayedViewerLyrics = new Map();
         
         this._initializeViewerLyricsContainer();
-    }
-      _initializeViewerLyricsContainer() {
+    }    _initializeViewerLyricsContainer() {
         this._viewerLyricsContainer = document.getElementById('viewer-lyrics-container') || document.createElement('div');
         if (!this._viewerLyricsContainer.parentNode) {
-            this._viewerLyricsContainer.className = 'viewer-lyrics-container absolute top-16 left-0 right-0 flex flex-wrap justify-center items-center gap-2 py-2 px-4 overflow-hidden z-10 pointer-events-none text-2xl font-bold';
+            this._viewerLyricsContainer.className = 'viewer-lyrics-container absolute top-4 left-0 right-0 flex flex-wrap justify-center items-center gap-2 py-2 px-4 overflow-hidden z-10 pointer-events-none text-2xl font-bold';
             const networkEl = document.getElementById('network');
             if (networkEl) networkEl.appendChild(this._viewerLyricsContainer);
         }
