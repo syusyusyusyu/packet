@@ -75,22 +75,22 @@ class NetworkModel {
         const deviceType = Utils.getDeviceType();
         let edgeOffset = 50;  // 画面端からの最小距離
         let terminalMargin = 40;  // 端末の追加マージン
-        let verticalPadding = 60; // 上下の追加余白
-          switch (deviceType) {
+        let verticalPadding = 60; // 上下の追加余白        
+        switch (deviceType) {
             case 'smartphone':
-                edgeOffset = 35;  // 画面端からの余白を大幅に増加
-                terminalMargin = 40; // 端末のマージンも増加
-                verticalPadding = 50; // 上下余白も増加
+                edgeOffset = 50;  // PC版と同じ余白に
+                terminalMargin = 40;
+                verticalPadding = 60; // PC版と同じ余白に
                 break;
             case 'mobile':
-                edgeOffset = 40;
-                terminalMargin = 45;
+                edgeOffset = 50;  // PC版と同じ余白に
+                terminalMargin = 40;
                 verticalPadding = 60;
                 break;
             case 'tablet':
-                edgeOffset = 35;
-                terminalMargin = 30;
-                verticalPadding = 50;
+                edgeOffset = 50;
+                terminalMargin = 40;
+                verticalPadding = 60;
                 break;
             default:
                 edgeOffset = 50;
@@ -830,25 +830,24 @@ class NetworkRenderer {
                 const deviceType = Utils.getDeviceType();
                 let portSize = '40px';
                 let fontSize = '16px';
-                
-                switch (deviceType) {
+                  switch (deviceType) {
                     case 'smartphone':
-                        portSize = '18px';
-                        fontSize = '8px';
+                        portSize = '28px';  // 見やすいサイズに
+                        fontSize = '14px';  // PC版と同じフォントサイズに
                         break;
                     case 'mobile':
-                        portSize = '24px';
-                        fontSize = '10px';
+                        portSize = '28px';  // 見やすいサイズに
+                        fontSize = '14px';  // PC版と同じフォントサイズに
                         break;
                     case 'tablet':
-                        portSize = '32px';
-                        fontSize = '14px';
+                        portSize = '28px';  // 見やすいサイズに
+                        fontSize = '14px';  // PC版と同じフォントサイズに
                         break;
                     default:
-                        portSize = '40px';
-                        fontSize = '16px';
+                        portSize = '28px';
+                        fontSize = '14px';
                         break;
-                }                portLabelEl.style.setProperty('width', portSize, 'important');
+                }portLabelEl.style.setProperty('width', portSize, 'important');
                 portLabelEl.style.setProperty('height', portSize, 'important');
                 portLabelEl.style.setProperty('font-size', fontSize, 'important');
                 
@@ -880,19 +879,18 @@ class NetworkRenderer {
                 const deviceType = Utils.getDeviceType();
                 let iconSize = '70px';
                 let labelSize = '16px';
-                
-                switch (deviceType) {
+                  switch (deviceType) {
                     case 'smartphone':
-                        iconSize = '40px';
-                        labelSize = '11px';
+                        iconSize = '70px';  // PC版と同じサイズに
+                        labelSize = '16px'; // PC版と同じサイズに
                         break;
                     case 'mobile':
-                        iconSize = '50px';
-                        labelSize = '13px';
+                        iconSize = '70px';  // PC版と同じサイズに
+                        labelSize = '16px'; // PC版と同じサイズに
                         break;
                     case 'tablet':
-                        iconSize = '60px';
-                        labelSize = '15px';
+                        iconSize = '70px';  // PC版と同じサイズに
+                        labelSize = '16px'; // PC版と同じサイズに
                         break;
                     default:
                         iconSize = '70px';
@@ -931,19 +929,18 @@ class NetworkRenderer {
                 const deviceType = Utils.getDeviceType();
                 let iconSize = '70px';
                 let labelSize = '16px';
-                
-                switch (deviceType) {
+                  switch (deviceType) {
                     case 'smartphone':
-                        iconSize = '50px';
-                        labelSize = '11px';
+                        iconSize = '70px';  // PC版と同じサイズに
+                        labelSize = '16px'; // PC版と同じサイズに
                         break;
                     case 'mobile':
-                        iconSize = '55px';
-                        labelSize = '13px';
+                        iconSize = '70px';  // PC版と同じサイズに
+                        labelSize = '16px'; // PC版と同じサイズに
                         break;
                     case 'tablet':
-                        iconSize = '60px';
-                        labelSize = '15px';
+                        iconSize = '70px';  // PC版と同じサイズに
+                        labelSize = '16px'; // PC版と同じサイズに
                         break;
                     default:
                         iconSize = '70px';
@@ -1097,16 +1094,15 @@ class NetworkRenderer {
         // デバイスタイプに応じたフォントサイズ調整
         const deviceType = Utils.getDeviceType();
         let fontSize = '24px';
-        
-        switch (deviceType) {
+          switch (deviceType) {
             case 'smartphone':
-                fontSize = '18px';
+                fontSize = '24px';  // PC版と同じサイズに
                 break;
             case 'mobile':
-                fontSize = '20px';
+                fontSize = '24px';  // PC版と同じサイズに
                 break;
             case 'tablet':
-                fontSize = '22px';
+                fontSize = '24px';  // PC版と同じサイズに
                 break;
             default:
                 fontSize = '24px';
