@@ -753,7 +753,7 @@ class NetworkRenderer {
                 break;
             case 'medium-desktop':
                 // 1120px付近の中サイズデスクトップ - 適度にスケーリング
-                this._scaleFactor = Math.min(this._scaleFactor * 0.95, 0.9);
+                this._scaleFactor = Math.min(this._scaleFactor * 0.80, 0.9);
                 break;
             default:
                 // デスクトップはそのまま
