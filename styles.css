@@ -937,6 +937,54 @@
     }
 }
 
+/* ===== 中サイズデスクトップ用最適化（1120px付近対応） ===== */
+@media (min-width: 1024px) and (max-width: 1200px) {
+    .terminal {
+        width: 48px;
+        height: 48px;
+        font-size: 20px;
+    }
+    
+    .router {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .router .text-sm {
+        font-size: 12px;
+    }
+    
+    .router-icon {
+        width: 28px;
+        height: 28px;
+        margin-bottom: 4px;
+    }
+    
+    .star-label, .port-label {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+    
+    .packet {
+        width: 30px;
+        height: 20px;
+        font-size: 10px;
+    }
+    
+    .connection {
+        height: 3px;
+    }
+    
+    .connection.active {
+        height: 5px;
+    }
+    
+    .viewer-lyric-char {
+        font-size: 23px;
+    }
+}
+
 /* ===== デスクトップ用最適化 ===== */
 @media (min-width: 1536px) {
     .container {

@@ -18,11 +18,11 @@ const Utils = {
     isMobile: () => window.innerWidth <= 768,
     isTablet: () => window.innerWidth > 768 && window.innerWidth <= 1024,
     isSmartphone: () => window.innerWidth <= 640,
-    
-    getDeviceType: () => {
+      getDeviceType: () => {
         if (window.innerWidth <= 640) return 'smartphone';
         if (window.innerWidth <= 768) return 'mobile';
         if (window.innerWidth <= 1024) return 'tablet';
+        if (window.innerWidth <= 1200) return 'medium-desktop'; // 1120px付近対応
         return 'desktop';
     },
     
@@ -738,8 +738,7 @@ class NetworkRenderer {
         
         // デバイスタイプに応じたスケーリング調整
         const deviceType = Utils.getDeviceType();
-        
-        switch (deviceType) {
+          switch (deviceType) {
             case 'smartphone':
                 // スマートフォンはより小さくして、全体が見えるように
                 this._scaleFactor = Math.min(this._scaleFactor * 0.75, 0.6);
@@ -751,6 +750,10 @@ class NetworkRenderer {
             case 'tablet':
                 // タブレットは少し小さめだが見やすく
                 this._scaleFactor = Math.min(this._scaleFactor * 0.9, 0.85);
+                break;
+            case 'medium-desktop':
+                // 1120px付近の中サイズデスクトップ - 適度にスケーリング
+                this._scaleFactor = Math.min(this._scaleFactor * 0.95, 0.9);
                 break;
             default:
                 // デスクトップはそのまま
@@ -869,8 +872,7 @@ class NetworkRenderer {
                 portLabelEl.style.left = `${midX}px`;
                 portLabelEl.style.top = `${midY}px`;
                 portLabelEl.title = `ポート ${connection.portLabel}: ${connection.from} → ${connection.to}`;
-                
-                // デバイスタイプに応じたポートラベルサイズ調整
+                  // デバイスタイプに応じたポートラベルサイズ調整
                 const deviceType = Utils.getDeviceType();
                 let portSize = '40px';
                 let fontSize = '16px';
@@ -888,11 +890,15 @@ class NetworkRenderer {
                         portSize = '32px';
                         fontSize = '14px';
                         break;
+                    case 'medium-desktop':
+                        portSize = '36px';
+                        fontSize = '15px';
+                        break;
                     default:
                         portSize = '40px';
                         fontSize = '16px';
                         break;
-                }                portLabelEl.style.setProperty('width', portSize, 'important');
+                }portLabelEl.style.setProperty('width', portSize, 'important');
                 portLabelEl.style.setProperty('height', portSize, 'important');
                 portLabelEl.style.setProperty('font-size', fontSize, 'important');
                 
@@ -913,8 +919,8 @@ class NetworkRenderer {
             
             if (this._activeElements.has(id)) {
                 nodeEl.classList.add('active');
-            }
-              if (node.type === 'terminal') {
+            }            
+            if (node.type === 'terminal') {
                 nodeEl.classList.add('terminal');
                 const pcIcon = document.createElement('img');
                 pcIcon.src = './images/54F75B51-169C-4AAC-B781-D459DFE38F65.png';
@@ -935,6 +941,10 @@ class NetworkRenderer {
                         labelSize = '14px';
                         break;
                     case 'tablet':
+                        iconSize = '60px';
+                        labelSize = '15px';
+                        break;
+                    case 'medium-desktop':
                         iconSize = '60px';
                         labelSize = '15px';
                         break;
@@ -964,8 +974,7 @@ class NetworkRenderer {
                 nodeEl.appendChild(label);
                 
                 nodeEl.addEventListener('click', () => this._onTerminalClick(id));
-                nodeEl.title = `端末 ${id}`;
-            } else if (node.type === 'router') {
+                nodeEl.title = `端末 ${id}`;            } else if (node.type === 'router') {
                 nodeEl.classList.add('router');
                 const pcIcon = document.createElement('img');
                 pcIcon.src = './images/B9CF8581-D931-4993-96B8-7E10B00DB6EA.png';
@@ -987,6 +996,10 @@ class NetworkRenderer {
                         break;
                     case 'tablet':
                         iconSize = '60px';
+                        labelSize = '15px';
+                        break;
+                    case 'medium-desktop':
+                        iconSize = '65px';
                         labelSize = '15px';
                         break;
                     default:
@@ -1141,8 +1154,7 @@ class NetworkRenderer {
         const viewerChar = document.createElement('span');
         viewerChar.className = 'viewer-lyric-char';
         viewerChar.textContent = text;
-        
-        // デバイスタイプに応じたフォントサイズ調整
+          // デバイスタイプに応じたフォントサイズ調整
         const deviceType = Utils.getDeviceType();
         let fontSize = '24px';
         
@@ -1155,6 +1167,9 @@ class NetworkRenderer {
                 break;
             case 'tablet':
                 fontSize = '22px';
+                break;
+            case 'medium-desktop':
+                fontSize = '23px';
                 break;
             default:
                 fontSize = '24px';
