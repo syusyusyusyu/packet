@@ -64,10 +64,10 @@ class NetworkModel {
         const baseScale = 1.2;
         
         this._nodes = {
-            A: { x: -35 * baseScale, y: 50 * baseScale, type: 'terminal', label: 'A', direction: 'right' },
-            B: { x: -35 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'B', direction: 'right' },
-            C: { x: 705 * baseScale, y: 50 * baseScale, type: 'terminal', label: 'C', direction: 'left' },
-            D: { x: 705 * baseScale, y: 450 * baseScale, type: 'terminal', label: 'D', direction: 'left' },
+            A: { x: -35 * baseScale, y: 70 * baseScale, type: 'terminal', label: 'A', direction: 'right' },
+            B: { x: -35 * baseScale, y: 430 * baseScale, type: 'terminal', label: 'B', direction: 'right' },
+            C: { x: 705 * baseScale, y: 70 * baseScale, type: 'terminal', label: 'C', direction: 'left' },
+            D: { x: 705 * baseScale, y: 430 * baseScale, type: 'terminal', label: 'D', direction: 'left' },
             X: { x: 190 * baseScale, y: 250 * baseScale, type: 'router', label: 'X' },
             Y: { x: 480 * baseScale, y: 250 * baseScale, type: 'router', label: 'Y' }
         };
@@ -132,8 +132,8 @@ class LogManager {
 
     addEntry(message, type = 'info') {
         this._pendingEntries.push({ message, type, timestamp: new Date() });
-    }
-
+    }    
+    
     _flushEntries() {
         if (!this._pendingEntries.length) return;
         if (!this._container && !this._mobileContainer) return;
@@ -141,7 +141,7 @@ class LogManager {
         this._pendingEntries.forEach(entry => {
             const logEntry = this._createLogEntryElement(entry);
             
-            if (window.innerWidth > 1024 && this._container) {
+            if (window.innerWidth > 1200 && this._container) {
                 this._container.appendChild(logEntry.cloneNode(true));
                 this._limitLogEntries(this._container);
                 this._scrollToBottom(this._container);
@@ -943,9 +943,8 @@ class NetworkRenderer {
                     case 'tablet':
                         iconSize = '60px';
                         labelSize = '15px';
-                        break;
-                    case 'medium-desktop':
-                        iconSize = '60px';
+                        break;                    case 'medium-desktop':
+                        iconSize = '58px';
                         labelSize = '15px';
                         break;
                     default:
@@ -1002,8 +1001,7 @@ class NetworkRenderer {
                     case 'tablet':
                         iconSize = '60px';
                         labelSize = '15px';
-                        break;
-                    case 'medium-desktop':
+                        break;                    case 'medium-desktop':
                         iconSize = '65px';
                         labelSize = '15px';
                         break;
