@@ -977,7 +977,12 @@ class NetworkRenderer {
                 nodeEl.title = `端末 ${id}`;            } else if (node.type === 'router') {
                 nodeEl.classList.add('router');
                 const pcIcon = document.createElement('img');
-                pcIcon.src = './images/B9CF8581-D931-4993-96B8-7E10B00DB6EA.png';
+                // ルータYの場合は異なる画像を使用
+                if (id === 'Y') {
+                    pcIcon.src = './images/E2F9A4A1-8021-4483-8B61-2FECD120E824.png';
+                } else {
+                    pcIcon.src = './images/B9CF8581-D931-4993-96B8-7E10B00DB6EA.png';
+                }
                 pcIcon.classList.add('pc-icon');
                 
                 // デバイスタイプに応じたアイコンサイズ調整
