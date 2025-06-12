@@ -940,8 +940,8 @@
 /* ===== 中サイズデスクトップ用最適化（1120px付近対応） ===== */
 @media (min-width: 1024px) and (max-width: 1200px) {
     .terminal {
-        width: 50px;
-        height: 50px;
+        width: 52px;
+        height: 52px;
         font-size: 20px;
     }
     
