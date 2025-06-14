@@ -765,6 +765,16 @@ video {
   min-height: 400px;
 }
 
+.min-h-0 {
+  min-height: 0px;
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+/* 全画面用の高さクラス */
+
 .w-1\/2 {
   width: 50%;
 }
@@ -1675,9 +1685,7 @@ video {
   .lg\:px-3 {
     padding-left: 0.75rem;
     padding-right: 0.75rem;
-  }
-
-  .lg\:px-8 {
+  }  .lg\:px-8 {
     padding-left: 2rem;
     padding-right: 2rem;
   }

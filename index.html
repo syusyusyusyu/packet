@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" class="h-full">
 <head>
     <link rel="icon" href="./images/favicon.ico" sizes="32x32">
     <meta charset="UTF-8">
@@ -12,7 +12,7 @@
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script src="https://unpkg.com/textalive-app-api/dist/index.js"></script>
 </head>
-<body class="starry-bg font-sans text-white touch-manipulation">
+<body class="starry-bg font-sans text-white touch-manipulation h-full overflow-hidden">
     <!-- 流れ星の背景エフェクト -->
     <div class="meteor-container fixed inset-0 pointer-events-none">
         <div class="meteor" style="--delay: 0; top: 10%; left: 80%;"></div>
@@ -31,11 +31,9 @@
         <div class="floating-star" style="--delay: 5.5; top: 5%; left: 55%;"></div>
         <div class="floating-star" style="--delay: 0.8; top: 75%; left: 45%;"></div>
         <div class="floating-star" style="--delay: 1.8; top: 35%; left: 75%;"></div>
-    </div>
-
-    <div id="app-container" class="w-full flex flex-col">
+    </div>    <div id="app-container" class="h-full flex flex-col">
         <!-- ヘッダー部分 -->
-        <div class="bg-space-900 bg-opacity-80 shadow-md border-b border-miku-400">
+        <div class="bg-space-900 bg-opacity-80 shadow-md border-b border-miku-400 flex-shrink-0">
             <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16">
                     <div class="flex items-center">
@@ -60,7 +58,7 @@
         </div>
 
         <!-- コントロールパネル -->
-        <div class="bg-space-900 bg-opacity-80 shadow-lg border-b-2 border-miku-400 py-2 sm:py-4">
+        <div class="bg-space-900 bg-opacity-80 shadow-lg border-b-2 border-miku-400 py-2 sm:py-4 flex-shrink-0">
             <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex flex-col sm:flex-row flex-wrap items-center gap-2 sm:gap-3 lg:gap-5 control-panel">
                     <div class="w-full sm:w-auto flex items-center bg-space-800 bg-opacity-80 rounded-lg px-2 py-2 border border-miku-400 control-group">
@@ -120,15 +118,13 @@
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- メインコンテンツ -->
-        <div class="flex-1">
-            <div class="max-w-none mx-auto px-1 sm:px-2 lg:px-3">
-                <div class="flex flex-col lg:flex-row gap-2 sm:gap-4">
+        </div>        <!-- メインコンテンツ -->
+        <div class="flex-1 min-h-0">
+            <div class="max-w-none mx-auto px-1 sm:px-2 lg:px-3 h-full">
+                <div class="flex flex-col lg:flex-row gap-2 sm:gap-4 h-full">
                     <!-- ネットワーク表示エリア -->
-                    <div id="network-container" class="flex-1 bg-space-900 bg-opacity-80 rounded-xl shadow-glassy border border-miku-400 overflow-hidden flex flex-col relative">
-                        <div class="px-3 sm:px-5 py-2 sm:py-3 flex justify-between items-center border-b border-miku-400 bg-space-800 bg-opacity-80">
+                    <div id="network-container" class="flex-1 bg-space-900 bg-opacity-80 rounded-xl shadow-glassy border border-miku-400 overflow-hidden flex flex-col relative min-h-0">
+                        <div class="px-3 sm:px-5 py-2 sm:py-3 flex justify-between items-center border-b border-miku-400 bg-space-800 bg-opacity-80 flex-shrink-0">
                             <h2 class="text-lg sm:text-xl font-display font-semibold text-white flex items-center">
                                 <svg class="h-5 w-5 sm:h-6 sm:w-6 mr-2 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
@@ -138,9 +134,8 @@
                             <div id="packet-counter" class="text-xs sm:text-sm font-medium text-white bg-space-800 bg-opacity-90 rounded-full px-2 sm:px-4 py-1 sm:py-1.5 shadow-sm border border-miku-400 packet-counter">
                                 アクティブな歌詞: <span class="font-bold text-miku-300">0</span>
                             </div>
-                        </div>
-                        <!-- クロスブラウザ対応のネットワークコンテナ -->
-                        <div class="relative w-full flex-1 min-h-[400px]">
+                        </div>                        <!-- クロスブラウザ対応のネットワークコンテナ -->
+                        <div class="relative w-full flex-1 min-h-0 overflow-hidden">
                             <div class="absolute inset-0 p-2">
                                 <div id="network" class="w-full h-full bg-space-900 bg-opacity-80 rounded-lg overflow-hidden starry-bg pinch-zoom-container">
                                     <!-- ネットワーク可視化はここに動的に表示されます -->
@@ -149,13 +144,10 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <!-- デスクトップ用サイドバー (lg以上の画面サイズでのみ表示) -->
+                    </div>                      <!-- デスクトップ用サイドバー (lg以上の画面サイズでのみ表示) -->
                     <div id="sidebar" class="hidden lg:block w-80 lg:w-96 flex-shrink-0">
-                        <div class="bg-space-900 bg-opacity-80 rounded-xl shadow-glassy-sm border border-miku-400 overflow-hidden h-full flex flex-col">
-                            <!-- タブ切り替えボタン -->
-                            <div class="flex border-b border-miku-400">
+                        <div class="bg-space-900 bg-opacity-80 rounded-xl shadow-glassy-sm border border-miku-400 overflow-hidden h-full flex flex-col min-h-0">                            <!-- タブ切り替えボタン -->
+                            <div class="flex border-b border-miku-400 flex-shrink-0">
                                 <button class="tab-button active flex-1 text-center text-white" data-tab="log-tab">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1.5 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -169,10 +161,9 @@
                                     ルーティング
                                 </button>
                             </div>
-                            
-                            <!-- ルーティングテーブルのタブコンテンツ -->
-                            <div id="routing-tab" class="tab-content flex-1 overflow-hidden">
-                                <div class="p-4 border-b border-miku-400 bg-space-800 bg-opacity-80">
+                              <!-- ルーティングテーブルのタブコンテンツ -->
+                            <div id="routing-tab" class="tab-content flex-1 overflow-hidden min-h-0">
+                                <div class="p-4 border-b border-miku-400 bg-space-800 bg-opacity-80 flex-shrink-0">
                                     <div class="flex items-center mb-2">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2.5 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2-2 0 01-2-2z" />
@@ -180,8 +171,7 @@
                                         <h2 class="text-lg font-display font-semibold text-white">ルーティングテーブル</h2>
                                     </div>
                                     <p class="text-sm text-white ml-7">各ルータが歌詞を転送する際の経路決定基準</p>
-                                </div>
-                                <div class="p-4 flex-1 overflow-y-auto">
+                                </div>                                <div class="p-4 flex-1 overflow-y-auto min-h-0">
                                     <div class="overflow-x-auto rounded-lg border border-miku-400">
                                         <table id="routing-table" class="min-w-full divide-y divide-miku-800 table-fixed">
                                             <thead>
@@ -197,10 +187,9 @@
                                     </div>
                                 </div>
                             </div>
-                            
-                            <!-- 歌詞ログのタブコンテンツ -->
-                            <div id="log-tab" class="tab-content active flex-1 overflow-hidden">
-                                <div class="p-3 border-b border-miku-400 bg-space-800 bg-opacity-80">
+                              <!-- 歌詞ログのタブコンテンツ -->
+                            <div id="log-tab" class="tab-content active flex-1 overflow-hidden min-h-0">
+                                <div class="p-3 border-b border-miku-400 bg-space-800 bg-opacity-80 flex-shrink-0">
                                     <div class="flex items-center">
                                         <h2 class="text-lg font-display font-semibold text-white flex items-center">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2.5 text-miku-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -210,7 +199,7 @@
                                         </h2>
                                     </div>
                                 </div>
-                                <div id="log-container" class="flex-1 overflow-y-auto bg-space-900 bg-opacity-70 h-[calc(100vh-340px)]">
+                                <div id="log-container" class="flex-1 overflow-y-auto bg-space-900 bg-opacity-70 min-h-0">
                                     <div id="log-entries" class="p-3 space-y-2">
                                         <!-- ログエントリーがここに追加されます -->
                                     </div>
@@ -219,9 +208,8 @@
                         </div>
                     </div>
                 </div>
-                
-                <!-- モバイル用タブパネル (新規追加) -->
-                <div id="mobile-tabs-container" class="mt-4 block lg:hidden">
+                  <!-- モバイル用タブパネル (新規追加) -->
+                <div id="mobile-tabs-container" class="mt-4 block xl:hidden">
                     <div class="bg-space-900 bg-opacity-80 rounded-xl shadow-glassy-sm border border-miku-400 overflow-hidden">
                         <!-- モバイル用タブ切り替えボタン -->
                         <div class="flex border-b border-miku-400">

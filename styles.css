@@ -1,3 +1,34 @@
+/* ===== 基本設定 ===== */
+html, body {
+    height: 100%;
+    overflow: hidden;
+}
+
+/* デスクトップ以外では通常のスクロールを許可 */
+@media (max-width: 1023px) {
+    html, body {
+        height: auto;
+        min-height: 100%;
+        overflow: visible;
+    }
+}
+
+/* アプリ全体のレイアウト */
+#app-container {
+    height: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* モバイルでは固定の高さ制限を解除 */
+@media (max-width: 1023px) {
+    #app-container {
+        height: auto;
+        min-height: 100vh;
+    }
+}
+
 /* ===== フォント読み込み ===== */
 @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@300;400;500;700&family=Zen+Maru+Gothic:wght@400;500;700&display=swap');
 
@@ -293,6 +324,46 @@
     color: #000;
 }
 
+/* ===== 装飾画像 ===== */
+.decoration-image {
+    transition: all 0.3s ease-in-out;
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+    object-fit: contain;
+    max-width: 90%; /* 画面幅の90%を超えないように */
+    max-height: 40vh; /* ビューポート高さの40%を超えないように */
+}
+
+.decoration-image:hover {
+    transform: translate(-50%, -50%) scale(1.05);
+    filter: drop-shadow(0 4px 12px rgba(57, 240, 236, 0.4));
+}
+
+@keyframes decoration-float {
+    0%, 100% { transform: translate(-50%, -50%) translateY(0px); }
+    50% { transform: translate(-50%, -50%) translateY(-5px); }
+}
+
+.decoration-image.floating {
+    animation: decoration-float 3s ease-in-out infinite;
+}
+
+/* デバイス別装飾画像調整 */
+@media (max-width: 640px) {
+    .decoration-image {
+        opacity: 0.7;
+        max-width: 80%; /* スマートフォンではさらに小さく */
+        max-height: 30vh; /* スマートフォンではさらに低く */
+    }
+}
+
+/* タブレット用調整 */
+@media (min-width: 641px) and (max-width: 1024px) {
+    .decoration-image {
+        max-width: 85%;
+        max-height: 35vh;
+    }
+}
+
 .star-label.active, .port-label.active {
     transform: translate(-50%, -50%) scale(1.25);
     background-color: #ff6bcb;
@@ -547,15 +618,16 @@
 
 /* ===== レイアウト ===== */
 #network-container {
-    min-height: calc(100vh - 130px);
+    min-height: 0;
+    flex: 1;
 }
 
 #sidebar {
     width: 380px;
-    max-height: calc(100vh - 130px);
-    display: grid;
-    grid-template-rows: minmax(0, auto) minmax(0, 1fr);
-    gap: 1rem;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 .routing-table-container {
@@ -564,8 +636,8 @@
 }
 
 #log-container {
-    height: auto;
-    max-height: calc(55vh - 130px);
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
 }
 
@@ -699,7 +771,7 @@
 
 @media (max-width: 768px) {
     /* モバイルで本体をスクロール可能に */
-    body {
+    html, body {
         overflow-y: auto !important;
         height: auto !important;
     }
@@ -708,12 +780,12 @@
         height: auto !important;
         min-height: 100vh;
     }
-    
-    /* ネットワーク可視化エリアを固定高さに */
+      /* ネットワーク可視化エリアを固定高さに */
     #network-container {
-        height: 60vh !important;
-        min-height: 300px;
+        height: 55vh !important; /* 60vh -> 55vhに調整 */
+        min-height: 320px; /* 300px -> 320pxに増加 */
         position: relative;
+        flex: none;
     }
     
     #network {
@@ -902,8 +974,46 @@
     }
 }
 
-/* ===== タブレット用最適化 ===== */
+/* ===== タブレット用最適化（768px-1024px）===== */
 @media (min-width: 768px) and (max-width: 1023px) {
+    /* モバイルと同様の縦方向レイアウトを適用 */
+    html, body {
+        overflow-y: auto !important;
+        height: auto !important;
+    }
+    
+    #app-container {
+        height: auto !important;
+        min-height: 100vh;
+    }
+    
+    /* ネットワーク可視化エリアを固定高さに */
+    #network-container {
+        height: 65vh !important; /* 60vh -> 65vhに増加 */
+        min-height: 350px; /* 300px -> 350pxに増加 */
+        position: relative;
+        flex: none;
+    }
+    
+    #network {
+        position: absolute !important;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
+      /* モバイル用タブコンテンツを表示 */
+    #mobile-tabs-container {
+        display: block !important;
+    }
+    
+    /* モバイル用ログコンテナの高さ調整 */
+    #mobile-log-container {
+        max-height: 35vh !important;
+        min-height: 200px;
+    }
+    
     .terminal {
         width: 52px;
         height: 52px;
@@ -937,55 +1047,44 @@
     }
 }
 
-/* ===== 中サイズデスクトップ用最適化（1120px付近対応） ===== */
-@media (min-width: 1024px) and (max-width: 1200px) {
-    .terminal {
-        width: 52px;
-        height: 52px;
-        font-size: 20px;
+/* ===== デスクトップ用最適化（1024px以上）===== */
+@media (min-width: 1024px) {
+    /* デスクトップレイアウトの確保 */
+    html, body {
+        height: 100% !important;
+        overflow: hidden !important;
     }
     
-    .router {
-        width: 70px;
-        height: 70px;
+    #app-container {
+        height: 100% !important;
+        min-height: 100vh;
     }
     
-    .router .text-sm {
-        font-size: 12px;
+    #network-container {
+        height: auto !important;
+        min-height: 0 !important;
+        position: relative;
+        flex: 1;
     }
     
-    .router-icon {
-        width: 28px;
-        height: 28px;
-        margin-bottom: 4px;
+    #network {
+        position: static !important;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
     }
     
-    .star-label, .port-label {
-        width: 28px;
-        height: 28px;
-        font-size: 12px;
+    /* デスクトップ用サイドバーを表示 */
+    #sidebar {
+        display: block !important;
     }
     
-    .packet {
-        width: 30px;
-        height: 20px;
-        font-size: 10px;
-    }
-    
-    .connection {
-        height: 3px;
-    }
-    
-    .connection.active {
-        height: 5px;
-    }
-    
-    .viewer-lyric-char {
-        font-size: 23px;
+    /* モバイル用タブコンテンツを非表示 */
+    #mobile-tabs-container {
+        display: none !important;
     }
 }
 
-/* ===== デスクトップ用最適化 ===== */
 @media (min-width: 1536px) {
     .container {
         max-width: none;
