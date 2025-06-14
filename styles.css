@@ -4,17 +4,7 @@ html, body {
     overflow: hidden;
 }
 
-/* 上部歌詞表示を完全に無効化 */
-.viewer-lyrics-container,
-#viewer-lyrics-container {
-    display: none !important;
-    visibility: hidden !important;
-}
 
-.viewer-lyric-char {
-    display: none !important;
-    visibility: hidden !important;
-}
 
 /* デスクトップ以外では通常のスクロールを許可 */
 @media (max-width: 1023px) {
@@ -413,36 +403,6 @@ html, body {
     box-shadow: 0 0 15px rgba(255, 107, 203, 0.7);
 }
 
-/* ===== 視聴用歌詞 ===== */
-.viewer-lyric-char {
-    display: inline-block;
-    color: white;
-    font-weight: bold;
-    opacity: 0;
-    transform: translateY(20px);
-    transition: 
-        opacity 0.3s ease-out,
-        transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.viewer-lyric-char.active {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.viewer-lyric-char.fade-out {
-    opacity: 0;
-    transform: translateY(-20px);
-    transition: 
-        opacity 0.5s ease-in,
-        transform 0.5s ease-in;
-}
-
-.viewer-lyric-char.highlighted {
-    color: rgba(255, 107, 203, 1);
-    transform: scale(1.1);
-}
-
 /* ===== ログエントリー ===== */
 .log-entry {
     background-color: rgba(16, 37, 70, 0.75);
@@ -756,13 +716,8 @@ html, body {
     .connection {
         height: 4px;
     }
-    
-    .connection.active {
+      .connection.active {
         height: 6px;
-    }
-    
-    .viewer-lyric-char {
-        font-size: 18px;
     }
     
     .mobile-touch-area {
@@ -920,23 +875,6 @@ html, body {
         font-size: 10px;
     }
     
-    .viewer-lyric-char {
-        font-size: 20px;
-    }      
-      
-    .viewer-lyrics-container {
-        top: 0px !important;
-        line-height: 1.4 !important;
-        overflow-y: auto !important;
-        scrollbar-width: none !important; /* Firefox */
-        -ms-overflow-style: none !important; /* IE and Edge */
-        max-height: 30vh !important;
-    }
-    
-    .viewer-lyrics-container::-webkit-scrollbar {
-        display: none !important; /* Chrome, Safari, and Opera */
-    }
-    
     .mobile-control-button {
         width: 56px;
         height: 56px;
@@ -1033,12 +971,7 @@ html, body {
     
     .router {
         width: 70px;
-        height: 70px;
-    }
-    
-    .viewer-lyric-char {
-        font-size: 22px;
-    }
+        height: 70px;    }
       .star-label {
         width: 32px;
         height: 32px;
