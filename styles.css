@@ -352,7 +352,6 @@ html, body {
 /* デバイス別装飾画像調整 */
 @media (max-width: 640px) {
     .decoration-image {
-        opacity: 0.7;
         max-width: 80%; /* スマートフォンではさらに小さく */
         max-height: 30vh; /* スマートフォンではさらに低く */
     }

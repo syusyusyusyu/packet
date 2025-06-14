@@ -1,6 +1,7 @@
 /**
  * Miku Network - TextAlive API統合版
  * モバイル対応強化版 - 2ルーター構成
+ * 送信先別装飾画像対応版
  */
 
 // 曲のデータ
@@ -13,16 +14,53 @@ const songsData = [
     { id: 6, title: "ロンリーラン", artist: "海風太陽", apiToken: "fI0SyBEEBzlB2f5C", songUrl: "https://piapro.jp/t/CyPO/20250128183915" }
 ];
 
+// 送信先別装飾画像設定
+const destinationDecorations = {
+    A: {
+        images: [
+            './images/A220DA46-3572-4975-88AC-F4CAEAB63C95.png',
+            './images/A220DA46-3572-4975-88AC-F4CAEAB63C95 - コピー.png'
+        ],
+        position: { x: 50, y: 75 }, // 端末BとDの間（画面下部中央）
+        interval: 500 // 0.5秒
+    },
+    B: {
+        // モック: 送信先Bの場合は左側に単一画像
+        images: ['./images/A220DA46-3572-4975-88AC-F4CAEAB63C95.png',
+            './images/A220DA46-3572-4975-88AC-F4CAEAB63C95 - コピー.png'
+        ],
+        position: { x: 20, y: 50 },
+        interval: null // アニメーションなし
+    },
+    C: {
+        // モック: 送信先Cの場合は右上に浮遊アニメーション
+        images: ['./images/A220DA46-3572-4975-88AC-F4CAEAB63C95.png',
+            './images/A220DA46-3572-4975-88AC-F4CAEAB63C95 - コピー.png'
+        ],
+        position: { x: 80, y: 20 },
+        interval: null,
+        floating: true // 浮遊アニメーション
+    },
+    D: {
+        // モック: 送信先Dの場合は右下で点滅
+        images: ['./images/A220DA46-3572-4975-88AC-F4CAEAB63C95.png',
+            './images/A220DA46-3572-4975-88AC-F4CAEAB63C95 - コピー.png'],
+        position: { x: 80, y: 80 },
+        interval: 1000, // 1秒間隔で点滅
+        blinking: true
+    }
+};
+
 // ===== ユーティリティ関数 =====
 const Utils = {
     isMobile: () => window.innerWidth <= 768,
     isTablet: () => window.innerWidth > 768 && window.innerWidth <= 1024,
     isSmartphone: () => window.innerWidth <= 640,
-      getDeviceType: () => {
+    getDeviceType: () => {
         if (window.innerWidth <= 640) return 'smartphone';
         if (window.innerWidth <= 768) return 'mobile';
         if (window.innerWidth <= 1024) return 'tablet';
-        if (window.innerWidth <= 1200) return 'medium-desktop'; // 1120px付近対応
+        if (window.innerWidth <= 1200) return 'medium-desktop';
         return 'desktop';
     },
     
@@ -132,7 +170,7 @@ class LogManager {
 
     addEntry(message, type = 'info') {
         this._pendingEntries.push({ message, type, timestamp: new Date() });
-    }    
+    }
     
     _flushEntries() {
         if (!this._pendingEntries.length) return;
@@ -186,7 +224,9 @@ class LogManager {
         if (logContainer) {
             logContainer.scrollTop = logContainer.scrollHeight;
         }
-    }    dispose() {
+    }
+
+    dispose() {
         if (this._updateInterval) {
             clearInterval(this._updateInterval);
             this._updateInterval = null;
@@ -291,10 +331,10 @@ class TextAliveManager {
             video: { apiKey: initialSong.apiToken }
         });
     }
-      _handleVideoReady(v) {
+
+    _handleVideoReady(v) {
         console.log('楽曲準備完了:', v);
         
-        // TextAlive Playerの利用可能メソッドをデバッグログに出力
         if (this._player) {
             console.log('Player利用可能メソッド:', {
                 hasRequestSeek: typeof this._player.requestSeek === 'function',
@@ -308,7 +348,8 @@ class TextAliveManager {
         this._isReady = true;
         this._onReady();
     }
-      _handlePlay() {
+
+    _handlePlay() {
         console.log('TextAliveManager._handlePlay() 呼び出し');
         this._playRequestPending = false;
         this._resetLyricProcessedState();
@@ -324,12 +365,13 @@ class TextAliveManager {
     _handleStop() {
         this._playRequestPending = false;
         this._onStop();
-    }    _resetLyricProcessedState() {
+    }
+
+    _resetLyricProcessedState() {
         try {
             console.log('歌詞処理状態リセット開始');
             let resetCount = 0;
             
-            // デバッグ: プレイヤーデータ構造を詳しく調査
             console.log('プレイヤーデータ構造調査:', {
                 hasVideo: !!this._player.video,
                 hasData: !!this._player.data,
@@ -448,7 +490,8 @@ class TextAliveManager {
         }
         return false;
     }
-      async requestPause() {
+
+    async requestPause() {
         if (this._player && !this._fallbackActive) {
             try {
                 if (this._playRequestPending) {
@@ -466,7 +509,9 @@ class TextAliveManager {
                 console.error('TextAlive Player一時停止エラー:', e);
             }
         }
-    }    async requestRestart() {
+    }
+
+    async requestRestart() {
         if (this._player && !this._fallbackActive) {
             try {
                 console.log('リスタート開始 - プレイヤー状態:', {
@@ -475,16 +520,14 @@ class TextAliveManager {
                     hasTimer: !!this._player.timer,
                     hasVideo: !!this._player.video
                 });
-                  // 現在の再生を確実に停止し、保留中のリクエストもクリア
+
                 this._playRequestPending = false;
                 
                 if (this._player.isPlaying) {
                     this._player.requestPause();
-                    // 少し長めに待機してpause処理が完了するのを確実にする
                     await new Promise(resolve => setTimeout(resolve, 500));
                 }
                 
-                // 楽曲の最初に戻る - 複数の方法を試す
                 let seekSuccess = false;
                 
                 // 方法1: timer.seek (最も一般的)
@@ -539,13 +582,13 @@ class TextAliveManager {
                     await new Promise(resolve => setTimeout(resolve, 500));
                     seekSuccess = true;
                 }
-                  // 歌詞の処理状態をリセット
+
                 this._resetLyricProcessedState();
                 console.log('歌詞処理状態をリセットしました');
                 
-                // 少し待ってから再生開始
                 await new Promise(resolve => setTimeout(resolve, 200));
-                  this._playRequestPending = true;
+
+                this._playRequestPending = true;
                 console.log('requestPlay()を呼び出します - _playRequestPending:', this._playRequestPending);
                 await this._player.requestPlay();
                 console.log('リスタート完了 - requestPlay()呼び出し完了');
@@ -631,13 +674,15 @@ class TextAliveManager {
 class NetworkRenderer {
     constructor(networkModel, onTerminalClick) {
         this._model = networkModel;
-        this._onTerminalClick = onTerminalClick;        this._scaleFactor = 1;
+        this._onTerminalClick = onTerminalClick;
+        this._scaleFactor = 1;
         this._offsetX = 0;
         this._offsetY = 0;
         this._baseWidth = 800;
-        this._baseHeight = 700;        this._activeElements = new Set();
+        this._baseHeight = 700;
+        this._activeElements = new Set();
+        this._decorationManager = new DecorationManager();
     }
-  
 
     calculateScaleFactor() {
         const networkEl = document.getElementById('network');
@@ -653,35 +698,27 @@ class NetworkRenderer {
         
         this._scaleFactor = Math.min(scaleX, scaleY, 1);
         
-        // デバイスタイプに応じたスケーリング調整
         const deviceType = Utils.getDeviceType();
-          switch (deviceType) {
+        switch (deviceType) {
             case 'smartphone':
-                // スマートフォンはより小さくして、全体が見えるように
                 this._scaleFactor = Math.min(this._scaleFactor * 0.75, 0.6);
                 break;
             case 'mobile':
-                // 768px以下のモバイルデバイス
                 this._scaleFactor = Math.min(this._scaleFactor * 0.8, 0.7);
                 break;
             case 'tablet':
-                // タブレットは少し小さめだが見やすく
                 this._scaleFactor = Math.min(this._scaleFactor * 0.9, 0.85);
                 break;
             case 'medium-desktop':
-                // 1120px付近の中サイズデスクトップ - 適度にスケーリング
                 this._scaleFactor = Math.min(this._scaleFactor * 0.80, 0.9);
                 break;
             default:
-                // デスクトップはそのまま
                 break;
         }
         
-        // オフセット計算（中央配置）
         this._offsetX = (containerWidth - (this._baseWidth * this._scaleFactor)) / 2;
         this._offsetY = (containerHeight - (this._baseHeight * this._scaleFactor)) / 2;
         
-        // モバイルデバイスの場合、少し上に配置して操作しやすくする
         if (Utils.isMobile()) {
             this._offsetY = Math.max(this._offsetY - 20, 10);
         }
@@ -693,7 +730,8 @@ class NetworkRenderer {
             y: (y * this._scaleFactor) + this._offsetY
         };
     }
-      render() {
+
+    render() {
         const networkEl = document.getElementById('network');
         if (!networkEl) return;
         
@@ -704,11 +742,22 @@ class NetworkRenderer {
         if (zoomArea && zoomIndicator) {
             networkEl.appendChild(zoomArea);
             networkEl.appendChild(zoomIndicator);
-        }        this._renderConnections(networkEl);
+        }
+
+        this._renderConnections(networkEl);
         this._renderNodes(networkEl);
+        this._decorationManager.render(networkEl, this._scaleFactor, this._offsetX, this._offsetY);
         
         if (Utils.isMobile()) {
             this._setupTouchTargets(networkEl);
+        }
+    }
+    
+    updateDestinationDecoration(destination) {
+        this._decorationManager.setDestination(destination);
+        const networkEl = document.getElementById('network');
+        if (networkEl) {
+            this._decorationManager.render(networkEl, this._scaleFactor, this._offsetX, this._offsetY);
         }
     }
     
@@ -736,13 +785,13 @@ class NetworkRenderer {
             if (this._activeElements.has(connection.id)) {
                 connectionEl.classList.add('active');
             }
-              connectionEl.style.left = `${fromPos.x}px`;
+
+            connectionEl.style.left = `${fromPos.x}px`;
             connectionEl.style.top = `${fromPos.y}px`;
             connectionEl.style.width = `${length}px`;
             connectionEl.style.transform = `rotate(${angle}rad)`;
             connectionEl.title = `接続: ${connection.from} → ${connection.to}`;
             
-            // デバイスタイプに応じた接続線の太さ調整
             const deviceType = Utils.getDeviceType();
             let connectionHeight = '3px';
             
@@ -764,7 +813,8 @@ class NetworkRenderer {
             connectionEl.style.height = connectionHeight;
             
             networkEl.appendChild(connectionEl);
-              if (connection.portLabel) {
+
+            if (connection.portLabel) {
                 const midX = fromPos.x + dx / 2;
                 const midY = fromPos.y + dy / 2;
                 
@@ -780,7 +830,7 @@ class NetworkRenderer {
                 portLabelEl.style.left = `${midX}px`;
                 portLabelEl.style.top = `${midY}px`;
                 portLabelEl.title = `ポート ${connection.portLabel}: ${connection.from} → ${connection.to}`;
-                  // デバイスタイプに応じたポートラベルサイズ調整
+
                 const deviceType = Utils.getDeviceType();
                 let portSize = '40px';
                 let fontSize = '16px';
@@ -806,7 +856,9 @@ class NetworkRenderer {
                         portSize = '40px';
                         fontSize = '16px';
                         break;
-                }portLabelEl.style.setProperty('width', portSize, 'important');
+                }
+
+                portLabelEl.style.setProperty('width', portSize, 'important');
                 portLabelEl.style.setProperty('height', portSize, 'important');
                 portLabelEl.style.setProperty('font-size', fontSize, 'important');
                 
@@ -827,14 +879,14 @@ class NetworkRenderer {
             
             if (this._activeElements.has(id)) {
                 nodeEl.classList.add('active');
-            }            
+            }
+            
             if (node.type === 'terminal') {
                 nodeEl.classList.add('terminal');
                 const pcIcon = document.createElement('img');
                 pcIcon.src = './images/54F75B51-169C-4AAC-B781-D459DFE38F65.png';
                 pcIcon.classList.add('pc-icon');
                 
-                // デバイスタイプに応じたアイコンサイズ調整
                 const deviceType = Utils.getDeviceType();
                 let iconSize = '70px';
                 let labelSize = '16px';
@@ -851,7 +903,8 @@ class NetworkRenderer {
                     case 'tablet':
                         iconSize = '60px';
                         labelSize = '15px';
-                        break;                    case 'medium-desktop':
+                        break;
+                    case 'medium-desktop':
                         iconSize = '58px';
                         labelSize = '15px';
                         break;
@@ -881,7 +934,8 @@ class NetworkRenderer {
                 nodeEl.appendChild(label);
                 
                 nodeEl.addEventListener('click', () => this._onTerminalClick(id));
-                nodeEl.title = `端末 ${id}`;            } else if (node.type === 'router') {
+                nodeEl.title = `端末 ${id}`;
+            } else if (node.type === 'router') {
                 nodeEl.classList.add('router');
                 const pcIcon = document.createElement('img');
                 // ルータYの場合は異なる画像を使用
@@ -892,7 +946,6 @@ class NetworkRenderer {
                 }
                 pcIcon.classList.add('pc-icon');
                 
-                // デバイスタイプに応じたアイコンサイズ調整
                 const deviceType = Utils.getDeviceType();
                 let iconSize = '70px';
                 let labelSize = '16px';
@@ -909,7 +962,8 @@ class NetworkRenderer {
                     case 'tablet':
                         iconSize = '60px';
                         labelSize = '15px';
-                        break;                    case 'medium-desktop':
+                        break;
+                    case 'medium-desktop':
                         iconSize = '65px';
                         labelSize = '15px';
                         break;
@@ -978,12 +1032,12 @@ class NetworkRenderer {
             }
         }
     }
-      _setupTouchTargets(networkEl) {
+
+    _setupTouchTargets(networkEl) {
         document.querySelectorAll('.terminal').forEach(terminal => {
             const touchArea = document.createElement('div');
             touchArea.className = 'mobile-touch-area';
             
-            // デバイスタイプに応じたタッチターゲットサイズ調整
             const deviceType = Utils.getDeviceType();
             let touchSize = '44px';
             
@@ -1054,8 +1108,136 @@ class NetworkRenderer {
                     nodeEl.classList.remove('active');
                 }
             }
-        }    }
-  
+        }
+    }
+}
+
+// ===== 装飾管理クラス =====
+class DecorationManager {
+    constructor() {
+        this._currentDestination = null;
+        this._animationInterval = null;
+        this._currentImageIndex = 0;
+        this._decorationElement = null;
+    }
+    
+    setDestination(destination) {
+        if (this._currentDestination === destination) return;
+        
+        this._currentDestination = destination;
+        this._clearAnimation();
+    }
+    
+    render(networkEl, scaleFactor, offsetX, offsetY) {
+        // 既存の装飾を削除
+        this._removeDecoration();
+        
+        if (!this._currentDestination || !destinationDecorations[this._currentDestination]) return;
+        
+        const decoration = destinationDecorations[this._currentDestination];
+        const position = this._calculatePosition(decoration.position, networkEl, scaleFactor, offsetX, offsetY);
+        
+        this._decorationElement = document.createElement('img');
+        this._decorationElement.className = 'decoration-image';
+        this._decorationElement.style.position = 'absolute';
+        this._decorationElement.style.left = `${position.x}px`;
+        this._decorationElement.style.top = `${position.y}px`;
+        this._decorationElement.style.transform = 'translate(-50%, -50%)';
+        this._decorationElement.style.zIndex = '8'; // ノードより下、接続線より上
+        
+        // デバイスタイプに応じたサイズ調整
+        const deviceType = Utils.getDeviceType();
+        let maxWidth = '200px';
+        let maxHeight = '200px';
+        
+        switch (deviceType) {
+            case 'smartphone':
+                maxWidth = '180px';
+                maxHeight = '180px';
+                break;
+            case 'mobile':
+                maxWidth = '2250px';
+                maxHeight = '225px';
+                break;
+            case 'tablet':
+                maxWidth = '270px';
+                maxHeight = '270px';
+                break;
+            default:
+                maxWidth = '300px';
+                maxHeight = '300px';
+                break;
+        }
+        
+        this._decorationElement.style.maxWidth = maxWidth;
+        this._decorationElement.style.maxHeight = maxHeight;
+        
+        // 初期画像を設定
+        this._decorationElement.src = decoration.images[0];
+        
+        // アニメーション設定
+        if (decoration.interval && decoration.images.length > 1) {
+            this._startImageAnimation(decoration);
+        }
+        
+        if (decoration.floating) {
+            this._decorationElement.classList.add('floating');
+        }
+        
+        if (decoration.blinking && decoration.interval) {
+            this._startBlinkingAnimation(decoration.interval);
+        }
+        
+        networkEl.appendChild(this._decorationElement);
+    }
+    
+    _calculatePosition(position, networkEl, scaleFactor, offsetX, offsetY) {
+        const containerWidth = networkEl.clientWidth;
+        const containerHeight = networkEl.clientHeight;
+        
+        // パーセンテージで指定された位置を実際のピクセル位置に変換
+        const x = (containerWidth * position.x) / 100;
+        const y = (containerHeight * position.y) / 100;
+        
+        return { x, y };
+    }
+    
+    _startImageAnimation(decoration) {
+        if (!decoration.blinking) {
+            this._animationInterval = setInterval(() => {
+                this._currentImageIndex = (this._currentImageIndex + 1) % decoration.images.length;
+                if (this._decorationElement) {
+                    this._decorationElement.src = decoration.images[this._currentImageIndex];
+                }
+            }, decoration.interval);
+        }
+    }
+    
+    _startBlinkingAnimation(interval) {
+        let visible = true;
+        this._animationInterval = setInterval(() => {
+            visible = !visible;
+            if (this._decorationElement) {
+                this._decorationElement.style.opacity = visible ? '1' : '0';
+            }
+        }, interval / 2);
+    }
+    
+    _clearAnimation() {
+        if (this._animationInterval) {
+            clearInterval(this._animationInterval);
+            this._animationInterval = null;
+        }
+        this._currentImageIndex = 0;
+    }
+    
+    _removeDecoration() {
+        this._clearAnimation();
+        if (this._decorationElement && this._decorationElement.parentNode) {
+            this._decorationElement.parentNode.removeChild(this._decorationElement);
+            this._decorationElement = null;
+        }
+    }
 }
 
 // ===== 歌詞アニメーションマネージャー =====
@@ -1110,14 +1292,14 @@ class LyricAnimationManager {
             onComplete(lyric);
         });
     }
-      _createLyricElement(lyric) {
+
+    _createLyricElement(lyric) {
         const lyricEl = document.createElement('div');
         lyricEl.classList.add('packet');
         lyricEl.textContent = lyric.text;
         lyricEl.dataset.id = `lyric-${lyric.id}`;
         lyricEl.title = `歌詞 #${lyric.id}: 「${lyric.text}」 ${lyric.source} → ${lyric.destination}`;
         
-        // デバイスタイプに応じたパケットサイズ調整
         const deviceType = Utils.getDeviceType();
         let fontSize = '12px';
         let height = '24px';
@@ -1303,13 +1485,15 @@ class LyricFlowManager {
         this._lyrics.push(lyric);
         this._stats.lyricsCreated++;
         this._logManager.addEntry(`歌詞 #${id}: 「${lyric.text}」を 端末 ${source} から 端末 ${destination} へ送信します。`, 'info');
-        this._updateLyricCounter();        this._moveLyric(lyric);
+        this._updateLyricCounter();
+        this._moveLyric(lyric);
     }
     
     _moveLyric(lyric) {
         if (lyric.completed) return;
         
-        lyric.hops++;        const portNumber = this._model.getPortNumber(lyric.currentNode, lyric.nextNode);
+        lyric.hops++;
+        const portNumber = this._model.getPortNumber(lyric.currentNode, lyric.nextNode);
         
         this._animationManager.animateLyric(lyric, (completedLyric) => {
             this._processNextHop(completedLyric);
@@ -1320,11 +1504,11 @@ class LyricFlowManager {
         if (lyric.completed) return;
         
         lyric.currentNode = lyric.nextNode;
-          if (lyric.currentNode === lyric.destination) {
+
+        if (lyric.currentNode === lyric.destination) {
             this._stats.lyricsDelivered++;
             this._stats.totalHops += lyric.hops;
             
-            // 到達ログを削除
             lyric.completed = true;
             this._updateLyricCounter();
         } else {
@@ -1351,7 +1535,9 @@ class LyricFlowManager {
             const activeCount = this._lyrics.filter(p => !p.completed).length;
             counter.innerHTML = `アクティブな歌詞: <span class="font-bold text-miku-300">${activeCount}</span>`;
         }
-    }      clearAll() {
+    }
+
+    clearAll() {
         this._lyrics = [];
         this._updateLyricCounter();
         this._animationManager.clearAll();
@@ -1385,7 +1571,8 @@ class UIController {
         this._setupMobileInteraction();
         this._setupKeyboardShortcuts();
     }
-      _setupEventListeners() {
+
+    _setupEventListeners() {
         const sendBtn = document.getElementById('send-btn');
         const stopBtn = document.getElementById('stop-btn');
         const restartBtn = document.getElementById('restart-btn');
@@ -1426,11 +1613,22 @@ class UIController {
             this._updateTerminalOptions(destSelect);
             
             sourceSelect.addEventListener('change', () => this._updateActiveTerminals());
-            destSelect.addEventListener('change', () => this._updateActiveTerminals());
+            destSelect.addEventListener('change', () => {
+                this._updateActiveTerminals();
+                this._updateDestinationDecoration();
+            });
         }
         
         document.addEventListener('fullscreenchange', () => this._handleFullscreenChange());
         document.addEventListener('webkitfullscreenchange', () => this._handleFullscreenChange());
+    }
+    
+    _updateDestinationDecoration() {
+        const destSelect = document.getElementById('destination');
+        if (destSelect) {
+            const destination = destSelect.value;
+            this._simulation.updateDestinationDecoration(destination);
+        }
     }
     
     _addTouchFeedback(element) {
@@ -1616,7 +1814,8 @@ class UIController {
             }
         });
     }
-      _setupKeyboardShortcuts() {
+
+    _setupKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 this._handleEscapeKey();
@@ -1713,14 +1912,14 @@ class UIController {
             document.webkitFullscreenElement ||
             document.msFullscreenElement) {
             fullscreenBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
                 全画面解除
             `;
         } else {
             fullscreenBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-miku-300" fill="none" viewBox="0 0 20 20" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 0h-4m4 0l-5-5" />
                 </svg>
                 全画面
@@ -1748,6 +1947,11 @@ class UIController {
             } else if (selectElement.id === 'destination') {
                 selectElement.value = terminalNodes.length > 1 ? terminalNodes[1] : terminalNodes[0];
             }
+        }
+        
+        // 初期状態で装飾を表示
+        if (selectElement.id === 'destination') {
+            this._updateDestinationDecoration();
         }
     }
     
@@ -1791,6 +1995,7 @@ class UIController {
         }
         
         this._updateActiveTerminals();
+        this._updateDestinationDecoration();
     }
     
     updateSongSelectionDropdown() {
@@ -1957,7 +2162,8 @@ class FallbackManager {
             }
         }, 100);
     }
-      stop() {
+
+    stop() {
         if (this._fallbackTimer) {
             clearInterval(this._fallbackTimer);
             this._fallbackTimer = null;
@@ -2008,7 +2214,8 @@ class LyricsNetworkSimulation {
         this._renderer.render();
         this._uiController.updateRoutingTable();
         this._uiController.showInitialHelp();
-          window.addEventListener('resize', () => this.handleResize());
+
+        window.addEventListener('resize', () => this.handleResize());
         
         // デバイスの向き変更にも対応
         window.addEventListener('orientationchange', () => {
@@ -2062,7 +2269,9 @@ class LyricsNetworkSimulation {
             this._logManager.addEntry("TextAlive API接続に失敗しました。フォールバックモードで実行します。", "error");
             this._logManager.addEntry("このモードでは、歌詞の正確なタイミングは提供されません。", "system");
         }
-    }    _handleTimeUpdate(position) {
+    }
+
+    _handleTimeUpdate(position) {
         if (!this._isRunning) {
             console.log('_handleTimeUpdate: シミュレーションが停止中なのでスキップ, position:', position);
             return;
@@ -2089,7 +2298,9 @@ class LyricsNetworkSimulation {
                 条件: `startTime(${word.startTime}) <= position(${position}): ${word.startTime <= position}, processed: ${word.processed}`
             });
         }
-    }_handlePlay() {
+    }
+
+    _handlePlay() {
         console.log('_handlePlay イベント発生 - 再生開始, 現在の_isRunning:', this._isRunning);
         this._logManager.addEntry('再生開始', 'success');
         this._isRunning = true;
@@ -2224,11 +2435,14 @@ class LyricsNetworkSimulation {
         this._renderer.setActiveElements(new Set());
         this._renderer.render();
         this._logManager.addEntry('再生を停止しました。', 'info');
-          this._uiController.enableSendButton(true);
+
+        this._uiController.enableSendButton(true);
         this._uiController.updateSimulationStatus(false);
         
         this._isCleaningUp = false;
-    }    async restartPlayback() {
+    }
+
+    async restartPlayback() {
         if (!this._textAliveManager.isReady()) {
             this._logManager.addEntry('曲の準備ができていません。しばらくお待ちください。', 'error');
             return;
@@ -2238,7 +2452,8 @@ class LyricsNetworkSimulation {
         this._logManager.clear();
         this._logManager.addEntry('再生を最初から開始します...', 'info');
         console.log('restartPlayback開始 - 現在の_isRunning:', this._isRunning);
-          // 現在の再生を停止してクリア（ただし状態はまだ維持）
+
+        // 現在の再生を停止してクリア（ただし状態はまだ維持）
         if (this._isRunning) {
             console.log('現在実行中なので歌詞とアニメーションをクリア');
             this._lyricFlowManager.clearAll();
@@ -2291,9 +2506,15 @@ class LyricsNetworkSimulation {
             this._logManager.addEntry(`曲変更エラー: ${error.message}`, 'error');
             Utils.removeElement(this._loadingOverlay);
         }
-    }      handleResize() {
+    }
+
+    handleResize() {
         this._renderer.calculateScaleFactor();
         this._renderer.render();
+    }
+    
+    updateDestinationDecoration(destination) {
+        this._renderer.updateDestinationDecoration(destination);
     }
     
     isRunning() {
