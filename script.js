@@ -29,7 +29,7 @@ const destinationDecorations = {
         images: ['./images/A220DA46-3572-4975-88AC-F4CAEAB63C95.png',
             './images/A220DA46-3572-4975-88AC-F4CAEAB63C95 - コピー.png'
         ],
-        position: { x: 20, y: 50 },
+        position: { x: 50, y: 75 },
         interval: null // アニメーションなし
     },
     C: {
@@ -37,7 +37,7 @@ const destinationDecorations = {
         images: ['./images/A220DA46-3572-4975-88AC-F4CAEAB63C95.png',
             './images/A220DA46-3572-4975-88AC-F4CAEAB63C95 - コピー.png'
         ],
-        position: { x: 80, y: 20 },
+        position: { x: 50, y: 75 },
         interval: null,
         floating: true // 浮遊アニメーション
     },
@@ -45,7 +45,7 @@ const destinationDecorations = {
         // モック: 送信先Dの場合は右下で点滅
         images: ['./images/A220DA46-3572-4975-88AC-F4CAEAB63C95.png',
             './images/A220DA46-3572-4975-88AC-F4CAEAB63C95 - コピー.png'],
-        position: { x: 80, y: 80 },
+        position: { x: 50, y: 75 },
         interval: 1000, // 1秒間隔で点滅
         blinking: true
     }
