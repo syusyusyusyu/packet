@@ -335,7 +335,7 @@ html, body {
     max-height: 40vh; /* ビューポート高さの40%を超えないように */
 }
 
-.decoration-image:hover {
+.decoration-image {
     transform: translate(-50%, -50%) scale(1.05);
     filter: drop-shadow(0 4px 12px rgba(57, 240, 236, 0.4));
 }

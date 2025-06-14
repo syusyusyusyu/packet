@@ -1152,20 +1152,20 @@ class DecorationManager {
         
         switch (deviceType) {
             case 'smartphone':
-                maxWidth = '180px';
-                maxHeight = '180px';
-                break;
-            case 'mobile':
-                maxWidth = '2250px';
+                maxWidth = '225px';
                 maxHeight = '225px';
                 break;
+            case 'mobile':
+                maxWidth = '250px';
+                maxHeight = '250px';
+                break;
             case 'tablet':
-                maxWidth = '270px';
-                maxHeight = '270px';
+                maxWidth = '320px';
+                maxHeight = '320px';
                 break;
             default:
-                maxWidth = '300px';
-                maxHeight = '300px';
+                maxWidth = '360px';
+                maxHeight = '360px';
                 break;
         }
         
