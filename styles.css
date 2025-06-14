@@ -416,9 +416,6 @@ html, body {
 .viewer-lyric-char.active {
     opacity: 1;
     transform: translateY(0);
-    animation: lyrics-glow 0.3s ease-in-out;
-    color: #39f0ec; /* ミクカラー */
-    text-shadow: 0 0 10px rgba(57, 240, 236, 0.8);
 }
 
 .viewer-lyric-char.fade-out {
@@ -432,21 +429,6 @@ html, body {
 .viewer-lyric-char.highlighted {
     color: rgba(255, 107, 203, 1);
     transform: scale(1.1);
-}
-
-@keyframes lyrics-glow {
-    0% { 
-        transform: scale(1); 
-        opacity: 0.8; 
-    }
-    50% { 
-        transform: scale(1.1); 
-        opacity: 1; 
-    }
-    100% { 
-        transform: scale(1); 
-        opacity: 1; 
-    }
 }
 
 /* ===== ログエントリー ===== */
@@ -925,26 +907,18 @@ html, body {
         height: 20px;
         font-size: 10px;
     }
-      .viewer-lyric-char {
-        font-size: 18px; /* 少し小さくして改行を促進 */
-        margin: 2px 1px; /* 文字間の余白を追加 */
-        display: inline-block; /* 改行制御を改善 */
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8); /* 背景とのコントラストを向上 */
-        background: rgba(15, 23, 42, 0.7); /* 半透明の背景を追加 */
-        border-radius: 4px;
-        padding: 2px 4px;
-    }
-        .viewer-lyrics-container {
-        top: 10px !important; /* 一番上に固定 */
-        line-height: 1.3 !important;
-        overflow-y: visible !important; /* 必要に応じてスクロール可能 */
+    
+    .viewer-lyric-char {
+        font-size: 20px;
+    }      
+      
+    .viewer-lyrics-container {
+        top: 0px !important;
+        line-height: 1.4 !important;
+        overflow-y: auto !important;
         scrollbar-width: none !important; /* Firefox */
         -ms-overflow-style: none !important; /* IE and Edge */
-        max-height: 35vh !important;
-        word-wrap: break-word !important; /* 長い単語の改行 */
-        word-break: break-all !important; /* 必要に応じて文字間で改行 */
-        flex-wrap: wrap !important; /* フレックス要素の改行を許可 */
-        align-content: flex-start !important; /* 上揃え */
+        max-height: 30vh !important;
     }
     
     .viewer-lyrics-container::-webkit-scrollbar {
