@@ -644,10 +644,10 @@ class NetworkRenderer {
         this._initializeViewerLyricsContainer();
     }      
     
-    _initializeViewerLyricsContainer() {
-        this._viewerLyricsContainer = document.getElementById('viewer-lyrics-container') || document.createElement('div');
+    _initializeViewerLyricsContainer() {        this._viewerLyricsContainer = document.getElementById('viewer-lyrics-container') || document.createElement('div');
         if (!this._viewerLyricsContainer.parentNode) {
             this._viewerLyricsContainer.className = 'viewer-lyrics-container absolute top-0 left-0 right-0 flex flex-wrap justify-center items-start gap-2 py-2 px-4 overflow-hidden z-10 pointer-events-none text-2xl font-bold';
+            this._viewerLyricsContainer.id = 'viewer-lyrics-container';
             const networkEl = document.getElementById('network');
             if (networkEl) networkEl.appendChild(this._viewerLyricsContainer);
         }
@@ -680,49 +680,56 @@ class NetworkRenderer {
 
         // 歌詞コンテナの安全な配置位置を計算
         this._adjustLyricsPosition(terminalPositions, networkRect);
-    }      _adjustLyricsPosition(terminalPositions, networkRect) {
+    }    _adjustLyricsPosition(terminalPositions, networkRect) {
         if (!this._viewerLyricsContainer) return;
 
-        const containerHeight = Math.min(120, networkRect.height * 0.3);
-        let topPosition = 0; // 一番上から開始
-
-        // 上部の端末との衝突をチェック
+        // 歌詞を一番上に固定配置
+        let topPosition = 10; // 上端から少し余白
+        
+        // 歌詞の行の高さを考慮
+        const lineHeight = 40; // 歌詞1行の高さ
+        const maxLines = Math.floor((networkRect.height * 0.4) / lineHeight); // 最大行数を画面の40%に制限
+        
+        // 上部の端末との衝突をチェックして必要に応じて改行を促進
         const topTerminals = terminalPositions.filter(terminal => 
-            terminal.y < containerHeight + terminal.radius
+            terminal.y < lineHeight * 2 // 最初の2行の範囲内にある端末
         );
 
+        // 端末と重なりそうな場合は、歌詞の折り返しを促進
         if (topTerminals.length > 0) {
-            // 最も下にある端末の下に配置
-            const lowestTopTerminal = Math.max(...topTerminals.map(t => t.y + t.radius));
-            topPosition = Math.max(topPosition, lowestTopTerminal + 10);
-        }
-
-        // 歌詞コンテナが画面外に出ないよう調整
-        if (topPosition + containerHeight > networkRect.height - 40) {
-            topPosition = Math.max(0, networkRect.height - containerHeight - 40); // 最小値を0に設定
-        }
-
-        // 端末の左右の位置も考慮してパディングを調整
-        const leftTerminals = terminalPositions.filter(t => t.x < networkRect.width * 0.3);
-        const rightTerminals = terminalPositions.filter(t => t.x > networkRect.width * 0.7);
-        
-        let leftPadding = 20;
-        let rightPadding = 20;
-        
-        if (leftTerminals.length > 0) {
-            leftPadding = Math.max(40, ...leftTerminals.map(t => t.x + t.radius - networkRect.left));
-        }
-        
-        if (rightTerminals.length > 0) {
-            rightPadding = Math.max(40, networkRect.right - Math.min(...rightTerminals.map(t => t.x - t.radius)));
-        }
-
+            // フレックスボックスの設定を調整して改行を促進
+            this._viewerLyricsContainer.style.flexWrap = 'wrap';
+            this._viewerLyricsContainer.style.alignContent = 'flex-start';
+            this._viewerLyricsContainer.style.lineHeight = '1.2';
+            
+            // 端末の左右位置を考慮してコンテナの幅を調整
+            const leftTerminals = terminalPositions.filter(t => t.x < networkRect.width * 0.4 && t.y < lineHeight * 2);
+            const rightTerminals = terminalPositions.filter(t => t.x > networkRect.width * 0.6 && t.y < lineHeight * 2);
+            
+            let leftPadding = 20;
+            let rightPadding = 20;
+            
+            if (leftTerminals.length > 0) {
+                leftPadding = Math.max(60, ...leftTerminals.map(t => t.x + t.radius + 20));
+            }
+            
+            if (rightTerminals.length > 0) {
+                const rightEdge = networkRect.width - Math.min(...rightTerminals.map(t => t.x - t.radius - 20));
+                rightPadding = Math.max(60, rightEdge);
+            }
+            
+            this._viewerLyricsContainer.style.paddingLeft = `${leftPadding}px`;
+            this._viewerLyricsContainer.style.paddingRight = `${rightPadding}px`;
+        } else {
+            // 端末が上部にない場合は通常の配置
+            this._viewerLyricsContainer.style.paddingLeft = '20px';
+            this._viewerLyricsContainer.style.paddingRight = '20px';
+        }        // 常に一番上に配置
         this._viewerLyricsContainer.style.top = `${topPosition}px`;
-        this._viewerLyricsContainer.style.maxHeight = `${containerHeight}px`;
-        this._viewerLyricsContainer.style.paddingLeft = `${leftPadding}px`;
-        this._viewerLyricsContainer.style.paddingRight = `${rightPadding}px`;
+        this._viewerLyricsContainer.style.maxHeight = `${Math.min(200, networkRect.height * 0.4)}px`;
     }
-      calculateScaleFactor() {
+
+    calculateScaleFactor() {
         const networkEl = document.getElementById('network');
         if (!networkEl) return;
         
@@ -1147,7 +1154,7 @@ class NetworkRenderer {
                 }
             }
         }
-    }      displayViewerLyric(text) {
+    }    displayViewerLyric(text) {
         if (this._displayedViewerLyrics.has(text)) return;
         if (!this._viewerLyricsContainer) return;
 
@@ -1157,39 +1164,69 @@ class NetworkRenderer {
         const viewerChar = document.createElement('span');
         viewerChar.className = 'viewer-lyric-char';
         viewerChar.textContent = text;
-          // デバイスタイプに応じたフォントサイズ調整
+        
+        // デバイスタイプに応じたフォントサイズ調整
         const deviceType = Utils.getDeviceType();
-        let fontSize = '24px';
+        let fontSize = '20px';
         
         switch (deviceType) {
             case 'smartphone':
-                fontSize = '18px';
+                fontSize = '16px';
                 break;
             case 'mobile':
-                fontSize = '20px';
+                fontSize = '18px';
                 break;
             case 'tablet':
-                fontSize = '22px';
+                fontSize = '19px';
                 break;
             case 'medium-desktop':
-                fontSize = '23px';
+                fontSize = '20px';
                 break;
             default:
-                fontSize = '24px';
+                fontSize = '20px';
                 break;
         }
         
-        viewerChar.style.fontSize = fontSize;
+        viewerChar.style.fontSize = fontSize;        // 歌詞の長さをチェックして適切な改行を挿入
+        const currentLineLength = this._getCurrentLineLength();
+        const networkEl = document.getElementById('network');
         
-        if (this._viewerLyricsContainer.children.length > 0) {
-            this._viewerLyricsContainer.appendChild(document.createTextNode(' '));
+        // デバイスに応じた最大行長を設定（既存のdeviceTypeを使用）
+        let maxLineLength;
+        switch (deviceType) {
+            case 'smartphone':
+                maxLineLength = Math.floor(networkEl.clientWidth / 15) || 20;
+                break;
+            case 'mobile':
+                maxLineLength = Math.floor(networkEl.clientWidth / 18) || 25;
+                break;
+            case 'tablet':
+                maxLineLength = Math.floor(networkEl.clientWidth / 20) || 30;
+                break;
+            default:
+                maxLineLength = Math.floor(networkEl.clientWidth / 22) || 35;
+                break;
+        }
+        
+        // 行が長くなりすぎた場合、または端末と重なりそうな場合は改行
+        if (currentLineLength > maxLineLength || this._shouldBreakLine()) {
+            const br = document.createElement('br');
+            this._viewerLyricsContainer.appendChild(br);
+        } else if (this._viewerLyricsContainer.children.length > 0) {
+            // 最後の要素がBRでない場合のみスペースを追加
+            const lastChild = this._viewerLyricsContainer.lastChild;
+            if (lastChild && lastChild.tagName !== 'BR') {
+                this._viewerLyricsContainer.appendChild(document.createTextNode(' '));
+            }
         }
         
         this._viewerLyricsContainer.appendChild(viewerChar);
 
         requestAnimationFrame(() => {
             viewerChar.classList.add('active');
-        });        this._displayedViewerLyrics.set(text, {
+        });
+
+        this._displayedViewerLyrics.set(text, {
             element: viewerChar
         });
 
@@ -1223,6 +1260,59 @@ class NetworkRenderer {
             this._viewerLyricsContainer.innerHTML = '';
         }
         this._displayedViewerLyrics.clear();
+    }
+    
+    // 現在の行の長さを取得
+    _getCurrentLineLength() {
+        if (!this._viewerLyricsContainer) return 0;
+        
+        const children = Array.from(this._viewerLyricsContainer.children);
+        let currentLineLength = 0;
+        
+        // 最後のbr要素以降の文字数をカウント
+        for (let i = children.length - 1; i >= 0; i--) {
+            const child = children[i];
+            if (child.tagName === 'BR') {
+                break;
+            }
+            if (child.classList && child.classList.contains('viewer-lyric-char')) {
+                currentLineLength += child.textContent.length;
+            }
+        }
+        
+        return currentLineLength;
+    }
+    
+    // 改行すべきかどうかを判定
+    _shouldBreakLine() {
+        if (!this._viewerLyricsContainer || !this._model) return false;
+        
+        // コンテナの現在の高さを取得
+        const containerRect = this._viewerLyricsContainer.getBoundingClientRect();
+        const networkEl = document.getElementById('network');
+        if (!networkEl) return false;
+        
+        const networkRect = networkEl.getBoundingClientRect();
+        const nodes = this._model.getNodes();
+        
+        // 次の行が端末と重なるかどうかをチェック
+        const nextLineY = containerRect.top + containerRect.height + 30; // 次の行の予想位置
+        
+        const terminals = ['A', 'B', 'C', 'D'];
+        for (const nodeId of terminals) {
+            const node = nodes[nodeId];
+            if (node) {
+                const scaledPos = this.scalePosition(node.x, node.y);
+                const nodeScreenY = networkRect.top + scaledPos.y;
+                
+                // 次の行が端末の近くにある場合は改行
+                if (Math.abs(nextLineY - nodeScreenY) < 40) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
     }
 }
 
